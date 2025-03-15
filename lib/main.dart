@@ -8,6 +8,7 @@ void main() async {
   await initializeDateFormatting('vi_VN', null); // Khởi tạo locale tiếng Việt
 
   runApp(MaterialApp(
+    debugShowCheckedModeBanner: false,
     home: HomeScreen(),
     routes: {
       '/add_event': (context) => AddEventScreen(),

@@ -10,6 +10,12 @@ class _AddEventScreenState extends State<AddEventScreen> {
   TextEditingController _titleController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
+  int _repeatIndex = 0;
+  List<String> options = [
+    "Chỉ hôm nay",
+    "3 Ngày liên tục",
+    "Lặp lại hằng tuần",
+  ];
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -22,22 +28,33 @@ class _AddEventScreenState extends State<AddEventScreen> {
               controller: _titleController,
               decoration: InputDecoration(labelText: "Tên sự kiện"),
             ),
-            SizedBox(height: 10),
+            SizedBox(height: 20),
             ListTile(
-              title: Text(
-                "Giờ bắt đầu: ${_selectedTime.format(context)}",
-              ),
-               trailing: Icon(Icons.access_time),
-               onTap: () async {
-                TimeOfDay? picked = await showTimePicker(context: context,
-                initialTime: _selectedTime,
+              title: Text("Giờ bắt đầu: ${_selectedTime.format(context)}"),
+              trailing: Icon(Icons.access_time),
+              onTap: () async {
+                TimeOfDay? picked = await showTimePicker(
+                  context: context,
+                  initialTime: _selectedTime,
                 );
-                if(picked != null){
+                if (picked != null) {
                   setState(() {
                     _selectedTime = picked;
                   });
                 }
-               },
+              },
+            ),
+            Column(
+              children: List.generate(options.length, (index){
+                return RadioListTile(title: Text(options[index]) ,
+                value: index, 
+                groupValue: _repeatIndex,
+                onChanged: (int? value){
+                  setState(() {
+                    _repeatIndex = value!;
+                  });
+                });
+              }),
             ),
             ListTile(
               title: Text(
@@ -61,7 +78,6 @@ class _AddEventScreenState extends State<AddEventScreen> {
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                // Lưu sự kiện
                 Navigator.pop(context);
               },
               child: Text("Lưu"),
