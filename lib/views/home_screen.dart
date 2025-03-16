@@ -75,7 +75,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             SizedBox(width: 8),
             Text(
-              DateFormat('MM yyyy', 'vi').format(selectedDate), // Cập nhật tháng
+              DateFormat(
+                'MM yyyy',
+                'vi',
+              ).format(selectedDate), // Cập nhật tháng
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               overflow: TextOverflow.ellipsis,
             ),

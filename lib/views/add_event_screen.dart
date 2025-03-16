@@ -45,15 +45,17 @@ class _AddEventScreenState extends State<AddEventScreen> {
               },
             ),
             Column(
-              children: List.generate(options.length, (index){
-                return RadioListTile(title: Text(options[index]) ,
-                value: index, 
-                groupValue: _repeatIndex,
-                onChanged: (int? value){
-                  setState(() {
-                    _repeatIndex = value!;
-                  });
-                });
+              children: List.generate(options.length, (index) {
+                return RadioListTile(
+                  title: Text(options[index]),
+                  value: index,
+                  groupValue: _repeatIndex,
+                  onChanged: (int? value) {
+                    setState(() {
+                      _repeatIndex = value!;
+                    });
+                  },
+                );
               }),
             ),
             ListTile(
