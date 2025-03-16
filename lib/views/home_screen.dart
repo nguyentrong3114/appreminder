@@ -11,6 +11,7 @@ class _HomeScreenState extends State<HomeScreen> {
   DateTime selectedDate = DateTime.now(); // Ngày được chọn
   List<String> items = ["Tháng", "Danh Sách", "Tuần", "Ngày"];
   int selectedIndex = 0;
+  int _bottomNavIndex = 0; // Mục được chọn trong Bottom Navigation Bar
 
   void _onDateSelected(DateTime date) {
     setState(() {
@@ -34,6 +35,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
       selectedDate = DateTime(newYear, newMonth, 1);
     });
+  }
+
+  // Chuyển trang trong Bottom Navigation Bar
+  void _onBottomNavTapped(int index) {
+    setState(() {
+      _bottomNavIndex = index;
+    });
+
+    // Điều hướng tới các trang khác (có thể mở rộng)
+    switch (index) {
+      case 0:
+        // Ở lại trang Home
+        break;
+      case 1:
+        // Điều hướng tới trang Calendar (nếu có)
+        break;
+      case 2:
+        // Điều hướng tới trang Settings (nếu có)
+        break;
+    }
   }
 
   @override
@@ -126,6 +147,27 @@ class _HomeScreenState extends State<HomeScreen> {
           Navigator.pushNamed(context, '/add_event');
         },
         child: Icon(Icons.add),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _bottomNavIndex,
+        onTap: _onBottomNavTapped,
+        selectedItemColor: Colors.blue,
+        unselectedItemColor: Colors.grey,
+        showUnselectedLabels: true,
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.manage_accounts),
+            label: 'Quản Lí',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
+        ],
       ),
     );
   }

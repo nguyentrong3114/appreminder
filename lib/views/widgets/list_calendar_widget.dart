@@ -56,7 +56,7 @@ class _ListCalendarState extends State<ListCalendar> {
 
     return Column(
       children: [
-        SizedBox(height: 20),
+        SizedBox(height: 10),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children:
@@ -83,7 +83,7 @@ class _ListCalendarState extends State<ListCalendar> {
             physics: ScrollPhysics(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 6,
-              childAspectRatio: 0.2,// tỉ lệ với chiều rộng
+              childAspectRatio: 1,// tỉ lệ với chiều rộng
             ),
             itemCount: lastDayInView.difference(firstDayInView).inDays + 1,
             itemBuilder: (context, index) {
@@ -100,7 +100,6 @@ class _ListCalendarState extends State<ListCalendar> {
                   widget.onDateSelected(day);
                 },
                 child: Container(
-                  margin: EdgeInsets.all(2),
                   decoration: BoxDecoration(
                     color:
                         isSelected
@@ -110,7 +109,6 @@ class _ListCalendarState extends State<ListCalendar> {
                     border: Border.all(
                       color: Colors.grey.shade300,
                     ), // Viền ô ngày
-                    borderRadius: BorderRadius.circular(6), // Bo tròn góc
                   ),
                   alignment: Alignment.center,
                   child: Column(
