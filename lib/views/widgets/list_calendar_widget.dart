@@ -1,5 +1,5 @@
-import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
+
 
 class ListCalendar extends StatefulWidget {
   final Function(DateTime) onDateSelected;
@@ -51,43 +51,45 @@ class _ListCalendarState extends State<ListCalendar> {
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
     List<String> weekdays = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 
+    int totalDays = lastDayInView.difference(firstDayInView).inDays + 1;
+    int totalCells = 7 + totalDays; 
+
     return Column(
       children: [
-        SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children:
-              weekdays
-                  .map(
-                    (day) => Expanded(
-                      child: Center(
-                        child: Text(
-                          day,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ),
-                  )
-                  .toList(),
-        ),
         SizedBox(height: 40),
         Expanded(
           child: GridView.builder(
             padding: EdgeInsets.all(10),
             physics: ScrollPhysics(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 6,
-              childAspectRatio: 1,// tỉ lệ với chiều rộng
+              crossAxisCount: 7, // 7 cột (T2 -> CN)
+              childAspectRatio: 1, // Tỉ lệ vuông
             ),
-            itemCount: lastDayInView.difference(firstDayInView).inDays + 1,
+            itemCount: totalCells,
             itemBuilder: (context, index) {
-              DateTime day = firstDayInView.add(Duration(days: index));
+              if (index < 7) {
+                return Container(
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: Text(
+                    weekdays[index],
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.green,
+                    ),
+                  ),
+                );
+              }
+
+              // Ô hiển thị ngày trong tháng
+              DateTime day = firstDayInView.add(Duration(days: index - 7));
               bool isSelected =
                   selectedDay != null && _isSameDay(day, selectedDay!);
               bool isCurrentMonth = (day.month == currentMonth.month);
@@ -101,14 +103,8 @@ class _ListCalendarState extends State<ListCalendar> {
                 },
                 child: Container(
                   decoration: BoxDecoration(
-                    color:
-                        isSelected
-                            ? Colors.green[100]
-                            : Colors
-                                .transparent, 
-                    border: Border.all(
-                      color: Colors.grey.shade300,
-                    ), // Viền ô ngày
+                    color: isSelected ? Colors.green[100] : Colors.transparent,
+                    border: Border.all(color: Colors.grey.shade300),
                   ),
                   alignment: Alignment.center,
                   child: Column(
@@ -118,10 +114,7 @@ class _ListCalendarState extends State<ListCalendar> {
                         '${day.day}',
                         style: TextStyle(
                           color:
-                              _isSameDay(
-                                    day,
-                                    DateTime.now(),
-                                  ) 
+                              _isSameDay(day, DateTime.now())
                                   ? Colors.green
                                   : isCurrentMonth
                                   ? Colors.black
@@ -131,10 +124,7 @@ class _ListCalendarState extends State<ListCalendar> {
                               isSelected ? FontWeight.bold : FontWeight.normal,
                         ),
                       ),
-                     
-                      if (day.day == 14 &&
-                          day.month ==
-                              DateTime.now().month) //ngày có sự kiện 
+                      if (day.day == 14 && day.month == DateTime.now().month)
                         Container(
                           margin: EdgeInsets.only(top: 4),
                           padding: EdgeInsets.symmetric(
@@ -146,7 +136,7 @@ class _ListCalendarState extends State<ListCalendar> {
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            'sinh nhật',
+                            'Sinh nhật',
                             style: TextStyle(fontSize: 10, color: Colors.white),
                           ),
                         ),

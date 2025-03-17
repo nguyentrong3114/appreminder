@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:intl/date_symbol_data_local.dart';
 import 'views/home_screen.dart';
 import 'views/add_event_screen.dart';
 import 'views/challenge_screen.dart';
+import 'package:flutter/material.dart';
 import 'views/add_challenge_screen.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -78,23 +78,22 @@ class _MainScreenState extends State<MainScreen> {
         ),
       ),
       floatingActionButton: Transform.translate(
-        offset: Offset(0, -10),
+        offset: Offset(0, -5),
         child: SizedBox(
           width: 75,
           height: 75,
           child: FloatingActionButton(
             onPressed: () {
               if (_selectedIndex == 2) {
-                // Nếu đang ở ChallengeScreen
                 Navigator.pushNamed(context, '/add_challenge');
               } else {
                 Navigator.pushNamed(context, '/add_event');
               }
             },
-            child: Icon(Icons.add, size: 38, color: Colors.white),
             backgroundColor: Color(0xFF4FCA9C),
             shape: CircleBorder(),
             elevation: 0.0,
+            child: Icon(Icons.add, size: 48, color: Colors.white),
           ),
         ),
       ),
@@ -111,7 +110,7 @@ class _MainScreenState extends State<MainScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 28, color: itemColor),
+            Icon(icon, size: 24, color: itemColor),
             SizedBox(height: 2),
             Text(
               label,

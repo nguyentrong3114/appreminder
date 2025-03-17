@@ -1,6 +1,8 @@
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'widgets/list_calendar_widget.dart';
+import 'package:flutter_app/views/widgets/Home/event_calendar.dart';
+import 'package:flutter_app/views/widgets/renctangle_calender.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -8,14 +10,19 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  DateTime selectedDate = DateTime.now(); // Ngày được chọn
-  List<String> items = ["Tháng", "Danh Sách", "Tuần", "Ngày"];
+  DateTime selectedDate = DateTime.now();
+  final List<String> items = ["Tháng", "Danh Sách", "Tuần", "Ngày"];
   int selectedIndex = 0;
-  int _bottomNavIndex = 0; // Mục được chọn trong Bottom Navigation Bar
-
+  int selectedDayIndex = 0;
   void _onDateSelected(DateTime date) {
     setState(() {
       selectedDate = date;
+    });
+  }
+
+  void _onDaySelected(int index) {
+    setState(() {
+      selectedDayIndex = index;
     });
   }
 
@@ -37,55 +44,69 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  // Chuyển trang trong Bottom Navigation Bar
-  void _onBottomNavTapped(int index) {
-    setState(() {
-      _bottomNavIndex = index;
-    });
-
-    // Điều hướng tới các trang khác (có thể mở rộng)
-    switch (index) {
-      case 0:
-        // Ở lại trang Home
-        break;
-      case 1:
-        // Điều hướng tới trang Calendar (nếu có)
-        break;
-      case 2:
-        // Điều hướng tới trang Settings (nếu có)
-        break;
-    }
+  Widget _buildTabBar() {
+    return Container(
+      height: 50,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: ListView.builder(
+        shrinkWrap: true,
+        scrollDirection: Axis.horizontal,
+        itemCount: items.length,
+        itemBuilder: (context, index) {
+          bool isSelected = selectedIndex == index;
+          return GestureDetector(
+            onTap:
+                () => setState(
+                  () => selectedIndex = index,
+                ), // Cập nhật UI khi chọn tab
+            child: Container(
+              height: 50,
+              margin: const EdgeInsets.symmetric(horizontal: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: isSelected ? Colors.blue : Colors.grey[300],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(
+                child: Text(
+                  items[index],
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : Colors.black,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: Icon(Icons.star),
+        leading: const Icon(Icons.star),
         actions: [
-          IconButton(onPressed: () {}, icon: Icon(Icons.menu)),
-          IconButton(onPressed: () {}, icon: Icon(Icons.search)),
+          IconButton(onPressed: () {}, icon: const Icon(Icons.menu)),
+          IconButton(onPressed: () {}, icon: const Icon(Icons.search)),
         ],
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              icon: Icon(Icons.arrow_back),
-              onPressed: () => _changeMonth(-1), // Chuyển tháng về trước
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => _changeMonth(-1),
             ),
-            SizedBox(width: 8),
             Text(
-              DateFormat(
-                'MM yyyy',
-                'vi',
-              ).format(selectedDate), // Cập nhật tháng
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              DateFormat('MM yyyy', 'vi').format(selectedDate),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               overflow: TextOverflow.ellipsis,
             ),
-            SizedBox(width: 8),
             IconButton(
-              icon: Icon(Icons.arrow_forward),
-              onPressed: () => _changeMonth(1), // Chuyển tháng về sau
+              icon: const Icon(Icons.arrow_forward),
+              onPressed: () => _changeMonth(1),
             ),
           ],
         ),
@@ -93,91 +114,103 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Column(
         children: [
-          Container(
-            height: 50,
-            padding: EdgeInsets.symmetric(horizontal: 8),
-            child: Center(
-              child: ListView.builder(
-                shrinkWrap: true,
-                scrollDirection: Axis.horizontal,
-                itemCount: items.length,
-                itemBuilder: (context, index) {
-                  bool isSelected = selectedIndex == index;
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        selectedIndex = index;
-                      });
-                    },
-                    child: Container(
-                      height: 350,
-                      margin: EdgeInsets.symmetric(horizontal: 6),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isSelected ? Colors.blue : Colors.grey[300],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Center(
-                        child: Text(
-                          items[index],
-                          style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.black,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-          SizedBox(height: 20),
+          _buildTabBar(),
           Expanded(
-            flex: 1,
-            child: ListCalendar(
-              selectedDate: selectedDate,
-              onDateSelected: _onDateSelected,
+            child: IndexedStack(
+              index: selectedIndex,
+              children: [
+                _buildMonthView(),
+                _buildListView(),
+                _buildWeekView(),
+                _buildDayView(),
+              ],
             ),
           ),
-          Container(
-            padding: EdgeInsets.all(12),
-            margin: EdgeInsets.only(top: 10),
-            child: Text(
-              "Hôm nay: ${DateFormat('dd/mm/yyyy').format(DateTime.now())}"
-            ),
-          )
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.pushNamed(context, '/add_event');
         },
-        child: Icon(Icons.add),
+        child: const Icon(Icons.add),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _bottomNavIndex,
-        onTap: _onBottomNavTapped,
-        selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
-        showUnselectedLabels: true,
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
+    );
+  }
+
+  //UI
+
+  Widget _buildMonthView() {
+    return ListCalendar(
+      selectedDate: selectedDate,
+      onDateSelected: _onDateSelected,
+    );
+  }
+
+  Widget _buildListView() {
+    List<String> days = ["1", "2", "3", "4", "5", "6", "7"];
+    List<String> weekDays = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+
+    // Danh sách sự kiện theo ngày
+    Map<String, List<Map<String, String>>> allEvents = {
+      "1": [
+        {'title': 'Cuộc họp nhóm', 'time': '10:00 - 11:30'},
+        {'title': 'Tập Gym', 'time': '18:00 - 19:00'},
+      ],
+      "2": [
+        {'title': 'Đi siêu thị', 'time': '15:00 - 16:00'},
+      ],
+      "5": [
+        {'title': 'Xem phim', 'time': '20:00 - 22:00'},
+      ],
+    };
+
+    // Lấy danh sách sự kiện theo ngày được chọn
+    List<Map<String, String>> events = allEvents[days[selectedDayIndex]] ?? [];
+
+    return Column(
+      children: [
+        const SizedBox(height: 18),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DaySelector(
+            days: days,
+            weekDays: weekDays,
+            selectedIndex: selectedDayIndex,
+            onSelected: _onDaySelected,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.manage_accounts),
-            label: 'Quản Lí',
+        ),
+        const SizedBox(height: 10), 
+        if (events.isNotEmpty)
+          SizedBox(
+            height: 140, 
+            child: EventCalendar(date: selectedDate, events: events),
+          )
+        else
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 20),
+            child: Text(
+              "Không có sự kiện nào trong ngày này",
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
-        ],
+      ],
+    );
+  }
+
+  Widget _buildWeekView() {
+    return Center(
+      child: Text(
+        "Lịch Tuần",
+        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
+  Widget _buildDayView() {
+    return Center(
+      child: Text(
+        "Lịch Ngày",
+        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
       ),
     );
   }
