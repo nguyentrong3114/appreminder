@@ -143,6 +143,13 @@ class _HomeScreenState extends State<HomeScreen> {
               onDateSelected: _onDateSelected,
             ),
           ),
+          Container(
+            padding: EdgeInsets.all(12),
+            margin: EdgeInsets.only(top: 10),
+            child: Text(
+              "Hôm nay: ${DateFormat('dd/mm/yyyy').format(DateTime.now())}"
+            ),
+          )
         ],
       ),
       floatingActionButton: FloatingActionButton(
