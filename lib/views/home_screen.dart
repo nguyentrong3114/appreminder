@@ -1,7 +1,9 @@
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'widgets/list_calendar_widget.dart';
+import 'package:flutter_app/views/widgets/Home/week_selector.dart';
 import 'package:flutter_app/views/widgets/Home/event_calendar.dart';
+import 'package:flutter_app/views/widgets/Home/week_view_calendar.dart';
 import 'package:flutter_app/views/widgets/Home/renctangle_calender.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -14,6 +16,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<String> items = ["Tháng", "Danh Sách", "Tuần", "Ngày"];
   int selectedIndex = 0;
   int selectedDayIndex = 0;
+  int selectedWeekIndex = 3; 
   void _onDateSelected(DateTime date) {
     setState(() {
       selectedDate = date;
@@ -153,13 +156,13 @@ class _HomeScreenState extends State<HomeScreen> {
           "title": "Cuộc họp nhóm",
           "description": "Thảo luận dự án Flutter",
           "weekDay": "T2",
-          "time": "8 a.m - 9 a.m"
+          "time": "8 a.m - 9 a.m",
         },
         {
           "title": "Tập Gym",
           "description": "Luyện tập thể lực",
           "weekDay": "T2",
-          "time": "10 a.m - 12 p.m"
+          "time": "10 a.m - 12 p.m",
         },
       ],
       "2": [
@@ -167,7 +170,7 @@ class _HomeScreenState extends State<HomeScreen> {
           "title": "Đi siêu thị",
           "description": "Mua đồ dùng gia đình",
           "weekDay": "T3",
-          "time": "8 a.m - 9 p.m"
+          "time": "8 a.m - 9 p.m",
         },
       ],
       "5": [
@@ -175,7 +178,7 @@ class _HomeScreenState extends State<HomeScreen> {
           "title": "Xem phim",
           "description": "Thư giãn cuối tuần",
           "weekDay": "T6",
-          "time": "8 a.m - 9 p.m"
+          "time": "8 a.m - 9 p.m",
         },
       ],
     };
@@ -252,11 +255,34 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildWeekView() {
-    return Center(
-      child: Text(
-        "Lịch Tuần",
-        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-      ),
+    return StatefulBuilder(
+      builder: (context, setState) {
+        List<String> weeks = [
+          "02 - 08 thg 12",
+          "09 - 15 thg 12",
+          "16 - 22 thg 12",
+          "23 - 29 thg 12",
+          "30 - 05 thg 01",
+        ];
+
+        void onWeekSelected(int index) {
+          setState(() {
+            selectedWeekIndex = index; 
+          });
+          print("Tuần được chọn: ${weeks[index]}");
+        }
+
+        return Column(
+          children: [
+            WeekSelector(
+              weeks: weeks,
+              selectedIndex: selectedWeekIndex,
+              onWeekSelected: onWeekSelected,
+            ),
+            const Expanded(child: WeekView()), 
+          ],
+        );
+      },
     );
   }
 
