@@ -2,7 +2,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'widgets/list_calendar_widget.dart';
 import 'package:flutter_app/views/widgets/Home/event_calendar.dart';
-import 'package:flutter_app/views/widgets/renctangle_calender.dart';
+import 'package:flutter_app/views/widgets/Home/renctangle_calender.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -147,50 +147,104 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildListView() {
-    List<String> days = ["1", "2", "3", "4", "5", "6", "7"];
-    List<String> weekDays = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
-
-    // Danh sách sự kiện theo ngày
     Map<String, List<Map<String, String>>> allEvents = {
       "1": [
-        {'title': 'Cuộc họp nhóm', 'time': '10:00 - 11:30'},
-        {'title': 'Tập Gym', 'time': '18:00 - 19:00'},
+        {
+          "title": "Cuộc họp nhóm",
+          "description": "Thảo luận dự án Flutter",
+          "weekDay": "T2",
+          "time": "8 a.m - 9 a.m"
+        },
+        {
+          "title": "Tập Gym",
+          "description": "Luyện tập thể lực",
+          "weekDay": "T2",
+          "time": "10 a.m - 12 p.m"
+        },
       ],
       "2": [
-        {'title': 'Đi siêu thị', 'time': '15:00 - 16:00'},
+        {
+          "title": "Đi siêu thị",
+          "description": "Mua đồ dùng gia đình",
+          "weekDay": "T3",
+          "time": "8 a.m - 9 p.m"
+        },
       ],
       "5": [
-        {'title': 'Xem phim', 'time': '20:00 - 22:00'},
+        {
+          "title": "Xem phim",
+          "description": "Thư giãn cuối tuần",
+          "weekDay": "T6",
+          "time": "8 a.m - 9 p.m"
+        },
       ],
     };
 
-    // Lấy danh sách sự kiện theo ngày được chọn
-    List<Map<String, String>> events = allEvents[days[selectedDayIndex]] ?? [];
+    List<String> eventDays =
+        allEvents.keys.toList()
+          ..sort((a, b) => int.parse(a).compareTo(int.parse(b)));
+
+    int currentIndex =
+        (selectedDayIndex >= 0 && selectedDayIndex < eventDays.length)
+            ? selectedDayIndex
+            : 0;
+
+    List<Map<String, String>> events = allEvents[eventDays[currentIndex]] ?? [];
+
+    int dayNumber = int.parse(eventDays[currentIndex]);
+    DateTime selectedEventDate = DateTime(
+      selectedDate.year,
+      selectedDate.month,
+      dayNumber,
+    );
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 18),
+
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: DaySelector(
-            days: days,
-            weekDays: weekDays,
-            selectedIndex: selectedDayIndex,
-            onSelected: _onDaySelected,
+            allEvents: allEvents,
+            selectedIndex: currentIndex,
+            onSelected: (index) {
+              setState(() {
+                selectedDayIndex = index;
+              });
+            },
           ),
         ),
-        const SizedBox(height: 10), 
+
+        const SizedBox(height: 10),
+
         if (events.isNotEmpty)
-          SizedBox(
-            height: 140, 
-            child: EventCalendar(date: selectedDate, events: events),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  "Sự Kiện Hôm Nay",
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 160,
+                child: EventCalendar(date: selectedEventDate, events: events),
+              ),
+            ],
           )
         else
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 20),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
             child: Text(
               "Không có sự kiện nào trong ngày này",
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+              style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
             ),
           ),
       ],

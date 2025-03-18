@@ -1,23 +1,26 @@
 import 'package:flutter/material.dart';
 
 class DaySelector extends StatelessWidget {
-  final List<String> days;
-  final List<String> weekDays;
+  final Map<String, List<Map<String, String>>> allEvents;
   final int selectedIndex;
   final Function(int) onSelected;
 
   DaySelector({
-    required this.days,
-    required this.weekDays,
+    required this.allEvents,
     required this.selectedIndex,
     required this.onSelected,
   });
 
   @override
   Widget build(BuildContext context) {
+    List<String> daysWithEvents = allEvents.keys.toList();
+    List<String> weekDaysWithEvents = daysWithEvents.map((day) {
+      return allEvents[day]!.first['weekDay'] ?? '';
+    }).toList();
+
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(days.length, (index) {
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: List.generate(daysWithEvents.length, (index) {
         bool isSelected = selectedIndex == index;
         return GestureDetector(
           onTap: () => onSelected(index),
@@ -38,7 +41,7 @@ class DaySelector extends StatelessWidget {
               children: [
                 SizedBox(height: 18),
                 Text(
-                  days[index],
+                  daysWithEvents[index],
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
@@ -47,7 +50,7 @@ class DaySelector extends StatelessWidget {
                 ),
                 SizedBox(height: 6),
                 Text(
-                  weekDays[index],
+                  weekDaysWithEvents[index], 
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
