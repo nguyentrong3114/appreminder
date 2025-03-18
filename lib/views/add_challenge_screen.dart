@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_app/views/add_onetime_task.dart';
+import 'package:flutter_app/views/be_active_screen.dart';
+import 'package:flutter_app/views/be_weird_screen.dart';
+import 'package:flutter_app/views/connect_screen.dart';
+import 'package:flutter_app/views/self_improvement.dart';
+import 'package:flutter_app/views/self_relaxation_screen.dart';
 import 'add_regular_habit_screen.dart';
+import 'healthy_eating_screen.dart';
 
 class AddChallengeScreen extends StatelessWidget {
   @override
@@ -51,7 +58,12 @@ class AddChallengeScreen extends StatelessWidget {
             OptionTile(
               icon: Icons.event_available,
               title: 'Nhiệm vụ một lần',
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => OnetimeTask()),
+                );
+              },
             ),
             SizedBox(height: 32),
 
@@ -75,33 +87,81 @@ class AddChallengeScreen extends StatelessWidget {
                 children: [
                   CategoryCard(
                     imagePath: 'assets/images/cat_fish.png',
-                    title: 'Eat \nhealthy',
+                    title: 'Ăn ngon \nsống khỏe',
                     color: Colors.orange.shade200,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => HealthyEatingScreen(),
+                        ),
+                      );
+                    },
                   ),
                   CategoryCard(
                     imagePath: 'assets/images/cat_relaxation.png',
-                    title: 'Self Relaxation',
+                    title: 'Chill một chút nha',
                     color: Colors.teal.shade200,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SelfRelaxationScreen(),
+                        ),
+                      );
+                    },
                   ),
                   CategoryCard(
                     imagePath: 'assets/images/cat_active.png',
-                    title: 'Be active \nmy way',
+                    title: 'Vận động kiểu của tớ',
                     color: Colors.pink.shade200,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => BeActiveScreen(),
+                        ),
+                      );
+                    },
                   ),
                   CategoryCard(
                     imagePath: 'assets/images/cat_heart.png',
-                    title: 'Be weird. \nBe you',
+                    title: 'Lập dị một chút, chất riêng một tí',
                     color: Colors.purple.shade200,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => BeWeirdScreen(),
+                        ),
+                      );
+                    },
                   ),
                   CategoryCard(
                     imagePath: 'assets/images/cat_connect.png',
-                    title: 'Connet \n with others',
+                    title: 'Gắn kết yêu thương',
                     color: const Color.fromARGB(255, 110, 228, 241),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ConnectScreen(),
+                        ),
+                      );
+                    },
                   ),
                   CategoryCard(
                     imagePath: 'assets/images/cat_selfimprovement.png',
-                    title: 'Self \nimprovement',
+                    title: 'Hoàn thiện bản thân',
                     color: const Color.fromARGB(255, 252, 120, 128),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SelfImprovementScreen(),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -165,40 +225,46 @@ class CategoryCard extends StatelessWidget {
   final String imagePath;
   final String title;
   final Color color;
+  final VoidCallback? onTap;
 
   const CategoryCard({
     required this.imagePath,
     required this.title,
     required this.color,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 220,
-      padding: EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Stack(
-        children: [
-          Align(
-            alignment: Alignment.bottomLeft,
-            child: SizedBox(
-              height: 130,
-              child: Image.asset(imagePath, fit: BoxFit.contain),
+    return GestureDetector(
+      // Wrap with GestureDetector
+      onTap: onTap,
+      child: Container(
+        height: 220,
+        padding: EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Stack(
+          children: [
+            Align(
+              alignment: Alignment.bottomLeft,
+              child: SizedBox(
+                height: 130,
+                child: Image.asset(imagePath, fit: BoxFit.contain),
+              ),
             ),
-          ),
-          Align(
-            alignment: Alignment.topRight,
-            child: Text(
-              title,
-              style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.right,
+            Align(
+              alignment: Alignment.topRight,
+              child: Text(
+                title,
+                style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.right,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
