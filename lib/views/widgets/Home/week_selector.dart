@@ -50,7 +50,7 @@ class _WeekSelectorState extends State<WeekSelector> {
                 widget.weeks[index],
                 style: TextStyle(
                   color: isSelected ? Colors.white : Colors.black87,
-                  fontSize: 16, // Chỉnh font to hơn một chút
+                  fontSize: 16,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 ),
               ),

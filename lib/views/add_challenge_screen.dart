@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'add_regular_habit_screen.dart';
 
 class AddChallengeScreen extends StatelessWidget {
+  const AddChallengeScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -119,7 +121,7 @@ class OptionTile extends StatelessWidget {
   final String title;
   final VoidCallback onTap;
 
-  const OptionTile({
+  const OptionTile({super.key, 
     required this.icon,
     required this.title,
     required this.onTap,
@@ -166,7 +168,7 @@ class CategoryCard extends StatelessWidget {
   final String title;
   final Color color;
 
-  const CategoryCard({
+  const CategoryCard({super.key, 
     required this.imagePath,
     required this.title,
     required this.color,

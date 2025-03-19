@@ -21,6 +21,8 @@ void main() async {
 }
 
 class MainScreen extends StatefulWidget {
+  const MainScreen({super.key});
+
   @override
   _MainScreenState createState() => _MainScreenState();
 }
@@ -61,7 +63,7 @@ class _MainScreenState extends State<MainScreen> {
           child: BottomAppBar(
             notchMargin: 8.0,
             shape: CircularNotchedRectangle(),
-            child: Container(
+            child: SizedBox(
               height: 70,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,

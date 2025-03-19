@@ -6,13 +6,41 @@ class WeekView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final days = [
-      {'day': 'Th 2 23', 'events': ['Đêm Giáng...', 'Đêm Giáng...']},
-      {'day': 'Th 3 24', 'events': ['Giáng sinh/...']},
-      {'day': 'Th 4 25', 'events': ['']},
-      {'day': 'Th 5 26', 'events': ['']},
-      {'day': 'Th 6 27', 'events': ['']},
-      {'day': 'Th 7 28', 'events': ['']},
-      {'day': 'CN 29', 'events': ['']},
+      {
+        'day': 'Th 2 23',
+        'events': ['Đêm Giáng...', 'Đêm Giáng...'],
+        'time': ['7 p.m - 9 p.m', '9 p.m - 10 p.m'],
+      },
+      {
+        'day': 'Th 3 24',
+        'events': ['Giáng sinh...'],
+        'time': ['All day'],
+      },
+      {
+        'day': 'Th 4 25',
+        'events': ['Tập Gym'],
+        'time': ['8 p.m - 9 p.m'],
+      },
+      {
+        'day': 'Th 5 26',
+        'events': ['Tập Gym'],
+        'time': ['8 p.m - 9 p.m'],
+      },
+      {
+        'day': 'Th 6 27',
+        'events': ['Tập Gym'],
+        'time': ['8 p.m - 9 p.m'],
+      },
+      {
+        'day': 'Th 7 28',
+        'events': ['Tập Gym'],
+        'time': ['8 p.m - 9 p.m'],
+      },
+      {
+        'day': 'CN 29',
+        'events': ['Tập Gym'],
+        'time': ['8 p.m - 9 p.m'],
+      },
     ];
 
     return ListView.builder(
@@ -21,7 +49,13 @@ class WeekView extends StatelessWidget {
         final dayData = days[index];
         final dayName = dayData['day'] as String;
         final events = dayData['events'] as List<String>;
-        // Lọc bỏ các event rỗng để hiển thị
+
+        final times =
+            (dayData['time'] as List<dynamic>?)
+                ?.map((e) => e.toString())
+                .toList() ??
+            [];
+
         final validEvents = events.where((e) => e.trim().isNotEmpty).toList();
 
         return Card(
@@ -45,9 +79,11 @@ class WeekView extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                // Hiển thị danh sách sự kiện nếu có, ngược lại hiện "(Trống)"
+
                 if (validEvents.isNotEmpty)
-                  ...validEvents.map((event) => Padding(
+                  Column(
+                    children: List.generate(validEvents.length, (i) {
+                      return Padding(
                         padding: const EdgeInsets.only(bottom: 8.0),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -59,17 +95,35 @@ class WeekView extends StatelessWidget {
                             ),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: Text(
-                                event,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.black87,
-                                ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    validEvents[i],
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  if (i <
+                                      times
+                                          .length) // Kiểm tra nếu có thời gian tương ứng
+                                    Text(
+                                      times[i],
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.blueGrey,
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
                           ],
                         ),
-                      ))
+                      );
+                    }),
+                  )
                 else
                   const Text(
                     '(Trống)',
