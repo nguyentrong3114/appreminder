@@ -1,3 +1,8 @@
+import 'package:flutter_app/views/widgets/manage/add_diary_screen.dart';
+import 'package:flutter_app/views/widgets/manage/add_notes_screen.dart';
+import 'package:flutter_app/views/widgets/manage/add_todo_screen.dart';
+import 'package:flutter_app/views/widgets/manage/todo.dart';
+
 import 'views/home_screen.dart';
 import 'views/add_event_screen.dart';
 import 'views/challenge_screen.dart';
@@ -29,13 +34,20 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
+  final GlobalKey<TodoState> todoKey = GlobalKey<TodoState>();
 
-  final List<Widget> _screens = [
-    HomeScreen(),
-    Container(), // Placeholder cho trang "Quản lý"
-    ChallengeScreen(),
-    Container(), // Placeholder cho trang "Cài đặt"
-  ];
+  late List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      HomeScreen(),
+      Todo(key: todoKey),
+      ChallengeScreen(),
+      Container(),
+    ];
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -86,7 +98,37 @@ class _MainScreenState extends State<MainScreen> {
           height: 75,
           child: FloatingActionButton(
             onPressed: () {
-              if (_selectedIndex == 2) {
+              if (_selectedIndex == 1) {
+                final todoState = todoKey.currentState;
+                if (todoState != null) {
+                  if (todoState.selectedTab == 0) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const TodoScreen(),
+                      ),
+                    );
+                  }
+                  else if(todoState.selectedTab==1)
+                  {
+                      Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AddNoteScreen(),
+                      ),
+                    );
+                  }
+                  else if(todoState.selectedTab==2)
+                  {
+                      Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const DiaryScreen(),
+                      ),
+                    );
+                  }
+                }
+              } else if (_selectedIndex == 2) {
                 Navigator.pushNamed(context, '/add_challenge');
               } else {
                 Navigator.pushNamed(context, '/add_event');
