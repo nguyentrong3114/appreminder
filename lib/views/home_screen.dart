@@ -16,7 +16,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<String> items = ["Tháng", "Danh Sách", "Tuần", "Ngày"];
   int selectedIndex = 0;
   int selectedDayIndex = 0;
-  int selectedWeekIndex = 3; 
+  int selectedWeekIndex = 3;
   void _onDateSelected(DateTime date) {
     setState(() {
       selectedDate = date;
@@ -61,7 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onTap:
                 () => setState(
                   () => selectedIndex = index,
-                ), // Cập nhật UI khi chọn tab
+                ), 
             child: Container(
               height: 50,
               margin: const EdgeInsets.symmetric(horizontal: 6),
@@ -148,6 +148,8 @@ class _HomeScreenState extends State<HomeScreen> {
       onDateSelected: _onDateSelected,
     );
   }
+
+  // Menu Danh sách
 
   Widget _buildListView() {
     Map<String, List<Map<String, String>>> allEvents = {
@@ -254,32 +256,48 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  //Menu Tuần
   Widget _buildWeekView() {
+    Map<String, List<String>> _generateWeeks() {
+      DateTime now = DateTime.now();
+      List<String> weeks = [];
+      List<String> months = [];
+
+      for (int i = -2; i <= 6; i++) {
+        DateTime startOfWeek = now.add(Duration(days: i * 7));
+        DateTime endOfWeek = startOfWeek.add(Duration(days: 6));
+
+        weeks.add(
+          "${DateFormat('dd').format(startOfWeek)} - ${DateFormat('dd').format(endOfWeek)}",
+        );
+
+        months.add(DateFormat('MM').format(startOfWeek));
+      }
+
+      return {'weeks': weeks, 'months': months};
+    }
+
+    final weekData = _generateWeeks();
+    final List<String> months = weekData['months']!;
+    final List<String> weeks = weekData['weeks']!;
+
     return StatefulBuilder(
       builder: (context, setState) {
-        List<String> weeks = [
-          "02 - 08 thg 12",
-          "09 - 15 thg 12",
-          "16 - 22 thg 12",
-          "23 - 29 thg 12",
-          "30 - 05 thg 01",
-        ];
-
         void onWeekSelected(int index) {
           setState(() {
-            selectedWeekIndex = index; 
+            selectedWeekIndex = index;
           });
-          print("Tuần được chọn: ${weeks[index]}");
         }
 
         return Column(
           children: [
             WeekSelector(
+              months: months,
               weeks: weeks,
               selectedIndex: selectedWeekIndex,
               onWeekSelected: onWeekSelected,
             ),
-            const Expanded(child: WeekView()), 
+            const Expanded(child: WeekView()),
           ],
         );
       },

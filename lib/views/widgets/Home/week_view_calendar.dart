@@ -107,8 +107,7 @@ class WeekView extends StatelessWidget {
                                     ),
                                   ),
                                   if (i <
-                                      times
-                                          .length) // Kiểm tra nếu có thời gian tương ứng
+                                      times.length) 
                                     Text(
                                       times[i],
                                       style: const TextStyle(

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-
 class ListCalendar extends StatefulWidget {
   final Function(DateTime) onDateSelected;
   final DateTime selectedDate;
@@ -42,12 +41,8 @@ class _ListCalendarState extends State<ListCalendar> {
     firstDayOfMonth = DateTime(date.year, date.month, 1);
     lastDayOfMonth = DateTime(date.year, date.month + 1, 0);
 
-    firstDayInView = firstDayOfMonth.subtract(
-      Duration(days: firstDayOfMonth.weekday % 7 + 5),
-    );
-    lastDayInView = lastDayOfMonth.add(
-      Duration(days: 6 - lastDayOfMonth.weekday % 7),
-    );
+    firstDayInView = firstDayOfMonth.subtract(Duration(days: 3));
+    lastDayInView = lastDayOfMonth.add(Duration(days: 3));
   }
 
   @override
@@ -56,7 +51,7 @@ class _ListCalendarState extends State<ListCalendar> {
     List<String> weekdays = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 
     int totalDays = lastDayInView.difference(firstDayInView).inDays + 1;
-    int totalCells = 7 + totalDays; 
+    int totalCells = 7 + totalDays;
 
     return Column(
       children: [
@@ -67,7 +62,7 @@ class _ListCalendarState extends State<ListCalendar> {
             physics: ScrollPhysics(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 7, // 7 cột (T2 -> CN)
-              childAspectRatio: 1, // Tỉ lệ vuông
+              childAspectRatio: 0.8, // Tỉ lệ vuông
             ),
             itemCount: totalCells,
             itemBuilder: (context, index) {
