@@ -73,7 +73,7 @@ class AddChallengeScreen extends StatelessWidget {
             // Trong OptionTile cho "Thử thách một lần"
             OptionTile(
               icon: Icons.calendar_today,
-              title: 'Thử thách một lần',
+              title: 'Nhiệm vụ một lần',
               onTap: () {
                 // Lấy ngày đã chọn từ ChallengeScreen
                 DateTime selectedDate = ChallengeScreen.selectedDate;
