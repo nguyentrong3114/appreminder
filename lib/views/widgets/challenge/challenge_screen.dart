@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'add_challenge_screen.dart';
+import 'package:intl/intl.dart';
 
 class ChallengeScreen extends StatefulWidget {
   @override
@@ -7,27 +8,56 @@ class ChallengeScreen extends StatefulWidget {
 }
 
 class _ChallengeScreenState extends State<ChallengeScreen> {
-  int selectedIndex = -1; // Lưu vị trí được chọn
+  int selectedIndex = -1;
+  DateTime today = DateTime.now();
+  late DateTime currentMonth;
+  // Khởi tạo visibleDates ngay từ đầu thay vì dùng late
+  List<DateTime> visibleDates = [];
+  int initialScrollPosition =
+      100; // Vị trí cuộn ban đầu để có thể cuộn về quá khứ
+
+  @override
+  void initState() {
+    super.initState();
+    currentMonth = DateTime(today.year, today.month);
+    _generateDates(); // Đảm bảo hàm này được gọi trước khi visibleDates được sử dụng
+
+    // Đặt ngày hiện tại làm ngày được chọn mặc định
+    for (int i = 0; i < visibleDates.length; i++) {
+      if (visibleDates[i].year == today.year &&
+          visibleDates[i].month == today.month &&
+          visibleDates[i].day == today.day) {
+        selectedIndex = i;
+        break;
+      }
+    }
+  }
+
+  void _generateDates() {
+    // Tạo danh sách các ngày (quá khứ + hiện tại + tương lai)
+    visibleDates = List.generate(500, (index) {
+      return today.add(Duration(days: index - initialScrollPosition));
+    });
+  }
+
+  String _getMonthDisplay() {
+    if (selectedIndex >= 0 && selectedIndex < visibleDates.length) {
+      return DateFormat(
+        'MMMM yyyy',
+        'vi_VN',
+      ).format(visibleDates[selectedIndex]).toUpperCase();
+    }
+    return DateFormat('MMMM yyyy', 'vi_VN').format(today).toUpperCase();
+  }
 
   @override
   Widget build(BuildContext context) {
-    List<String> days = ['11', '12', '13', '14', '15', '16', '17'];
-    List<String> weekDays = [
-      'Thứ 3',
-      'Thứ 4',
-      'Thứ 5',
-      'Thứ 6',
-      'Thứ 7',
-      'Chủ nhật',
-      'Thứ 2',
-    ];
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          'THÁNG 3',
+          _getMonthDisplay(),
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
@@ -45,12 +75,32 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
       body: Column(
         children: [
           SizedBox(height: 10),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(7, (index) {
+          Container(
+            height: 100,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: visibleDates.length,
+              controller: ScrollController(
+                initialScrollOffset: initialScrollPosition * 70.0,
+              ),
+              itemBuilder: (context, index) {
+                DateTime date = visibleDates[index];
                 bool isSelected = index == selectedIndex;
+                bool isToday =
+                    date.year == today.year &&
+                    date.month == today.month &&
+                    date.day == today.day;
+
+                // Định dạng hiển thị
+                String dayNumber = date.day.toString();
+                String dayOfWeek = _getDayOfWeek(date.weekday);
+                String monthDisplay = '';
+
+                // Hiển thị tháng nếu khác với tháng hiện tại
+                if (date.month != today.month || date.year != today.year) {
+                  monthDisplay = 'T${date.month}';
+                }
+
                 return GestureDetector(
                   onTap: () {
                     setState(() {
@@ -63,47 +113,58 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
                       width: 60,
                       height: 90,
                       decoration: BoxDecoration(
-                        color:
-                            isSelected ? Colors.green.shade100 : Colors.white,
+                        color: isSelected ? Color(0xFF4FCA9C) : Colors.white,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color:
-                              isSelected
-                                  ? Colors.green.shade600
-                                  : Colors.grey.shade400, // Màu viền nhạt hơn
-                          width: isSelected ? 2 : 1.5, // Giảm độ dày viền
-                        ),
+                        border:
+                            isToday
+                                ? Border.all(color: Color(0xFF4FCA9C), width: 2)
+                                : null,
                         boxShadow: [
-                          BoxShadow(color: Colors.black12, blurRadius: 4),
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 4,
+                            spreadRadius: 0,
+                            offset: Offset(0, 0),
+                          ),
                         ],
                       ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            days[index],
+                            dayNumber,
                             style: TextStyle(
                               fontWeight: FontWeight.w900,
                               fontSize: 18,
-                              color: isSelected ? Colors.black : Colors.black87,
+                              color: isSelected ? Colors.white : Colors.black87,
                             ),
                           ),
                           SizedBox(height: 6),
                           Text(
-                            weekDays[index],
+                            dayOfWeek,
                             style: TextStyle(
                               fontWeight: FontWeight.w900,
-                              fontSize: 14,
-                              color: isSelected ? Colors.black : Colors.black54,
+                              fontSize: 13,
+                              color: isSelected ? Colors.white : Colors.black54,
                             ),
                             textAlign: TextAlign.center,
                           ),
+                          if (monthDisplay.isNotEmpty)
+                            Text(
+                              monthDisplay,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                                fontSize: 12,
+                                color:
+                                    isSelected ? Colors.white : Colors.black54,
+                              ),
+                            ),
                         ],
                       ),
                     ),
                   ),
                 );
-              }),
+              },
             ),
           ),
           SizedBox(height: 20),
@@ -114,7 +175,7 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
                 children: [
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.green[100],
+                      color: Color(0xFF4FCA9C),
                       shape: BoxShape.circle,
                     ),
                     padding: EdgeInsets.all(20),
@@ -122,7 +183,7 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
                       children: [
                         Image.asset(
                           'assets/images/challenge_screen_cat.png',
-                          height: 200, // Điều chỉnh kích thước
+                          height: 200,
                         ),
                       ],
                     ),
@@ -140,7 +201,7 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
                     child: Text(
                       '+ Thêm thử thách tại đây',
                       style: TextStyle(
-                        color: Colors.green,
+                        color: Color(0xFF4FCA9C),
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
@@ -153,5 +214,26 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
         ],
       ),
     );
+  }
+
+  String _getDayOfWeek(int weekday) {
+    switch (weekday) {
+      case 1:
+        return 'Thứ 2';
+      case 2:
+        return 'Thứ 3';
+      case 3:
+        return 'Thứ 4';
+      case 4:
+        return 'Thứ 5';
+      case 5:
+        return 'Thứ 6';
+      case 6:
+        return 'Thứ 7';
+      case 7:
+        return 'CN';
+      default:
+        return '';
+    }
   }
 }

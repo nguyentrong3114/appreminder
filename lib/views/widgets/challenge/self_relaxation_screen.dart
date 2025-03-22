@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'add_regular_habit_screen.dart'; // Thêm import này
 
 void main() {
   runApp(const MyApp());
@@ -77,36 +78,43 @@ class SelfRelaxationScreen extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               _buildTipItem(
+                context,
                 Icons.mediation_outlined,
                 'Thư giãn tâm trí và cơ thể',
                 'Giảm lo âu, xua tan muộn phiền, ngủ ngon hơn và tăng cường sức khỏe.😊🧘‍♂️',
               ),
               _buildTipItem(
+                context,
                 Icons.bedtime_outlined,
                 'Ngủ đủ giấc',
                 'Giảm căng thẳng, tâm trạng tươi vui.😊💤',
               ),
               _buildTipItem(
+                context,
                 Icons.music_note_outlined,
                 'Nghe nhạc',
                 'Giúp giảm căng thẳng và tăng cường trí não.🎶🎵',
               ),
               _buildTipItem(
+                context,
                 Icons.emoji_emotions_outlined,
                 'Cười nhiều hơn',
                 'Cười giúp giảm căng thẳng, tăng cường hệ miễn dịch và giảm đau.😊🤣',
               ),
               _buildTipItem(
+                context,
                 Icons.people_outlined,
                 'Tám chuyện với bạn bè',
                 'Giúp giảm căng thẳng, tăng cảm giác hạnh phúc và giảm cảm giác cô đơn.😊👭',
               ),
               _buildTipItem(
+                context,
                 Icons.nightlight_round_outlined,
                 'Ngủ sớm hơn',
                 'Giúp cơ thể nghỉ ngơi và phục hồi sau một ngày làm việc mệt mỏi.😊🌙',
               ),
               _buildTipItem(
+                context,
                 Icons.book_outlined,
                 'Đọc sách',
                 'Giúp giảm căng thẳng, tăng cường trí não và giúp bạn ngủ ngon hơn.📚📖',
@@ -119,7 +127,14 @@ class SelfRelaxationScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTipItem(IconData icon, String title, String description) {
+  Widget _buildTipItem(
+    BuildContext context,
+    IconData icon,
+    String title,
+    String description,
+  ) {
+    final Color mainColor = Colors.teal.shade200;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -132,7 +147,7 @@ class SelfRelaxationScreen extends StatelessWidget {
             width: 10,
             height: 80,
             decoration: BoxDecoration(
-              color: Colors.teal.shade200,
+              color: mainColor,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(15),
                 bottomLeft: Radius.circular(15),
@@ -145,10 +160,10 @@ class SelfRelaxationScreen extends StatelessWidget {
             padding: const EdgeInsets.all(10),
             margin: const EdgeInsets.symmetric(horizontal: 10),
             decoration: BoxDecoration(
-              color: Colors.teal.shade50,
+              color: Colors.teal.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: Colors.teal.shade200),
+            child: Icon(icon, color: mainColor),
           ),
           Expanded(
             child: Padding(
@@ -172,13 +187,29 @@ class SelfRelaxationScreen extends StatelessWidget {
               ),
             ),
           ),
-          Container(
-            margin: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.teal.shade100,
-              shape: BoxShape.circle,
+          InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) => RegularHabitScreen(
+                        initialTitle: title,
+                        initialIcon: icon,
+                        initialColor: mainColor,
+                        reminderEnabledByDefault: true,
+                      ),
+                ),
+              );
+            },
+            child: Container(
+              margin: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.teal.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.add, color: mainColor),
             ),
-            child: Icon(Icons.add, color: Colors.teal.shade200),
           ),
         ],
       ),

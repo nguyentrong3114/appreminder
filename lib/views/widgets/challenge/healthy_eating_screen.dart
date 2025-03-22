@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'add_regular_habit_screen.dart'; // Thêm import này
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +15,7 @@ class MyApp extends StatelessWidget {
 }
 
 class HealthyEatingScreen extends StatelessWidget {
-  const HealthyEatingScreen({Key? key}) : super(key: key);
+  const HealthyEatingScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -80,40 +81,47 @@ class HealthyEatingScreen extends StatelessWidget {
 
               // List of tips
               _buildTipItem(
+                context: context,
                 icon: Icons.coffee_outlined,
                 title: 'Bắt đầu ngày mới thật tràn đầy năng lượng',
                 description:
                     'Bữa sáng giúp bạn tỉnh táo hơn, tập trung hơn và vui vẻ hơn! 😊🍞🥑',
               ),
               _buildTipItem(
+                context: context,
                 icon: Icons.restaurant_outlined,
                 title: 'Hộp cơm mang theo',
                 description:
                     'Cung cấp năng lượng và dưỡng chất để bạn tiếp tục tràn đầy sức sống suốt buổi chiều! ⚡🥗😊',
               ),
               _buildTipItem(
+                context: context,
                 icon: Icons.set_meal_outlined,
                 title: 'Thêm cá vào bữa ăn nào',
                 description:
                     'Là nguồn cung cấp Omega-3 quan trọng cho cơ thể! 🐟💙✨',
               ),
               _buildTipItem(
+                context: context,
                 icon: Icons.lunch_dining_outlined,
                 title: 'Thịt bò, ngon và đầy dinh dưỡng',
                 description:
                     "Là nguồn cung cấp tuyệt vời của sắt, kẽm, niacin, riboflavin, vitamin B12 và thiamine! 💪🥩✨",
               ),
               _buildTipItem(
+                context: context,
                 icon: Icons.medication_outlined,
                 title: 'Bổ sung vitamin mỗi ngày nhé',
                 description: 'Giảm căng thẳng và lo âu! 😌🌿✨',
               ),
               _buildTipItem(
+                context: context,
                 icon: Icons.cake_outlined,
                 title: 'Nhâm nhi chút bánh cho vui nha',
                 description: 'Giúp tiêu hóa tốt hơn! 😊🍃✨',
               ),
               _buildTipItem(
+                context: context,
                 icon: Icons.coffee_outlined,
                 title: 'Một tách trà mỗi ngày',
                 description:
@@ -128,6 +136,7 @@ class HealthyEatingScreen extends StatelessWidget {
   }
 
   Widget _buildTipItem({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String description,
@@ -184,13 +193,30 @@ class HealthyEatingScreen extends StatelessWidget {
               ),
             ),
           ),
-          Container(
-            margin: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.orange.shade200,
-              shape: BoxShape.circle,
+          // Chuyển sang RegularHabitScreen khi nhấn vào nút +
+          InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) => RegularHabitScreen(
+                        initialTitle: title,
+                        initialIcon: icon, // Truyền icon từ card
+                        initialColor: Colors.orange.shade200,
+                        reminderEnabledByDefault: true, // Bật nhắc nhở mặc định
+                      ),
+                ),
+              );
+            },
+            child: Container(
+              margin: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade200,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.add, color: Colors.white),
             ),
-            child: const Icon(Icons.add, color: Colors.white),
           ),
         ],
       ),

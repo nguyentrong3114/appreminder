@@ -4,7 +4,7 @@ import 'package:flutter_app/views/widgets/manage/add_todo_screen.dart';
 import 'package:flutter_app/views/widgets/manage/todo.dart';
 
 import 'views/home_screen.dart';
-import 'views/widgets/challenge/add_event_screen.dart';
+import 'views/widgets/challenge/add_regular_habit_screen.dart'; // Thay đổi import
 import 'views/widgets/challenge/challenge_screen.dart';
 import 'package:flutter/material.dart';
 import 'views/widgets/challenge/add_challenge_screen.dart';
@@ -16,9 +16,12 @@ void main() async {
 
   runApp(
     MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(primarySwatch: Colors.blue),
       home: MainScreen(),
       routes: {
-        '/add_event': (context) => AddEventScreen(),
+        '/add_regular_habit':
+            (context) => RegularHabitScreen(), // Thay đổi route
         '/add_challenge': (context) => AddChallengeScreen(),
       },
     ),
@@ -127,7 +130,10 @@ class _MainScreenState extends State<MainScreen> {
               } else if (_selectedIndex == 2) {
                 Navigator.pushNamed(context, '/add_challenge');
               } else {
-                Navigator.pushNamed(context, '/add_event');
+                Navigator.pushNamed(
+                  context,
+                  '/add_regular_habit',
+                ); // Thay đổi tên route
               }
             },
             backgroundColor: Color(0xFF4FCA9C),

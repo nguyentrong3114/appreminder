@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'add_regular_habit_screen.dart'; // Thêm import này
 
 void main() {
   runApp(const MyApp());
@@ -80,36 +81,43 @@ class ConnectScreen extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               _buildTipItem(
+                context,
                 Icons.family_restroom_outlined,
                 'Trò chuyện với gia đình',
                 'Trò chuyện với gia đình giúp tăng cường tình cảm, giảm căng thẳng và tạo niềm vui.👨‍👩‍👧‍👦👨‍👩‍👧‍👦',
               ),
               _buildTipItem(
+                context,
                 Icons.people_outline,
                 'Kết nối lại với bạn cũ',
                 'Kết nối lại với bạn cũ giúp tăng cường tình bạn, giảm căng thẳng và tạo niềm vui.👫👫',
               ),
               _buildTipItem(
+                context,
                 Icons.phone_outlined,
                 'Gọi điện thoại',
                 'Gọi điện thoại cho người thân giúp tăng cường tình cảm, giảm căng thẳng và tạo niềm vui.📞📞',
               ),
               _buildTipItem(
+                context,
                 Icons.pets_outlined,
                 'Cứu trợ động vật',
                 'Cứu trợ động vật giúp tăng cường tình cảm, giảm căng thẳng và tạo niềm vui.🐶🐱',
               ),
               _buildTipItem(
+                context,
                 Icons.airplane_ticket_outlined,
                 'Đi du lịch',
                 'Du lịch giúp bạn khám phá thế giới, tăng cường kiến thức và giảm căng thẳng.🌍🌍',
               ),
               _buildTipItem(
+                context,
                 Icons.people_alt_outlined,
                 'Tham gia vào một cộng đồng',
                 'Tham gia vào một cộng đồng giúp tăng cường tình bạn, giảm căng thẳng và tạo niềm vui.👨‍👩‍👧‍👦👨‍👩‍👧‍👦',
               ),
               _buildTipItem(
+                context,
                 Icons.favorite_border_outlined,
                 'Trao đi sự ấm áp',
                 'Trao đi sự ấm áp giúp tăng cường tình cảm, giảm căng thẳng và tạo niềm vui.📚📚',
@@ -122,7 +130,14 @@ class ConnectScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTipItem(IconData icon, String title, String description) {
+  Widget _buildTipItem(
+    BuildContext context,
+    IconData icon,
+    String title,
+    String description,
+  ) {
+    final Color mainColor = const Color.fromARGB(255, 110, 228, 241);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -135,7 +150,7 @@ class ConnectScreen extends StatelessWidget {
             width: 10,
             height: 80,
             decoration: BoxDecoration(
-              color: Color.fromARGB(255, 110, 228, 241),
+              color: mainColor,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(15),
                 bottomLeft: Radius.circular(15),
@@ -148,10 +163,10 @@ class ConnectScreen extends StatelessWidget {
             padding: const EdgeInsets.all(10),
             margin: const EdgeInsets.symmetric(horizontal: 10),
             decoration: BoxDecoration(
-              color: Color.fromARGB(50, 110, 228, 241),
+              color: mainColor.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: const Color.fromARGB(255, 110, 228, 241)),
+            child: Icon(icon, color: mainColor),
           ),
           Expanded(
             child: Padding(
@@ -175,15 +190,28 @@ class ConnectScreen extends StatelessWidget {
               ),
             ),
           ),
-          Container(
-            margin: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Color.fromARGB(50, 110, 228, 241),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.add,
-              color: Color.fromARGB(255, 110, 228, 241),
+          InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) => RegularHabitScreen(
+                        initialTitle: title,
+                        initialIcon: icon,
+                        initialColor: mainColor,
+                        reminderEnabledByDefault: true,
+                      ),
+                ),
+              );
+            },
+            child: Container(
+              margin: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: mainColor.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.add, color: mainColor),
             ),
           ),
         ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'add_regular_habit_screen.dart'; // Thêm import này để dẫn tới màn hình tiếp theo
 
 void main() {
   runApp(const MyApp());
@@ -38,6 +39,7 @@ class BeActiveScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Header card
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20.0),
@@ -76,40 +78,56 @@ class BeActiveScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
+
+              // List of tips with navigation to RegularHabitScreen
               _buildTipItem(
-                Icons.cleaning_services_outlined,
-                'Dọn dẹp',
-                'Giúp cơ thể vận động, tinh thần sảng khoái và không gian sạch sẽ.🧹🧽',
+                context: context,
+                icon: Icons.cleaning_services_outlined,
+                title: 'Dọn dẹp',
+                description:
+                    'Giúp cơ thể vận động, tinh thần sảng khoái và không gian sạch sẽ.🧹🧽',
               ),
               _buildTipItem(
-                Icons.directions_run_outlined,
-                'Tập thể dục',
-                'Giúp cơ thể khỏe mạnh, tăng cường sức khỏe tim mạch và giảm căng thẳng.💪🏋️‍♂️',
+                context: context,
+                icon: Icons.directions_run_outlined,
+                title: 'Tập thể dục',
+                description:
+                    'Giúp cơ thể khỏe mạnh, tăng cường sức khỏe tim mạch và giảm căng thẳng.💪🏋️‍♂️',
               ),
               _buildTipItem(
-                Icons.local_dining_outlined,
-                'Nấu ăn tại nhà',
-                'Giúp cơ thể vận động, tinh thần sảng khoái và ăn uống lành mạnh.👨‍🍳🥗',
+                context: context,
+                icon: Icons.local_dining_outlined,
+                title: 'Nấu ăn tại nhà',
+                description:
+                    'Giúp cơ thể vận động, tinh thần sảng khoái và ăn uống lành mạnh.👨‍🍳🥗',
               ),
               _buildTipItem(
-                Icons.health_and_safety_outlined,
-                'Kiểm tra sức khỏe định kỳ',
-                'Giúp phát hiện sớm các vấn đề về sức khỏe và tư vấn cách phòng tránh.🩺🩺',
+                context: context,
+                icon: Icons.health_and_safety_outlined,
+                title: 'Kiểm tra sức khỏe định kỳ',
+                description:
+                    'Giúp phát hiện sớm các vấn đề về sức khỏe và tư vấn cách phòng tránh.🩺🩺',
               ),
               _buildTipItem(
-                Icons.sports_outlined,
-                'Tham gia vào lớp Yoga',
-                'Giúp cơ thể linh hoạt, tinh thần sảng khoái và giảm căng thẳng.🧘‍♂️🧘‍♀️',
+                context: context,
+                icon: Icons.sports_outlined,
+                title: 'Tham gia vào lớp Yoga',
+                description:
+                    'Giúp cơ thể linh hoạt, tinh thần sảng khoái và giảm căng thẳng.🧘‍♂️🧘‍♀️',
               ),
               _buildTipItem(
-                Icons.bed_outlined,
-                'Dọn giường',
-                'Giúp cơ thể vận động, tinh thần sảng khoái và giảm căng thẳng.🛏️🛏️',
+                context: context,
+                icon: Icons.bed_outlined,
+                title: 'Dọn giường',
+                description:
+                    'Giúp cơ thể vận động, tinh thần sảng khoái và giảm căng thẳng.🛏️🛏️',
               ),
               _buildTipItem(
-                Icons.emoji_objects_outlined,
-                'Bỏ thói quen xấu',
-                'Giúp cơ thể khỏe mạnh, tinh thần sảng khoái và tăng cường sức khỏe.🚭🚭',
+                context: context,
+                icon: Icons.emoji_objects_outlined,
+                title: 'Bỏ thói quen xấu',
+                description:
+                    'Giúp cơ thể khỏe mạnh, tinh thần sảng khoái và tăng cường sức khỏe.🚭🚭',
               ),
               const SizedBox(height: 20),
             ],
@@ -119,7 +137,12 @@ class BeActiveScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTipItem(IconData icon, String title, String description) {
+  Widget _buildTipItem({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String description,
+  }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -172,13 +195,30 @@ class BeActiveScreen extends StatelessWidget {
               ),
             ),
           ),
-          Container(
-            margin: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.pink.shade100,
-              shape: BoxShape.circle,
+          // Thêm nút dẫn đến RegularHabitScreen
+          InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) => RegularHabitScreen(
+                        initialTitle: title,
+                        initialIcon: icon, // Truyền icon từ tip
+                        initialColor: Colors.pink.shade200,
+                        reminderEnabledByDefault: true, // Bật nhắc nhở mặc định
+                      ),
+                ),
+              );
+            },
+            child: Container(
+              margin: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.pink.shade200,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.add, color: Colors.white),
             ),
-            child: Icon(Icons.add, color: Colors.pink.shade200),
           ),
         ],
       ),

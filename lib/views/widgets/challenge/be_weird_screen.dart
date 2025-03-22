@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'add_regular_habit_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -77,36 +78,43 @@ class BeWeirdScreen extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               _buildTipItem(
+                context,
                 Icons.work_outlined,
                 'Tìm việc làm',
                 'Tìm công việc mà bạn yêu thích, không phải vì tiền bạc mà vì đam mê.👩‍💻👨‍🎨',
               ),
               _buildTipItem(
+                context,
                 Icons.pets_outlined,
                 'Nuôi thú cưng',
                 'Nuôi thú cưng giúp bạn giảm căng thẳng, tăng cường sức khỏe và tạo niềm vui.🐶🐱',
               ),
               _buildTipItem(
+                context,
                 Icons.eco_outlined,
                 'Trồng cây',
                 'Cây xanh giúp cải thiện chất lượng không khí, giảm căng thẳng và tạo cảm giác thoải mái.🌳🌳',
               ),
               _buildTipItem(
+                context,
                 Icons.brush_outlined,
                 'Học vẽ',
                 'Học vẽ giúp bạn thể hiện cảm xúc, tăng cường trí não và giảm căng thẳng.🎨🎨',
               ),
               _buildTipItem(
+                context,
                 Icons.gamepad_outlined,
                 'Chơi cờ',
                 'Chơi cờ giúp cải thiện trí não, tăng cường tư duy và giảm căng thẳng.♟️♟️',
               ),
               _buildTipItem(
+                context,
                 Icons.cake_outlined,
                 'Tiệc tùng',
                 'Tổ chức tiệc tùng giúp tăng cường tình bạn, giảm căng thẳng và tạo niềm vui.🎉🎉',
               ),
               _buildTipItem(
+                context,
                 Icons.book_outlined,
                 'Đi du lịch',
                 'Du lịch giúp bạn khám phá thế giới, tăng cường kiến thức và giảm căng thẳng.🌍🌍',
@@ -119,7 +127,12 @@ class BeWeirdScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTipItem(IconData icon, String title, String description) {
+  Widget _buildTipItem(
+    BuildContext context,
+    IconData icon,
+    String title,
+    String description,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -172,13 +185,29 @@ class BeWeirdScreen extends StatelessWidget {
               ),
             ),
           ),
-          Container(
-            margin: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.purple.shade100,
-              shape: BoxShape.circle,
+          InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) => RegularHabitScreen(
+                        initialTitle: title,
+                        initialIcon: icon,
+                        initialColor: Colors.purple.shade200,
+                        reminderEnabledByDefault: true,
+                      ),
+                ),
+              );
+            },
+            child: Container(
+              margin: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.purple.shade100,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.add, color: Colors.purple.shade200),
             ),
-            child: Icon(Icons.add, color: Colors.purple.shade200),
           ),
         ],
       ),

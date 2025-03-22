@@ -1,15 +1,49 @@
 import 'package:flutter/material.dart';
 
 class RegularHabitScreen extends StatefulWidget {
+  final String? initialTitle;
+  final IconData? initialIcon;
+  final Color? initialColor;
+  final bool?
+  reminderEnabledByDefault; // Thêm tham số này để xác định có bật nhắc nhở mặc định hay không
+
+  const RegularHabitScreen({
+    Key? key,
+    this.initialTitle,
+    this.initialIcon,
+    this.initialColor,
+    this.reminderEnabledByDefault,
+  }) : super(key: key);
+
   @override
   _RegularHabitScreenState createState() => _RegularHabitScreenState();
 }
 
 class _RegularHabitScreenState extends State<RegularHabitScreen> {
-  bool reminderEnabled = false;
+  late bool reminderEnabled;
   bool streakEnabled = false;
-  Color selectedColor = Colors.blue;
-  IconData selectedIcon = Icons.flag;
+  late Color selectedColor;
+  late IconData selectedIcon; // Vẫn giữ cho phần biểu tượng
+  late IconData calendarIcon; // Thêm biến mới cho icon calendar
+  late TextEditingController _titleController;
+
+  @override
+  void initState() {
+    super.initState();
+    selectedColor = widget.initialColor ?? Colors.blue;
+    selectedIcon = Icons.flag; // Giá trị mặc định cho icon thói quen
+    calendarIcon =
+        widget.initialIcon ??
+        Icons.calendar_today; // Icon từ card hoặc mặc định là calendar
+    _titleController = TextEditingController(text: widget.initialTitle ?? '');
+    reminderEnabled = widget.reminderEnabledByDefault ?? false;
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    super.dispose();
+  }
 
   // Danh sách các biểu tượng để lựa chọn
   final List<IconData> iconOptions = [
@@ -67,6 +101,8 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
                   onTap: () {
                     setState(() {
                       selectedIcon = iconOptions[index];
+                      calendarIcon =
+                          iconOptions[index]; // Cập nhật cả calendarIcon
                     });
                     Navigator.of(context).pop();
                   },
@@ -160,7 +196,7 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Habit name input
+            // Habit name input với giá trị khởi tạo từ HealthyEatingScreen
             Container(
               padding: EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
@@ -177,17 +213,23 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
               child: Row(
                 children: [
                   SizedBox(width: 16),
+                  // Trong RegularHabitScreen, thay đổi phần Container hiển thị icon calendar
                   Container(
                     padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: selectedColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(Icons.calendar_today, color: selectedColor),
+                    child: Icon(
+                      calendarIcon,
+                      color: selectedColor,
+                    ), // Sử dụng calendarIcon thay vì Icons.calendar_today
                   ),
                   SizedBox(width: 16),
                   Expanded(
                     child: TextField(
+                      controller:
+                          _titleController, // Sử dụng controller với giá trị ban đầu
                       decoration: InputDecoration(
                         hintText: 'Nhập tên',
                         border: InputBorder.none,
@@ -204,7 +246,7 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
             // Icon and color selectors
             Row(
               children: [
-                // Icon selector
+                // Icon selector với icon được truyền từ HealthyEatingScreen
                 Expanded(
                   child: GestureDetector(
                     onTap: _showIconSelector,
@@ -234,7 +276,7 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
 
                 SizedBox(width: 16),
 
-                // Color selector
+                // Color selector với màu được truyền từ HealthyEatingScreen
                 Expanded(
                   child: GestureDetector(
                     onTap: _showColorSelector,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'add_regular_habit_screen.dart'; // Thêm import này
 
 void main() {
   runApp(const MyApp());
@@ -80,36 +81,43 @@ class SelfImprovementScreen extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               _buildTipItem(
+                context,
                 Icons.language_outlined,
                 'Học một ngôn ngữ mới',
                 'Giúp tăng cường trí não, kỹ năng giao tiếp và mở rộng tầm hiểu biết.🌍📚',
               ),
               _buildTipItem(
+                context,
                 Icons.work_outlined,
                 'Quản lý khối lượng công việc',
                 'Giúp bạn làm việc hiệu quả, giảm căng thẳng và tăng cường sức khỏe.📅📝',
               ),
               _buildTipItem(
+                context,
                 Icons.emoji_objects_outlined,
                 'Học một kỹ năng mới',
                 'Học kỹ năng mới giúp bạn phát triển bản thân, tăng cường tự tin và sự sáng tạo.🎶🎨',
               ),
               _buildTipItem(
+                context,
                 Icons.done_all_outlined,
                 'Hoàn thành công việc trước thời hạn deadline',
                 'Giúp bạn tự tin, tăng cường sự tự tin và giảm căng thẳng.📅📝',
               ),
               _buildTipItem(
+                context,
                 Icons.music_note_outlined,
                 'Học cách chơi một nhạc cụ mới',
                 'Giúp tăng cường trí não, giảm căng thẳng và tạo niềm vui.🎶🎵',
               ),
               _buildTipItem(
+                context,
                 Icons.emoji_emotions_outlined,
                 'Giữ kỳ vọng ở mức cân bằng',
                 'Giúp bạn tự tin, tăng cường sự tự tin và giảm căng thẳng.🌙🌟',
               ),
               _buildTipItem(
+                context,
                 Icons.refresh_outlined,
                 'Tái tạo năng lượng cho tâm hồn',
                 'Giảm căng thẳng, tăng cường tinh thần và tạo niềm vui.🌿🌟',
@@ -122,7 +130,14 @@ class SelfImprovementScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTipItem(IconData icon, String title, String description) {
+  Widget _buildTipItem(
+    BuildContext context,
+    IconData icon,
+    String title,
+    String description,
+  ) {
+    final Color mainColor = const Color.fromARGB(255, 252, 120, 128);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -135,7 +150,7 @@ class SelfImprovementScreen extends StatelessWidget {
             width: 10,
             height: 80,
             decoration: BoxDecoration(
-              color: const Color.fromARGB(255, 252, 120, 128),
+              color: mainColor,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(15),
                 bottomLeft: Radius.circular(15),
@@ -148,10 +163,10 @@ class SelfImprovementScreen extends StatelessWidget {
             padding: const EdgeInsets.all(10),
             margin: const EdgeInsets.symmetric(horizontal: 10),
             decoration: BoxDecoration(
-              color: const Color.fromARGB(255, 252, 120, 128).withOpacity(0.2),
+              color: mainColor.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: const Color.fromARGB(255, 252, 120, 128)),
+            child: Icon(icon, color: mainColor),
           ),
           Expanded(
             child: Padding(
@@ -175,15 +190,28 @@ class SelfImprovementScreen extends StatelessWidget {
               ),
             ),
           ),
-          Container(
-            margin: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color.fromARGB(255, 252, 120, 128).withOpacity(0.2),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.add,
-              color: const Color.fromARGB(255, 252, 120, 128),
+          InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) => RegularHabitScreen(
+                        initialTitle: title,
+                        initialIcon: icon,
+                        initialColor: mainColor,
+                        reminderEnabledByDefault: true,
+                      ),
+                ),
+              );
+            },
+            child: Container(
+              margin: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: mainColor.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.add, color: mainColor),
             ),
           ),
         ],
