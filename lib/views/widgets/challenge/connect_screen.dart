@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'add_regular_habit_screen.dart'; // Thêm import này
+import 'challenge_screen.dart';
+import 'package:intl/intl.dart';
 
 void main() {
   runApp(const MyApp());
@@ -19,8 +21,8 @@ class MyApp extends StatelessWidget {
 }
 
 class ConnectScreen extends StatelessWidget {
-  const ConnectScreen({Key? key}) : super(key: key);
-
+  final DateTime? selectedDate;
+  const ConnectScreen({super.key, this.selectedDate});
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -201,6 +203,12 @@ class ConnectScreen extends StatelessWidget {
                         initialIcon: icon,
                         initialColor: mainColor,
                         reminderEnabledByDefault: true,
+                        initialStartDate:
+                            ChallengeScreen.selectedDate, // Thêm dòng này
+                        formattedStartDate: DateFormat(
+                          'MMMM d, yyyy',
+                          'vi_VN',
+                        ).format(ChallengeScreen.selectedDate), // Thêm dòng này
                       ),
                 ),
               );

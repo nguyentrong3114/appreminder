@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class RegularHabitScreen extends StatefulWidget {
   final String? initialTitle;
   final IconData? initialIcon;
   final Color? initialColor;
-  final bool?
-  reminderEnabledByDefault; // Thêm tham số này để xác định có bật nhắc nhở mặc định hay không
+  final bool? reminderEnabledByDefault;
+  final DateTime? initialStartDate; // Thêm tham số mới để nhận ngày bắt đầu
+  final String?
+  formattedStartDate; // Thêm tham số để nhận chuỗi định dạng sẵn của ngày
 
   const RegularHabitScreen({
     Key? key,
@@ -13,6 +16,8 @@ class RegularHabitScreen extends StatefulWidget {
     this.initialIcon,
     this.initialColor,
     this.reminderEnabledByDefault,
+    this.initialStartDate,
+    this.formattedStartDate,
   }) : super(key: key);
 
   @override
@@ -23,20 +28,33 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
   late bool reminderEnabled;
   bool streakEnabled = false;
   late Color selectedColor;
-  late IconData selectedIcon; // Vẫn giữ cho phần biểu tượng
-  late IconData calendarIcon; // Thêm biến mới cho icon calendar
+  late IconData selectedIcon;
+  late IconData calendarIcon;
   late TextEditingController _titleController;
+  late DateTime startDate; // Thêm biến để lưu ngày bắt đầu
+  late String formattedStartDate; // Thêm biến để lưu chuỗi định dạng
 
   @override
   void initState() {
     super.initState();
     selectedColor = widget.initialColor ?? Colors.blue;
-    selectedIcon = Icons.flag; // Giá trị mặc định cho icon thói quen
-    calendarIcon =
-        widget.initialIcon ??
-        Icons.calendar_today; // Icon từ card hoặc mặc định là calendar
+    selectedIcon = Icons.flag;
+    calendarIcon = widget.initialIcon ?? Icons.calendar_today;
     _titleController = TextEditingController(text: widget.initialTitle ?? '');
     reminderEnabled = widget.reminderEnabledByDefault ?? false;
+
+    // Khởi tạo giá trị ngày bắt đầu
+    startDate = widget.initialStartDate ?? DateTime.now();
+
+    // Khởi tạo giá trị của chuỗi định dạng ngày
+    if (widget.formattedStartDate != null) {
+      formattedStartDate = widget.formattedStartDate!;
+    } else {
+      formattedStartDate = DateFormat(
+        'MMMM d, yyyy',
+        'vi_VN',
+      ).format(startDate);
+    }
   }
 
   @override
@@ -77,6 +95,25 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
     Colors.brown,
   ];
 
+  void _showDatePicker() async {
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: startDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+    );
+
+    if (pickedDate != null && pickedDate != startDate) {
+      setState(() {
+        startDate = pickedDate;
+        formattedStartDate = DateFormat(
+          'MMMM d, yyyy',
+          'vi_VN',
+        ).format(startDate);
+      });
+    }
+  }
+
   void _showIconSelector() {
     showDialog(
       context: context,
@@ -101,8 +138,7 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
                   onTap: () {
                     setState(() {
                       selectedIcon = iconOptions[index];
-                      calendarIcon =
-                          iconOptions[index]; // Cập nhật cả calendarIcon
+                      calendarIcon = iconOptions[index];
                     });
                     Navigator.of(context).pop();
                   },
@@ -196,7 +232,6 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Habit name input với giá trị khởi tạo từ HealthyEatingScreen
             Container(
               padding: EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
@@ -213,23 +248,18 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
               child: Row(
                 children: [
                   SizedBox(width: 16),
-                  // Trong RegularHabitScreen, thay đổi phần Container hiển thị icon calendar
                   Container(
                     padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: selectedColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(
-                      calendarIcon,
-                      color: selectedColor,
-                    ), // Sử dụng calendarIcon thay vì Icons.calendar_today
+                    child: Icon(calendarIcon, color: selectedColor),
                   ),
                   SizedBox(width: 16),
                   Expanded(
                     child: TextField(
-                      controller:
-                          _titleController, // Sử dụng controller với giá trị ban đầu
+                      controller: _titleController,
                       decoration: InputDecoration(
                         hintText: 'Nhập tên',
                         border: InputBorder.none,
@@ -246,7 +276,6 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
             // Icon and color selectors
             Row(
               children: [
-                // Icon selector với icon được truyền từ HealthyEatingScreen
                 Expanded(
                   child: GestureDetector(
                     onTap: _showIconSelector,
@@ -276,7 +305,6 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
 
                 SizedBox(width: 16),
 
-                // Color selector với màu được truyền từ HealthyEatingScreen
                 Expanded(
                   child: GestureDetector(
                     onTap: _showColorSelector,
@@ -331,24 +359,27 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
               ),
               child: Column(
                 children: [
-                  // Start date
-                  SettingItem(
-                    icon: Icons.flag,
-                    iconColor: selectedColor,
-                    title: 'Ngày bắt đầu',
-                    trailing: Row(
-                      children: [
-                        Text(
-                          'Tháng 3 16, 2025',
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                        SizedBox(width: 8),
-                        Icon(
-                          Icons.arrow_forward_ios,
-                          size: 16,
-                          color: Colors.grey,
-                        ),
-                      ],
+                  // Start date - Cập nhật hiển thị ngày đã chọn
+                  GestureDetector(
+                    onTap: _showDatePicker,
+                    child: SettingItem(
+                      icon: Icons.flag,
+                      iconColor: selectedColor,
+                      title: 'Ngày bắt đầu',
+                      trailing: Row(
+                        children: [
+                          Text(
+                            formattedStartDate, // Sử dụng ngày đã định dạng
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                          SizedBox(width: 8),
+                          Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                            color: Colors.grey,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
@@ -432,10 +463,8 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
 
             SizedBox(height: 20),
 
-            // Precise positioning of the button with flexible space
             Spacer(flex: 3),
 
-            // Save button with adjusted width
             Center(
               child: Container(
                 width: MediaQuery.of(context).size.width * 0.6,
@@ -460,7 +489,6 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
               ),
             ),
 
-            // Space below the button
             Spacer(flex: 4),
           ],
         ),

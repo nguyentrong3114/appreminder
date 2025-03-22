@@ -7,6 +7,8 @@ import 'package:flutter_app/views/widgets/challenge/self_improvement_screen.dart
 import 'package:flutter_app/views/widgets/challenge/self_relaxation_screen.dart';
 import 'add_regular_habit_screen.dart';
 import 'healthy_eating_screen.dart';
+import 'challenge_screen.dart';
+import 'package:intl/intl.dart';
 
 class AddChallengeScreen extends StatelessWidget {
   @override
@@ -45,9 +47,22 @@ class AddChallengeScreen extends StatelessWidget {
               icon: Icons.calendar_today,
               title: 'Thói quen thường xuyên',
               onTap: () {
+                // Lấy ngày đã chọn từ ChallengeScreen
+                DateTime selectedDate = ChallengeScreen.selectedDate;
+                String formattedDate = DateFormat(
+                  'MMMM d, yyyy',
+                  'vi_VN',
+                ).format(selectedDate);
+
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => RegularHabitScreen()),
+                  MaterialPageRoute(
+                    builder:
+                        (context) => RegularHabitScreen(
+                          initialStartDate: selectedDate,
+                          formattedStartDate: formattedDate,
+                        ),
+                  ),
                 );
               },
             ),
@@ -55,16 +70,31 @@ class AddChallengeScreen extends StatelessWidget {
             SizedBox(height: 16),
 
             // Nhiệm vụ một lần
+            // Trong OptionTile cho "Thử thách một lần"
             OptionTile(
-              icon: Icons.event_available,
-              title: 'Nhiệm vụ một lần',
+              icon: Icons.calendar_today,
+              title: 'Thử thách một lần',
               onTap: () {
+                // Lấy ngày đã chọn từ ChallengeScreen
+                DateTime selectedDate = ChallengeScreen.selectedDate;
+                String formattedDate = DateFormat(
+                  'MMMM d, yyyy',
+                  'vi_VN',
+                ).format(selectedDate);
+
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => OnetimeTask()),
+                  MaterialPageRoute(
+                    builder:
+                        (context) => OnetimeTask(
+                          initialStartDate: selectedDate,
+                          formattedStartDate: formattedDate,
+                        ),
+                  ),
                 );
               },
             ),
+
             SizedBox(height: 32),
 
             Text(

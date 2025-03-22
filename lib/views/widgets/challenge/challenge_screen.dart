@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'add_challenge_screen.dart';
+import 'add_regular_habit_screen.dart'; // Thay add_challenge_screen bằng regular_habit_screen
 import 'package:intl/intl.dart';
+import 'add_challenge_screen.dart';
 
 class ChallengeScreen extends StatefulWidget {
+  static DateTime selectedDate = DateTime.now();
   @override
   _ChallengeScreenState createState() => _ChallengeScreenState();
 }
@@ -11,16 +13,14 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
   int selectedIndex = -1;
   DateTime today = DateTime.now();
   late DateTime currentMonth;
-  // Khởi tạo visibleDates ngay từ đầu thay vì dùng late
   List<DateTime> visibleDates = [];
-  int initialScrollPosition =
-      100; // Vị trí cuộn ban đầu để có thể cuộn về quá khứ
+  int initialScrollPosition = 100;
 
   @override
   void initState() {
     super.initState();
     currentMonth = DateTime(today.year, today.month);
-    _generateDates(); // Đảm bảo hàm này được gọi trước khi visibleDates được sử dụng
+    _generateDates();
 
     // Đặt ngày hiện tại làm ngày được chọn mặc định
     for (int i = 0; i < visibleDates.length; i++) {
@@ -28,13 +28,14 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
           visibleDates[i].month == today.month &&
           visibleDates[i].day == today.day) {
         selectedIndex = i;
+        // Cập nhật ngày đã chọn vào biến static
+        ChallengeScreen.selectedDate = visibleDates[i];
         break;
       }
     }
   }
 
   void _generateDates() {
-    // Tạo danh sách các ngày (quá khứ + hiện tại + tương lai)
     visibleDates = List.generate(500, (index) {
       return today.add(Duration(days: index - initialScrollPosition));
     });
@@ -68,7 +69,16 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
           ),
           IconButton(
             icon: Icon(Icons.add, color: Colors.black),
-            onPressed: () {},
+            onPressed: () {
+              // Lấy ngày đã chọn từ biến static
+              DateTime selectedDate = ChallengeScreen.selectedDate;
+
+              // Chuyển đến trang AddChallengeScreen và truyền ngày đã chọn
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => AddChallengeScreen()),
+              );
+            },
           ),
         ],
       ),
@@ -91,12 +101,10 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
                     date.month == today.month &&
                     date.day == today.day;
 
-                // Định dạng hiển thị
                 String dayNumber = date.day.toString();
                 String dayOfWeek = _getDayOfWeek(date.weekday);
                 String monthDisplay = '';
 
-                // Hiển thị tháng nếu khác với tháng hiện tại
                 if (date.month != today.month || date.year != today.year) {
                   monthDisplay = 'T${date.month}';
                 }
@@ -105,6 +113,8 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
                   onTap: () {
                     setState(() {
                       selectedIndex = index;
+                      // Cập nhật ngày đã chọn vào biến static
+                      ChallengeScreen.selectedDate = visibleDates[index];
                     });
                   },
                   child: Padding(
@@ -191,10 +201,28 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
                   SizedBox(height: 10),
                   GestureDetector(
                     onTap: () {
+                      // Lấy ngày đã chọn
+                      DateTime selectedDate =
+                          selectedIndex >= 0 &&
+                                  selectedIndex < visibleDates.length
+                              ? visibleDates[selectedIndex]
+                              : today;
+
+                      // Định dạng ngày để hiển thị
+                      String formattedDate = DateFormat(
+                        'MMMM d, yyyy',
+                        'vi_VN',
+                      ).format(selectedDate);
+
+                      // Điều hướng trực tiếp đến RegularHabitScreen và truyền ngày đã chọn
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => AddChallengeScreen(),
+                          builder:
+                              (context) => RegularHabitScreen(
+                                initialStartDate: selectedDate,
+                                formattedStartDate: formattedDate,
+                              ),
                         ),
                       );
                     },

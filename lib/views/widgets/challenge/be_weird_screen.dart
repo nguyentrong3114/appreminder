@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'add_regular_habit_screen.dart';
+import 'challenge_screen.dart';
+import 'package:intl/intl.dart';
 
 void main() {
   runApp(const MyApp());
@@ -19,7 +21,9 @@ class MyApp extends StatelessWidget {
 }
 
 class BeWeirdScreen extends StatelessWidget {
-  const BeWeirdScreen({Key? key}) : super(key: key);
+  final DateTime? selectedDate;
+
+  const BeWeirdScreen({super.key, this.selectedDate});
 
   @override
   Widget build(BuildContext context) {
@@ -196,6 +200,12 @@ class BeWeirdScreen extends StatelessWidget {
                         initialIcon: icon,
                         initialColor: Colors.purple.shade200,
                         reminderEnabledByDefault: true,
+                        initialStartDate:
+                            ChallengeScreen.selectedDate, // Thêm dòng này
+                        formattedStartDate: DateFormat(
+                          'MMMM d, yyyy',
+                          'vi_VN',
+                        ).format(ChallengeScreen.selectedDate), // Thêm dòng này
                       ),
                 ),
               );

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'add_regular_habit_screen.dart'; // Thêm import này để dẫn tới màn hình tiếp theo
+import 'challenge_screen.dart';
+import 'package:intl/intl.dart';
 
 void main() {
   runApp(const MyApp());
@@ -19,7 +21,8 @@ class MyApp extends StatelessWidget {
 }
 
 class BeActiveScreen extends StatelessWidget {
-  const BeActiveScreen({Key? key}) : super(key: key);
+  final DateTime? selectedDate;
+  const BeActiveScreen({super.key, this.selectedDate});
 
   @override
   Widget build(BuildContext context) {
@@ -207,6 +210,12 @@ class BeActiveScreen extends StatelessWidget {
                         initialIcon: icon, // Truyền icon từ tip
                         initialColor: Colors.pink.shade200,
                         reminderEnabledByDefault: true, // Bật nhắc nhở mặc định
+                        initialStartDate:
+                            ChallengeScreen.selectedDate, // Thêm dòng này
+                        formattedStartDate: DateFormat(
+                          'MMMM d, yyyy',
+                          'vi_VN',
+                        ).format(ChallengeScreen.selectedDate), // Thêm dòng này
                       ),
                 ),
               );

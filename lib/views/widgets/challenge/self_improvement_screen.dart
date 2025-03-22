@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'add_regular_habit_screen.dart'; // Thêm import này
+import 'challenge_screen.dart';
+import 'package:intl/intl.dart';
 
 void main() {
   runApp(const MyApp());
@@ -19,7 +21,9 @@ class MyApp extends StatelessWidget {
 }
 
 class SelfImprovementScreen extends StatelessWidget {
-  const SelfImprovementScreen({Key? key}) : super(key: key);
+  final DateTime? selectedDate;
+
+  const SelfImprovementScreen({super.key, this.selectedDate});
 
   @override
   Widget build(BuildContext context) {
@@ -201,6 +205,12 @@ class SelfImprovementScreen extends StatelessWidget {
                         initialIcon: icon,
                         initialColor: mainColor,
                         reminderEnabledByDefault: true,
+                        initialStartDate:
+                            ChallengeScreen.selectedDate, // Thêm dòng này
+                        formattedStartDate: DateFormat(
+                          'MMMM d, yyyy',
+                          'vi_VN',
+                        ).format(ChallengeScreen.selectedDate), // Thêm dòng này
                       ),
                 ),
               );

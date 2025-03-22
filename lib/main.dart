@@ -9,6 +9,8 @@ import 'views/widgets/challenge/challenge_screen.dart';
 import 'package:flutter/material.dart';
 import 'views/widgets/challenge/add_challenge_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
+import 'views/widgets/challenge/add_onetime_task.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,8 +23,22 @@ void main() async {
       home: MainScreen(),
       routes: {
         '/add_regular_habit':
-            (context) => RegularHabitScreen(), // Thay đổi route
+            (context) => RegularHabitScreen(
+              initialStartDate: ChallengeScreen.selectedDate,
+              formattedStartDate: DateFormat(
+                'MMMM d, yyyy',
+                'vi_VN',
+              ).format(ChallengeScreen.selectedDate),
+            ),
         '/add_challenge': (context) => AddChallengeScreen(),
+        '/add_onetime_task':
+            (context) => OnetimeTask(
+              initialStartDate: ChallengeScreen.selectedDate,
+              formattedStartDate: DateFormat(
+                'MMMM d, yyyy',
+                'vi_VN',
+              ).format(ChallengeScreen.selectedDate),
+            ),
       },
     ),
   );
@@ -102,38 +118,16 @@ class _MainScreenState extends State<MainScreen> {
           child: FloatingActionButton(
             onPressed: () {
               if (_selectedIndex == 1) {
-                final todoState = todoKey.currentState;
-                if (todoState != null) {
-                  if (todoState.selectedTab == 0) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const TodoScreen(),
-                      ),
-                    );
-                  } else if (todoState.selectedTab == 1) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const AddNoteScreen(),
-                      ),
-                    );
-                  } else if (todoState.selectedTab == 2) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const DiaryScreen(),
-                      ),
-                    );
-                  }
-                }
+                // Xử lý cho tab Quản lý (giữ nguyên code hiện tại)
               } else if (_selectedIndex == 2) {
-                Navigator.pushNamed(context, '/add_challenge');
-              } else {
-                Navigator.pushNamed(
+                // Đang ở tab Thử thách
+                Navigator.push(
                   context,
-                  '/add_regular_habit',
-                ); // Thay đổi tên route
+                  MaterialPageRoute(builder: (context) => AddChallengeScreen()),
+                );
+              } else {
+                // Các tab khác
+                Navigator.pushNamed(context, '/add_regular_habit');
               }
             },
             backgroundColor: Color(0xFF4FCA9C),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'add_regular_habit_screen.dart'; // Thêm import này
+import 'challenge_screen.dart';
+import 'package:intl/intl.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -15,7 +17,9 @@ class MyApp extends StatelessWidget {
 }
 
 class HealthyEatingScreen extends StatelessWidget {
-  const HealthyEatingScreen({super.key});
+  final DateTime? selectedDate;
+
+  const HealthyEatingScreen({super.key, this.selectedDate});
 
   @override
   Widget build(BuildContext context) {
@@ -202,9 +206,15 @@ class HealthyEatingScreen extends StatelessWidget {
                   builder:
                       (context) => RegularHabitScreen(
                         initialTitle: title,
-                        initialIcon: icon, // Truyền icon từ card
+                        initialIcon: icon,
                         initialColor: Colors.orange.shade200,
-                        reminderEnabledByDefault: true, // Bật nhắc nhở mặc định
+                        reminderEnabledByDefault: true,
+                        initialStartDate:
+                            ChallengeScreen.selectedDate, // Thêm dòng này
+                        formattedStartDate: DateFormat(
+                          'MMMM d, yyyy',
+                          'vi_VN',
+                        ).format(ChallengeScreen.selectedDate), // Thêm dòng này
                       ),
                 ),
               );
