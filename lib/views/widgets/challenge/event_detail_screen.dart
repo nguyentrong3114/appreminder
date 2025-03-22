@@ -1,5 +1,6 @@
 import 'event_detail_screen.dart';
 import 'package:flutter/material.dart';
+
 class EventDetailScreen extends StatelessWidget {
   final String title;
   final String time;
@@ -15,7 +16,10 @@ class EventDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Text(
+              title,
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
             SizedBox(height: 10),
             Text("Thời gian: $time", style: TextStyle(fontSize: 18)),
             SizedBox(height: 20),
@@ -30,7 +34,7 @@ class EventDetailScreen extends StatelessWidget {
                 // Xóa sự kiện
               },
               child: Text("Xóa", style: TextStyle(color: Colors.red)),
-            ),  
+            ),
           ],
         ),
       ),

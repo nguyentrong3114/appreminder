@@ -4,10 +4,10 @@ import 'package:flutter_app/views/widgets/manage/add_todo_screen.dart';
 import 'package:flutter_app/views/widgets/manage/todo.dart';
 
 import 'views/home_screen.dart';
-import 'views/add_event_screen.dart';
-import 'views/challenge_screen.dart';
+import 'views/widgets/challenge/add_event_screen.dart';
+import 'views/widgets/challenge/challenge_screen.dart';
 import 'package:flutter/material.dart';
-import 'views/add_challenge_screen.dart';
+import 'views/widgets/challenge/add_challenge_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
@@ -108,19 +108,15 @@ class _MainScreenState extends State<MainScreen> {
                         builder: (context) => const TodoScreen(),
                       ),
                     );
-                  }
-                  else if(todoState.selectedTab==1)
-                  {
-                      Navigator.push(
+                  } else if (todoState.selectedTab == 1) {
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const AddNoteScreen(),
                       ),
                     );
-                  }
-                  else if(todoState.selectedTab==2)
-                  {
-                      Navigator.push(
+                  } else if (todoState.selectedTab == 2) {
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const DiaryScreen(),
