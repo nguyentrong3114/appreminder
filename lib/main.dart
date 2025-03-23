@@ -10,6 +10,9 @@ import 'package:flutter_app/views/widgets/manage/todo.dart';
 import 'package:flutter_app/views/widgets/home/add_event.dart';
 import 'views/widgets/challenge/add_regular_habit_screen.dart';
 import 'package:flutter_app/views/widgets/manage/add_todo_screen.dart';
+import 'package:flutter_app/views/widgets/manage/add_diary_screen.dart';
+import 'package:flutter_app/views/widgets/manage/add_notes_screen.dart';
+
 
 
 void main() async {
@@ -22,8 +25,7 @@ void main() async {
       theme: ThemeData(primarySwatch: Colors.blue),
       home: MainScreen(),
       routes: {
-        '/add_todo': 
-          (context) => TodoScreen(),
+        '/add_todo': (context) => TodoScreen(),
         '/add_regular_habit':
             (context) => RegularHabitScreen(
               initialStartDate: ChallengeScreen.selectedDate,
@@ -168,36 +170,33 @@ class _MainScreenState extends State<MainScreen> {
                     transitionDuration: const Duration(milliseconds: 300),
                   ),
                 );
-              }else if(_selectedIndex ==1 ){
-                                Navigator.push(
-                  context,
-                  PageRouteBuilder(
-                    pageBuilder:
-                        (context, animation, secondaryAnimation) =>
-                            TodoScreen(),
-                    transitionsBuilder: (
+              } else if (_selectedIndex == 1) {
+                final todoState = todoKey.currentState;
+                if (todoState != null) {
+                  if (todoState.selectedTab == 0) {
+                    Navigator.push(
                       context,
-                      animation,
-                      secondaryAnimation,
-                      child,
-                    ) {
-                      const begin = Offset(1.0, 0.0);
-                      const end = Offset.zero;
-                      const curve = Curves.ease;
-                      final tween = Tween(
-                        begin: begin,
-                        end: end,
-                      ).chain(CurveTween(curve: curve));
-                      return SlideTransition(
-                        position: animation.drive(tween),
-                        child: child,
-                      );
-                    },
-                    transitionDuration: const Duration(milliseconds: 300),
-                  ),
-                );
-              }
-               else if (_selectedIndex == 2) {
+                      MaterialPageRoute(
+                        builder: (context) => const TodoScreen(),
+                      ),
+                    );
+                  } else if (todoState.selectedTab == 1) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AddNoteScreen(),
+                      ),
+                    );
+                  } else if (todoState.selectedTab == 2) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const DiaryScreen(),
+                      ),
+                    );
+                  }
+                }
+              } else if (_selectedIndex == 2) {
                 Navigator.push(
                   context,
                   PageRouteBuilder(
