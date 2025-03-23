@@ -8,6 +8,7 @@ import 'views/widgets/challenge/add_challenge_screen.dart';
 import 'package:flutter_app/views/widgets/manage/todo.dart';
 import 'package:flutter_app/views/widgets/home/add_event.dart';
 import 'views/widgets/challenge/add_regular_habit_screen.dart';
+import 'views/widgets/setting/setting.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,7 +29,10 @@ void main() async {
               ).format(ChallengeScreen.selectedDate),
             ),
         '/add_events_home':
-            (context) => AddEventWidget(selectedDate: HomeScreen.selectedDate, initialDate: HomeScreen.selectedDate,),
+            (context) => AddEventWidget(
+              selectedDate: HomeScreen.selectedDate,
+              initialDate: HomeScreen.selectedDate,
+            ),
         '/add_challenge': (context) => AddChallengeScreen(),
         '/add_onetime_task':
             (context) => OnetimeTask(
@@ -135,7 +139,8 @@ class _MainScreenState extends State<MainScreen> {
                     pageBuilder:
                         (context, animation, secondaryAnimation) =>
                             AddEventWidget(
-                              selectedDate: HomeScreen.selectedDate, initialDate: HomeScreen.selectedDate,
+                              selectedDate: HomeScreen.selectedDate,
+                              initialDate: HomeScreen.selectedDate,
                             ),
                     transitionsBuilder: (
                       context,
