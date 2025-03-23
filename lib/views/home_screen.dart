@@ -8,6 +8,8 @@ import 'package:flutter_app/views/widgets/Home/renctangle_calender.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
+  static DateTime selectedDate = DateTime.now();
+  
   _HomeScreenState createState() => _HomeScreenState();
 }
 

@@ -2,7 +2,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 
 class EventCalendar extends StatelessWidget {
-  final DateTime date; // Ngày được truyền vào từ bên ngoài
+  final DateTime date; 
   final List<Map<String, String>> events;
 
   const EventCalendar({

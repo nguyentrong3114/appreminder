@@ -1,16 +1,13 @@
-import 'package:flutter_app/views/widgets/manage/add_diary_screen.dart';
-import 'package:flutter_app/views/widgets/manage/add_notes_screen.dart';
-import 'package:flutter_app/views/widgets/manage/add_todo_screen.dart';
-import 'package:flutter_app/views/widgets/manage/todo.dart';
-
 import 'views/home_screen.dart';
-import 'views/widgets/challenge/add_regular_habit_screen.dart'; // Thay đổi import
-import 'views/widgets/challenge/challenge_screen.dart';
-import 'package:flutter/material.dart';
-import 'views/widgets/challenge/add_challenge_screen.dart';
-import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'views/widgets/challenge/challenge_screen.dart';
 import 'views/widgets/challenge/add_onetime_task.dart';
+import 'views/widgets/challenge/add_challenge_screen.dart';
+import 'package:flutter_app/views/widgets/manage/todo.dart';
+import 'package:flutter_app/views/widgets/home/add_event.dart';
+import 'views/widgets/challenge/add_regular_habit_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +27,8 @@ void main() async {
                 'vi_VN',
               ).format(ChallengeScreen.selectedDate),
             ),
+        '/add_events_home':
+            (context) => AddEventWidget(selectedDate: HomeScreen.selectedDate, initialDate: HomeScreen.selectedDate,),
         '/add_challenge': (context) => AddChallengeScreen(),
         '/add_onetime_task':
             (context) => OnetimeTask(
@@ -74,73 +73,6 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: _screens[_selectedIndex],
-      extendBody: true,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              spreadRadius: 0,
-              blurRadius: 10,
-              offset: Offset(0, -1),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          child: BottomAppBar(
-            notchMargin: 8.0,
-            shape: CircularNotchedRectangle(),
-            child: SizedBox(
-              height: 70,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  buildNavItem(Icons.calendar_today, "Lịch", 0),
-                  buildNavItem(Icons.menu_book, "Quản lý", 1),
-                  SizedBox(width: 60),
-                  buildNavItem(Icons.extension, "Thử thách", 2),
-                  buildNavItem(Icons.settings, "Cài đặt", 3),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-      floatingActionButton: Transform.translate(
-        offset: Offset(0, -5),
-        child: SizedBox(
-          width: 75,
-          height: 75,
-          child: FloatingActionButton(
-            onPressed: () {
-              if (_selectedIndex == 1) {
-                // Xử lý cho tab Quản lý (giữ nguyên code hiện tại)
-              } else if (_selectedIndex == 2) {
-                // Đang ở tab Thử thách
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => AddChallengeScreen()),
-                );
-              } else {
-                // Các tab khác
-                Navigator.pushNamed(context, '/add_regular_habit');
-              }
-            },
-            backgroundColor: Color(0xFF4FCA9C),
-            shape: CircleBorder(),
-            elevation: 0.0,
-            child: Icon(Icons.add, size: 48, color: Colors.white),
-          ),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-    );
-  }
-
   Widget buildNavItem(IconData icon, String label, int index) {
     final Color itemColor =
         _selectedIndex == index ? Color(0xFF4FCA9C) : Colors.grey;
@@ -151,7 +83,7 @@ class _MainScreenState extends State<MainScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, size: 24, color: itemColor),
-            SizedBox(height: 2),
+            const SizedBox(height: 2),
             Text(
               label,
               style: TextStyle(
@@ -163,6 +95,142 @@ class _MainScreenState extends State<MainScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      //kh reload
+      body: IndexedStack(index: _selectedIndex, children: _screens),
+      extendBody: true,
+      bottomNavigationBar: BottomAppBar(
+        notchMargin: 8.0,
+        shape: CircularNotchedRectangle(),
+        child: SizedBox(
+          height: 70,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              buildNavItem(Icons.calendar_today, "Lịch", 0),
+              buildNavItem(Icons.menu_book, "Quản lý", 1),
+              const SizedBox(width: 60),
+              buildNavItem(Icons.extension, "Thử thách", 2),
+              buildNavItem(Icons.settings, "Cài đặt", 3),
+            ],
+          ),
+        ),
+      ),
+      floatingActionButton: Transform.translate(
+        offset: const Offset(0, -5),
+        child: SizedBox(
+          width: 75,
+          height: 75,
+          child: FloatingActionButton(
+            onPressed: () {
+              if (_selectedIndex == 0) {
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder:
+                        (context, animation, secondaryAnimation) =>
+                            AddEventWidget(
+                              selectedDate: HomeScreen.selectedDate, initialDate: HomeScreen.selectedDate,
+                            ),
+                    transitionsBuilder: (
+                      context,
+                      animation,
+                      secondaryAnimation,
+                      child,
+                    ) {
+                      // hiệu ứng trượt từ phải sang trái
+                      const begin = Offset(1.0, 0.0);
+                      const end = Offset.zero;
+                      const curve = Curves.ease;
+                      final tween = Tween(
+                        begin: begin,
+                        end: end,
+                      ).chain(CurveTween(curve: curve));
+                      return SlideTransition(
+                        position: animation.drive(tween),
+                        child: child,
+                      );
+                    },
+                    transitionDuration: const Duration(milliseconds: 300),
+                  ),
+                );
+              } else if (_selectedIndex == 2) {
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder:
+                        (context, animation, secondaryAnimation) =>
+                            AddChallengeScreen(),
+                    transitionsBuilder: (
+                      context,
+                      animation,
+                      secondaryAnimation,
+                      child,
+                    ) {
+                      const begin = Offset(1.0, 0.0);
+                      const end = Offset.zero;
+                      const curve = Curves.ease;
+                      final tween = Tween(
+                        begin: begin,
+                        end: end,
+                      ).chain(CurveTween(curve: curve));
+                      return SlideTransition(
+                        position: animation.drive(tween),
+                        child: child,
+                      );
+                    },
+                    transitionDuration: const Duration(milliseconds: 300),
+                  ),
+                );
+              } else {
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder:
+                        (context, animation, secondaryAnimation) =>
+                            RegularHabitScreen(
+                              initialStartDate: ChallengeScreen.selectedDate,
+                              formattedStartDate: DateFormat(
+                                'MMMM d, yyyy',
+                                'vi_VN',
+                              ).format(ChallengeScreen.selectedDate),
+                            ),
+                    transitionsBuilder: (
+                      context,
+                      animation,
+                      secondaryAnimation,
+                      child,
+                    ) {
+                      const begin = Offset(1.0, 0.0);
+                      const end = Offset.zero;
+                      const curve = Curves.ease;
+                      final tween = Tween(
+                        begin: begin,
+                        end: end,
+                      ).chain(CurveTween(curve: curve));
+                      return SlideTransition(
+                        position: animation.drive(tween),
+                        child: child,
+                      );
+                    },
+                    transitionDuration: const Duration(milliseconds: 300),
+                  ),
+                );
+              }
+            },
+            backgroundColor: const Color(0xFF4FCA9C),
+            shape: const CircleBorder(),
+            elevation: 0.0,
+            child: const Icon(Icons.add, size: 48, color: Colors.white),
+          ),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }
