@@ -1,6 +1,7 @@
 import 'views/home_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
+import 'views/widgets/setting/setting.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'views/widgets/challenge/challenge_screen.dart';
 import 'views/widgets/challenge/add_onetime_task.dart';
@@ -8,7 +9,7 @@ import 'views/widgets/challenge/add_challenge_screen.dart';
 import 'package:flutter_app/views/widgets/manage/todo.dart';
 import 'package:flutter_app/views/widgets/home/add_event.dart';
 import 'views/widgets/challenge/add_regular_habit_screen.dart';
-import 'views/widgets/setting/setting.dart';
+import 'package:flutter_app/views/widgets/manage/add_todo_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,6 +21,8 @@ void main() async {
       theme: ThemeData(primarySwatch: Colors.blue),
       home: MainScreen(),
       routes: {
+        '/add_todo': (context) => TodoScreen(),
+
         '/add_regular_habit':
             (context) => RegularHabitScreen(
               initialStartDate: ChallengeScreen.selectedDate,
@@ -149,6 +152,34 @@ class _MainScreenState extends State<MainScreen> {
                       child,
                     ) {
                       // hiệu ứng trượt từ phải sang trái
+                      const begin = Offset(1.0, 0.0);
+                      const end = Offset.zero;
+                      const curve = Curves.ease;
+                      final tween = Tween(
+                        begin: begin,
+                        end: end,
+                      ).chain(CurveTween(curve: curve));
+                      return SlideTransition(
+                        position: animation.drive(tween),
+                        child: child,
+                      );
+                    },
+                    transitionDuration: const Duration(milliseconds: 300),
+                  ),
+                );
+              } else if (_selectedIndex == 1) {
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder:
+                        (context, animation, secondaryAnimation) =>
+                            TodoScreen(),
+                    transitionsBuilder: (
+                      context,
+                      animation,
+                      secondaryAnimation,
+                      child,
+                    ) {
                       const begin = Offset(1.0, 0.0);
                       const end = Offset.zero;
                       const curve = Curves.ease;
