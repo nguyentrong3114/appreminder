@@ -137,6 +137,7 @@ class _MainScreenState extends State<MainScreen> {
           width: 75,
           height: 75,
           child: FloatingActionButton(
+            heroTag: null,
             onPressed: () {
               if (_selectedIndex == 0) {
                 Navigator.push(
