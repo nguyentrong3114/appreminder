@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_app/views/widgets/home/bottom_selected_time.dart';
 
 class AddEventWidget extends StatefulWidget {
-  final DateTime initialDate;
+  final DateTime selectedDate;
 
-  AddEventWidget({required this.initialDate, required DateTime selectedDate}); // ✅ Chỉ cần initialDate
+  AddEventWidget({required this.selectedDate});
 
   @override
   _AddEventWidgetState createState() => _AddEventWidgetState();
@@ -11,14 +12,26 @@ class AddEventWidget extends StatefulWidget {
 
 class _AddEventWidgetState extends State<AddEventWidget> {
   bool allDay = false;
-  bool reminder = true;
+  bool reminder = false;
   bool alarmReminder = false;
   late DateTime selectedDate;
-
+  List<String> selectedTime = ["Đúng giờ", "15 phút trước"];
+  final List<String> options = [
+    "Đúng giờ",
+    "15 phút trước",
+    "30 phút trước",
+    "1 giờ trước",
+    "2 giờ trước",
+    "6 giờ trước",
+    "12 giờ trước",
+    "1 ngày trước",
+    "2 ngày trước",
+    "1 tuần trước",
+  ];
   @override
   void initState() {
     super.initState();
-    selectedDate = widget.initialDate; // ✅ Gán giá trị từ initialDate
+    selectedDate = widget.selectedDate;
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -29,7 +42,7 @@ class _AddEventWidgetState extends State<AddEventWidget> {
       lastDate: DateTime(2101),
     );
 
-    if (picked != null && picked != selectedDate) {
+    if (picked != null) {
       setState(() {
         selectedDate = picked;
       });
@@ -40,7 +53,7 @@ class _AddEventWidgetState extends State<AddEventWidget> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text("Thêm sự kiện")),
-      body: SingleChildScrollView( // ✅ Tránh lỗi khi bàn phím xuất hiện
+      body: SingleChildScrollView(
         child: Padding(
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -60,22 +73,32 @@ class _AddEventWidgetState extends State<AddEventWidget> {
                     onPressed: () => Navigator.pop(context),
                   ),
                   Text(
-                    "EVENT",
+                    "Tạo Sự Kiện Mới",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   IconButton(
                     icon: Icon(Icons.check, color: Colors.green),
                     onPressed: () {
-                      Navigator.pop(context); // ✅ Đóng khi nhấn "✔"
+                      Navigator.pop(context);
                     },
                   ),
                 ],
               ),
               SizedBox(height: 10),
-
               // Nhập tiêu đề
               TextField(
+                autofocus: true,
+                textCapitalization: TextCapitalization.characters,
                 decoration: InputDecoration(
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.green, width: 2.0),
+                  ),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(
+                      color: const Color.fromARGB(255, 62, 63, 62),
+                      width: 2.0,
+                    ),
+                  ),
                   hintText: "Tiêu đề",
                   hintStyle: TextStyle(
                     color: Colors.grey,
@@ -84,8 +107,26 @@ class _AddEventWidgetState extends State<AddEventWidget> {
                   border: InputBorder.none,
                 ),
               ),
-              Divider(),
-
+              TextField(
+                autofocus: true,
+                decoration: InputDecoration(
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.green, width: 2.0),
+                  ),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(
+                      color: const Color.fromARGB(255, 62, 63, 62),
+                      width: 2.0,
+                    ),
+                  ),
+                  hintText: "Nội dung",
+                  hintStyle: TextStyle(
+                    color: Colors.grey,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  border: InputBorder.none,
+                ),
+              ),
               // Cài đặt Cả ngày
               SwitchListTile(
                 title: Text(
@@ -113,11 +154,70 @@ class _AddEventWidgetState extends State<AddEventWidget> {
                   "Cài đặt nhắc nhở",
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
-                secondary: Icon(Icons.notifications_active, color: Colors.green),
+                secondary: Icon(
+                  Icons.notifications_active,
+                  color: Colors.green,
+                ),
                 value: reminder,
                 onChanged: (value) => setState(() => reminder = value),
               ),
+              if (reminder)
+                Column(
+                  children: [
+                    ...selectedTime.map(
+                      (time) => ListTile(
+                        leading: Icon(Icons.access_time, color: Colors.green),
+                        title: Text(time, style: TextStyle(fontSize: 16)),
+                        trailing: IconButton(
+                          icon: Icon(Icons.remove_circle, color: Colors.red),
+                          onPressed: () {
+                            setState(() {
+                              selectedTime.remove(time);
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                    ListTile(
+                      leading: Icon(Icons.add, color: Colors.green),
+                      title: Text("Thêm thời gian nhắc nhở"),
+                      onTap: () async {
+                        final List<String> remainingOptions =
+                            options
+                                .where(
+                                  (option) => !selectedTime.contains(option),
+                                )
+                                .toList();
 
+                        if (remainingOptions.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text("Không còn thời gian nào để chọn!"),
+                            ),
+                          );
+                          return;
+                        }
+
+                        final String? pickedTime =
+                            await showModalBottomSheet<String>(
+                              isScrollControlled: true,
+                              context: context,
+                              builder: (BuildContext context) {
+                                return BottomPopup(
+                                  listToSelected: remainingOptions,
+                                );
+                              },
+                            );
+
+                        if (pickedTime != null) {
+                          setState(() {
+                            selectedTime.add(pickedTime);
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
               // Nhắc nhở báo thức
               SwitchListTile(
                 title: Text(
@@ -139,13 +239,14 @@ class _AddEventWidgetState extends State<AddEventWidget> {
                   children: List.generate(5, (index) {
                     return CircleAvatar(
                       radius: 10,
-                      backgroundColor: [
-                        Colors.green,
-                        Colors.orange,
-                        Colors.red,
-                        Colors.blue,
-                        Colors.black,
-                      ][index],
+                      backgroundColor:
+                          [
+                            Colors.green,
+                            Colors.orange,
+                            Colors.red,
+                            Colors.blue,
+                            Colors.black,
+                          ][index],
                     );
                   }),
                 ),
