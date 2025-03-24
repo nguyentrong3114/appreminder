@@ -1,13 +1,12 @@
 import 'package:intl/intl.dart';
+import 'list_calendar_widget.dart';
 import 'package:flutter/material.dart';
-import 'widgets/list_calendar_widget.dart';
 import 'package:flutter_app/views/widgets/Home/week_selector.dart';
 import 'package:flutter_app/views/widgets/Home/event_calendar.dart';
 import 'package:flutter_app/views/widgets/Home/week_view_calendar.dart';
 import 'package:flutter_app/views/widgets/Home/renctangle_calender.dart';
 
 class HomeScreen extends StatefulWidget {
-  @override
   static DateTime selectedDate = DateTime.now();
   
   _HomeScreenState createState() => _HomeScreenState();
@@ -143,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   //UI
-
+  //Hiện toàn bộ lịch
   Widget _buildMonthView() {
     return ListCalendar(
       selectedDate: selectedDate,

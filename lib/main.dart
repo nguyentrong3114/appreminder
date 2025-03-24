@@ -1,19 +1,16 @@
-import 'views/home_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
-import 'views/widgets/setting/setting.dart';
+import 'views/widgets/home/home_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'views/widgets/challenge/challenge_screen.dart';
 import 'views/widgets/challenge/add_onetime_task.dart';
 import 'views/widgets/challenge/add_challenge_screen.dart';
 import 'package:flutter_app/views/widgets/manage/todo.dart';
-import 'package:flutter_app/views/widgets/home/add_event.dart';
 import 'views/widgets/challenge/add_regular_habit_screen.dart';
 import 'package:flutter_app/views/widgets/manage/add_todo_screen.dart';
 import 'package:flutter_app/views/widgets/manage/add_diary_screen.dart';
 import 'package:flutter_app/views/widgets/manage/add_notes_screen.dart';
-
-
+import 'package:flutter_app/views/widgets/home/add_something_today.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,10 +32,7 @@ void main() async {
               ).format(ChallengeScreen.selectedDate),
             ),
         '/add_events_home':
-            (context) => AddEventWidget(
-              selectedDate: HomeScreen.selectedDate,
-              initialDate: HomeScreen.selectedDate,
-            ),
+            (context) => AddSomethingToday(),
         '/add_challenge': (context) => AddChallengeScreen(),
         '/add_onetime_task':
             (context) => OnetimeTask(
@@ -145,10 +139,7 @@ class _MainScreenState extends State<MainScreen> {
                   PageRouteBuilder(
                     pageBuilder:
                         (context, animation, secondaryAnimation) =>
-                            AddEventWidget(
-                              selectedDate: HomeScreen.selectedDate,
-                              initialDate: HomeScreen.selectedDate,
-                            ),
+                            AddSomethingToday(),
                     transitionsBuilder: (
                       context,
                       animation,
