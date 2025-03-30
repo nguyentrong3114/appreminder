@@ -414,65 +414,65 @@ class SettingsPage extends StatelessWidget {
           ),
         ],
       ),
-      bottomNavigationBar: BottomAppBar(
-        shape: CircularNotchedRectangle(),
-        notchMargin: 6.0,
-        child: Container(
-          height: 60,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.calendar_today, color: Colors.grey),
-                  Text(
-                    'Calendar',
-                    style: TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
-                ],
-              ),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.task, color: Colors.grey),
-                  Text(
-                    'Manage',
-                    style: TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
-                ],
-              ),
-              SizedBox(width: 48), // The dummy child
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.emoji_events, color: Colors.grey),
-                  Text(
-                    'Challenge',
-                    style: TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
-                ],
-              ),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.settings, color: Colors.green),
-                  Text(
-                    'Setting',
-                    style: TextStyle(color: Colors.green, fontSize: 12),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        child: Icon(Icons.add),
-        backgroundColor: Colors.green,
-      ),
+      // bottomNavigationBar: BottomAppBar(
+      //   shape: CircularNotchedRectangle(),
+      //   notchMargin: 6.0,
+      //   child: Container(
+      //     height: 60,
+      //     child: Row(
+      //       mainAxisAlignment: MainAxisAlignment.spaceAround,
+      //       children: [
+      //         Column(
+      //           mainAxisAlignment: MainAxisAlignment.center,
+      //           children: [
+      //             Icon(Icons.calendar_today, color: Colors.grey),
+      //             Text(
+      //               'Calendar',
+      //               style: TextStyle(color: Colors.grey, fontSize: 12),
+      //             ),
+      //           ],
+      //         ),
+      //         Column(
+      //           mainAxisAlignment: MainAxisAlignment.center,
+      //           children: [
+      //             Icon(Icons.task, color: Colors.grey),
+      //             Text(
+      //               'Manage',
+      //               style: TextStyle(color: Colors.grey, fontSize: 12),
+      //             ),
+      //           ],
+      //         ),
+      //         SizedBox(width: 48), // The dummy child
+      //         Column(
+      //           mainAxisAlignment: MainAxisAlignment.center,
+      //           children: [
+      //             Icon(Icons.emoji_events, color: Colors.grey),
+      //             Text(
+      //               'Challenge',
+      //               style: TextStyle(color: Colors.grey, fontSize: 12),
+      //             ),
+      //           ],
+      //         ),
+      //         Column(
+      //           mainAxisAlignment: MainAxisAlignment.center,
+      //           children: [
+      //             Icon(Icons.settings, color: Colors.green),
+      //             Text(
+      //               'Setting',
+      //               style: TextStyle(color: Colors.green, fontSize: 12),
+      //             ),
+      //           ],
+      //         ),
+      //       ],
+      //     ),
+      //   ),
+      // ),
+      // // floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      // floatingActionButton: FloatingActionButton(
+      //   onPressed: () {},
+      //   child: Icon(Icons.add),
+      //   backgroundColor: Colors.green,
+      // ),
     );
   }
 }

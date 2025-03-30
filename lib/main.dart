@@ -11,6 +11,7 @@ import 'package:flutter_app/views/widgets/manage/add_todo_screen.dart';
 import 'package:flutter_app/views/widgets/manage/add_diary_screen.dart';
 import 'package:flutter_app/views/widgets/manage/add_notes_screen.dart';
 import 'package:flutter_app/views/widgets/home/add_something_today.dart';
+import 'views/widgets/setting/setting.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +24,7 @@ void main() async {
       home: MainScreen(),
       routes: {
         '/add_todo': (context) => TodoScreen(),
+        '/add_setting': (context) => SettingsPage(),
         '/add_regular_habit':
             (context) => RegularHabitScreen(
               initialStartDate: ChallengeScreen.selectedDate,
@@ -66,6 +68,7 @@ class _MainScreenState extends State<MainScreen> {
       HomeScreen(),
       Todo(key: todoKey),
       ChallengeScreen(),
+      SettingsPage(),
       Container(),
     ];
   }
@@ -194,6 +197,35 @@ class _MainScreenState extends State<MainScreen> {
                     pageBuilder:
                         (context, animation, secondaryAnimation) =>
                             AddChallengeScreen(),
+                    transitionsBuilder: (
+                      context,
+                      animation,
+                      secondaryAnimation,
+                      child,
+                    ) {
+                      const begin = Offset(1.0, 0.0);
+                      const end = Offset.zero;
+                      const curve = Curves.ease;
+                      final tween = Tween(
+                        begin: begin,
+                        end: end,
+                      ).chain(CurveTween(curve: curve));
+                      return SlideTransition(
+                        position: animation.drive(tween),
+                        child: child,
+                      );
+                    },
+                    transitionDuration: const Duration(milliseconds: 300),
+                  ),
+                );
+                // abc
+              } else if (_selectedIndex == 3) {
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder:
+                        (context, animation, secondaryAnimation) =>
+                            SettingsPage(),
                     transitionsBuilder: (
                       context,
                       animation,
