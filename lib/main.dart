@@ -220,33 +220,35 @@ class _MainScreenState extends State<MainScreen> {
                 );
                 // abc
               } else if (_selectedIndex == 3) {
-                Navigator.push(
-                  context,
-                  PageRouteBuilder(
-                    pageBuilder:
-                        (context, animation, secondaryAnimation) =>
-                            SettingsPage(),
-                    transitionsBuilder: (
-                      context,
-                      animation,
-                      secondaryAnimation,
-                      child,
-                    ) {
-                      const begin = Offset(1.0, 0.0);
-                      const end = Offset.zero;
-                      const curve = Curves.ease;
-                      final tween = Tween(
-                        begin: begin,
-                        end: end,
-                      ).chain(CurveTween(curve: curve));
-                      return SlideTransition(
-                        position: animation.drive(tween),
-                        child: child,
-                      );
-                    },
-                    transitionDuration: const Duration(milliseconds: 300),
-                  ),
-                );
+                // Navigator.push(
+                //   context,
+                //   PageRouteBuilder(
+                //     pageBuilder:
+                //         (context, animation, secondaryAnimation) =>
+                //             SettingsPage(),
+                //     transitionsBuilder: (
+                //       context,
+                //       animation,
+                //       secondaryAnimation,
+                //       child,
+                //     ) {
+                //       const begin = Offset(1.0, 0.0);
+                //       const end = Offset.zero;
+                //       const curve = Curves.ease;
+                //       final tween = Tween(
+                //         begin: begin,
+                //         end: end,
+                //       ).chain(CurveTween(curve: curve));
+                //       return SlideTransition(
+                //         position: animation.drive(tween),
+                //         child: child,
+                //       );
+                //     },
+                //     transitionDuration: const Duration(milliseconds: 300),
+                //   ),
+                // );
+                // demo chuyển màn hình bằng route
+                Navigator.pushNamed(context, '/add_setting');
               } else {
                 Navigator.push(
                   context,
