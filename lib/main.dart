@@ -1,15 +1,16 @@
-import 'views/home_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
-import 'views/widgets/setting/setting.dart';
+import 'views/widgets/home/home_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'views/widgets/challenge/challenge_screen.dart';
 import 'views/widgets/challenge/add_onetime_task.dart';
 import 'views/widgets/challenge/add_challenge_screen.dart';
 import 'package:flutter_app/views/widgets/manage/todo.dart';
-import 'package:flutter_app/views/widgets/home/add_event.dart';
 import 'views/widgets/challenge/add_regular_habit_screen.dart';
 import 'package:flutter_app/views/widgets/manage/add_todo_screen.dart';
+import 'package:flutter_app/views/widgets/manage/add_diary_screen.dart';
+import 'package:flutter_app/views/widgets/manage/add_notes_screen.dart';
+import 'package:flutter_app/views/widgets/home/add_something_today.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,7 +23,6 @@ void main() async {
       home: MainScreen(),
       routes: {
         '/add_todo': (context) => TodoScreen(),
-
         '/add_regular_habit':
             (context) => RegularHabitScreen(
               initialStartDate: ChallengeScreen.selectedDate,
@@ -31,11 +31,7 @@ void main() async {
                 'vi_VN',
               ).format(ChallengeScreen.selectedDate),
             ),
-        '/add_events_home':
-            (context) => AddEventWidget(
-              selectedDate: HomeScreen.selectedDate,
-              initialDate: HomeScreen.selectedDate,
-            ),
+        '/add_events_home': (context) => AddSomethingToday(),
         '/add_challenge': (context) => AddChallengeScreen(),
         '/add_onetime_task':
             (context) => OnetimeTask(
@@ -134,6 +130,7 @@ class _MainScreenState extends State<MainScreen> {
           width: 75,
           height: 75,
           child: FloatingActionButton(
+            heroTag: null,
             onPressed: () {
               if (_selectedIndex == 0) {
                 Navigator.push(
@@ -141,10 +138,7 @@ class _MainScreenState extends State<MainScreen> {
                   PageRouteBuilder(
                     pageBuilder:
                         (context, animation, secondaryAnimation) =>
-                            AddEventWidget(
-                              selectedDate: HomeScreen.selectedDate,
-                              initialDate: HomeScreen.selectedDate,
-                            ),
+                            AddSomethingToday(),
                     transitionsBuilder: (
                       context,
                       animation,
@@ -168,33 +162,31 @@ class _MainScreenState extends State<MainScreen> {
                   ),
                 );
               } else if (_selectedIndex == 1) {
-                Navigator.push(
-                  context,
-                  PageRouteBuilder(
-                    pageBuilder:
-                        (context, animation, secondaryAnimation) =>
-                            TodoScreen(),
-                    transitionsBuilder: (
+                final todoState = todoKey.currentState;
+                if (todoState != null) {
+                  if (todoState.selectedTab == 0) {
+                    Navigator.push(
                       context,
-                      animation,
-                      secondaryAnimation,
-                      child,
-                    ) {
-                      const begin = Offset(1.0, 0.0);
-                      const end = Offset.zero;
-                      const curve = Curves.ease;
-                      final tween = Tween(
-                        begin: begin,
-                        end: end,
-                      ).chain(CurveTween(curve: curve));
-                      return SlideTransition(
-                        position: animation.drive(tween),
-                        child: child,
-                      );
-                    },
-                    transitionDuration: const Duration(milliseconds: 300),
-                  ),
-                );
+                      MaterialPageRoute(
+                        builder: (context) => const TodoScreen(),
+                      ),
+                    );
+                  } else if (todoState.selectedTab == 1) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AddNoteScreen(),
+                      ),
+                    );
+                  } else if (todoState.selectedTab == 2) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const DiaryScreen(),
+                      ),
+                    );
+                  }
+                }
               } else if (_selectedIndex == 2) {
                 Navigator.push(
                   context,

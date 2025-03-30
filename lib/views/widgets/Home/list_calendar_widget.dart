@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_app/views/widgets/home/add_event.dart';
 
 class ListCalendar extends StatefulWidget {
   final Function(DateTime) onDateSelected;
@@ -11,6 +12,7 @@ class ListCalendar extends StatefulWidget {
 }
 
 class _ListCalendarState extends State<ListCalendar> {
+  DateTime? today = DateTime.now();
   DateTime? selectedDay;
   late DateTime firstDayOfMonth;
   late DateTime lastDayOfMonth;
@@ -45,6 +47,14 @@ class _ListCalendarState extends State<ListCalendar> {
     lastDayInView = lastDayOfMonth.add(Duration(days: 3));
   }
 
+  _showAddEventDialog(DateTime selectedDate) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => AddEventWidget(selectedDate: selectedDate),
+    );
+  }
+
   @override
   @override
   Widget build(BuildContext context) {
@@ -62,7 +72,7 @@ class _ListCalendarState extends State<ListCalendar> {
             physics: ScrollPhysics(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 7, // 7 cột (T2 -> CN)
-              childAspectRatio: 0.8, // Tỉ lệ vuông
+              childAspectRatio: 0.7, // Tỉ lệ vuông
             ),
             itemCount: totalCells,
             itemBuilder: (context, index) {
@@ -119,20 +129,20 @@ class _ListCalendarState extends State<ListCalendar> {
                               isSelected ? FontWeight.bold : FontWeight.normal,
                         ),
                       ),
-                      if (day.day == 14 && day.month == DateTime.now().month)
-                        Container(
-                          margin: EdgeInsets.only(top: 4),
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 4,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.green[200],
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            'Sinh nhật',
-                            style: TextStyle(fontSize: 10, color: Colors.white),
+                      if (isSelected)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: GestureDetector(
+                            onTap:
+                                () => _showAddEventDialog(day),
+                            child: Text(
+                              '+',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                              ),
+                            ),
                           ),
                         ),
                     ],

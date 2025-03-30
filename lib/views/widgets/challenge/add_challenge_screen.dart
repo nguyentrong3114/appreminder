@@ -1,14 +1,14 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_app/views/widgets/challenge/add_onetime_task.dart';
-import 'package:flutter_app/views/widgets/challenge/be_active_screen.dart';
-import 'package:flutter_app/views/widgets/challenge/be_weird_screen.dart';
-import 'package:flutter_app/views/widgets/challenge/connect_screen.dart';
-import 'package:flutter_app/views/widgets/challenge/self_improvement_screen.dart';
-import 'package:flutter_app/views/widgets/challenge/self_relaxation_screen.dart';
-import 'add_regular_habit_screen.dart';
-import 'healthy_eating_screen.dart';
 import 'challenge_screen.dart';
 import 'package:intl/intl.dart';
+import 'healthy_eating_screen.dart';
+import 'package:flutter/material.dart';
+import 'add_regular_habit_screen.dart';
+import 'package:flutter_app/views/widgets/challenge/connect_screen.dart';
+import 'package:flutter_app/views/widgets/challenge/be_weird_screen.dart';
+import 'package:flutter_app/views/widgets/challenge/add_onetime_task.dart';
+import 'package:flutter_app/views/widgets/challenge/be_active_screen.dart';
+import 'package:flutter_app/views/widgets/challenge/self_relaxation_screen.dart';
+import 'package:flutter_app/views/widgets/challenge/self_improvement_screen.dart';
 
 class AddChallengeScreen extends StatelessWidget {
   @override
