@@ -18,7 +18,7 @@ class _TodoScreenState extends State<TodoScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _detailsController = TextEditingController();
   
-  // Biến để theo dõi nếu có thay đổi chưa lưu
+
   bool hasUnsavedChanges = false;
   List<Color> colors = [
     const Color(0xFF4CD080), // Green
