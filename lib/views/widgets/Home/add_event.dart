@@ -28,6 +28,15 @@ class _AddEventWidgetState extends State<AddEventWidget> {
     "2 ngày trước",
     "1 tuần trước",
   ];
+  List<Color> colors = [
+    const Color(0xFF4CD080), // Green
+    const Color(0xFFFFBE55), // Yellow/Orange
+    const Color(0xFFFF6B81), // Pink
+    const Color(0xFF8F9BFF), // Purple/Blue
+    const Color(0xFFFF8A65), // Orange
+    Colors.black,
+  ];
+  Color selectedColor = const Color(0xFF4CD080); // Màu mặc định
   @override
   void initState() {
     super.initState();
@@ -69,7 +78,7 @@ class _AddEventWidgetState extends State<AddEventWidget> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
-                    icon: Icon(Icons.close, color: Colors.green),
+                    icon: Icon(Icons.close, color: selectedColor),
                     onPressed: () => Navigator.pop(context),
                   ),
                   Text(
@@ -77,7 +86,7 @@ class _AddEventWidgetState extends State<AddEventWidget> {
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   IconButton(
-                    icon: Icon(Icons.check, color: Colors.green),
+                    icon: Icon(Icons.check, color: selectedColor),
                     onPressed: () {
                       Navigator.pop(context);
                     },
@@ -91,7 +100,7 @@ class _AddEventWidgetState extends State<AddEventWidget> {
                 textCapitalization: TextCapitalization.characters,
                 decoration: InputDecoration(
                   focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.green, width: 2.0),
+                    borderSide: BorderSide(color: selectedColor, width: 2.0),
                   ),
                   enabledBorder: UnderlineInputBorder(
                     borderSide: BorderSide(
@@ -111,7 +120,7 @@ class _AddEventWidgetState extends State<AddEventWidget> {
                 autofocus: true,
                 decoration: InputDecoration(
                   focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.green, width: 2.0),
+                    borderSide: BorderSide(color: selectedColor, width: 2.0),
                   ),
                   enabledBorder: UnderlineInputBorder(
                     borderSide: BorderSide(
@@ -133,14 +142,14 @@ class _AddEventWidgetState extends State<AddEventWidget> {
                   "Cả ngày",
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
-                secondary: Icon(Icons.access_time, color: Colors.green),
+                secondary: Icon(Icons.access_time, color: selectedColor),
                 value: allDay,
                 onChanged: (value) => setState(() => allDay = value),
               ),
 
               // Chọn ngày
               ListTile(
-                leading: Icon(Icons.calendar_today, color: Colors.green),
+                leading: Icon(Icons.calendar_today, color: selectedColor),
                 title: Text(
                   "${selectedDate.day}/${selectedDate.month}/${selectedDate.year}",
                 ),
@@ -156,7 +165,7 @@ class _AddEventWidgetState extends State<AddEventWidget> {
                 ),
                 secondary: Icon(
                   Icons.notifications_active,
-                  color: Colors.green,
+                  color: selectedColor,
                 ),
                 value: reminder,
                 onChanged: (value) => setState(() => reminder = value),
@@ -166,10 +175,10 @@ class _AddEventWidgetState extends State<AddEventWidget> {
                   children: [
                     ...selectedTime.map(
                       (time) => ListTile(
-                        leading: Icon(Icons.access_time, color: Colors.green),
+                        leading: Icon(Icons.access_time, color: selectedColor),
                         title: Text(time, style: TextStyle(fontSize: 16)),
                         trailing: IconButton(
-                          icon: Icon(Icons.remove_circle, color: Colors.red),
+                          icon: Icon(Icons.remove_circle, color: selectedColor),
                           onPressed: () {
                             setState(() {
                               selectedTime.remove(time);
@@ -179,7 +188,7 @@ class _AddEventWidgetState extends State<AddEventWidget> {
                       ),
                     ),
                     ListTile(
-                      leading: Icon(Icons.add, color: Colors.green),
+                      leading: Icon(Icons.add, color: selectedColor),
                       title: Text("Thêm thời gian nhắc nhở"),
                       onTap: () async {
                         final List<String> remainingOptions =
@@ -224,33 +233,38 @@ class _AddEventWidgetState extends State<AddEventWidget> {
                   "Nhắc nhở báo thức",
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
-                secondary: Icon(Icons.alarm, color: Colors.green),
+                secondary: Icon(Icons.alarm, color: selectedColor),
                 value: alarmReminder,
                 onChanged: (value) => setState(() => alarmReminder = value),
               ),
               Divider(),
-
-              // Chọn màu sắc sự kiện
               ListTile(
-                leading: Icon(Icons.color_lens, color: Colors.green),
+                leading: Icon(Icons.color_lens, color: selectedColor),
                 title: Text("Màu sắc sự kiện"),
                 trailing: Wrap(
                   spacing: 5,
-                  children: List.generate(5, (index) {
-                    return CircleAvatar(
-                      radius: 10,
-                      backgroundColor:
-                          [
-                            Colors.green,
-                            Colors.orange,
-                            Colors.red,
-                            Colors.blue,
-                            Colors.black,
-                          ][index],
+                  children: List.generate(colors.length, (index) {
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          selectedColor = colors[index];
+                        });
+                      },
+                      child: CircleAvatar(
+                        radius: 12,
+                        backgroundColor: colors[index],
+                        child:
+                            selectedColor == colors[index]
+                                ? Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                                  size: 14,
+                                )
+                                : null,
+                      ),
                     );
                   }),
                 ),
-                onTap: () {},
               ),
               SizedBox(height: 10),
             ],
