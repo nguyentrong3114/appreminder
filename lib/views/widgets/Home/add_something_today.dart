@@ -1,8 +1,9 @@
 import 'package:intl/intl.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter/material.dart';
 
 class AddSomethingToday extends StatelessWidget {
+  const AddSomethingToday({super.key});
+
   @override
   Widget build(BuildContext context) {
     DateTime today = DateTime.now();
@@ -16,7 +17,9 @@ class AddSomethingToday extends StatelessWidget {
         centerTitle: true,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {},
+          onPressed: () {
+            Navigator.pop(context);
+          },
         ),
         backgroundColor: Colors.white,
         elevation: 0,

@@ -147,8 +147,7 @@ class _MainScreenState extends State<MainScreen> {
                       animation,
                       secondaryAnimation,
                       child,
-                    ) {
-                      // hiệu ứng trượt từ phải sang trái
+                    ) { 
                       const begin = Offset(1.0, 0.0);
                       const end = Offset.zero;
                       const curve = Curves.ease;

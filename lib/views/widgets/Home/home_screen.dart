@@ -8,6 +8,8 @@ import 'package:flutter_app/views/widgets/Home/renctangle_calender.dart';
 
 class HomeScreen extends StatefulWidget {
   static DateTime selectedDate = DateTime.now();
+
+  const HomeScreen({super.key});
   
   _HomeScreenState createState() => _HomeScreenState();
 }
@@ -131,12 +133,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.pushNamed(context, '/add_event');
-        },
-        child: const Icon(Icons.add),
       ),
     );
   }
