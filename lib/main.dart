@@ -13,6 +13,7 @@ import 'package:flutter_app/views/widgets/manage/add_diary_screen.dart';
 import 'package:flutter_app/views/widgets/manage/add_notes_screen.dart';
 import 'package:flutter_app/views/widgets/home/add_something_today.dart';
 import 'views/widgets/setting/setting.dart';
+import 'shared/custom_page_route.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -193,24 +194,4 @@ class _MainScreenState extends State<MainScreen> {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
-}
-
-class CustomPageRoute extends PageRouteBuilder {
-  final Widget child;
-  CustomPageRoute({required this.child})
-    : super(
-        // pageBuilder: (context, animation, secondaryAnimation) => child,
-        pageBuilder: (context, animation, secondaryAnimation) => child,
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(1.0, 0.0);
-          const end = Offset.zero;
-          const curve = Curves.ease;
-          final tween = Tween(
-            begin: begin,
-            end: end,
-          ).chain(CurveTween(curve: curve));
-
-          return FadeTransition(opacity: animation, child: child);
-        },
-      );
 }
