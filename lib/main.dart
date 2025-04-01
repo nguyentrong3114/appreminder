@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'views/widgets/home/home_screen.dart';
@@ -138,149 +139,46 @@ class _MainScreenState extends State<MainScreen> {
               if (_selectedIndex == 0) {
                 Navigator.push(
                   context,
-                  PageRouteBuilder(
-                    pageBuilder:
-                        (context, animation, secondaryAnimation) =>
-                            AddSomethingToday(),
-                    transitionsBuilder: (
-                      context,
-                      animation,
-                      secondaryAnimation,
-                      child,
-                    ) {
-                      // hiệu ứng trượt từ phải sang trái
-                      const begin = Offset(1.0, 0.0);
-                      const end = Offset.zero;
-                      const curve = Curves.ease;
-                      final tween = Tween(
-                        begin: begin,
-                        end: end,
-                      ).chain(CurveTween(curve: curve));
-                      return SlideTransition(
-                        position: animation.drive(tween),
-                        child: child,
-                      );
-                    },
-                    transitionDuration: const Duration(milliseconds: 300),
-                  ),
+                  CustomPageRoute(child: AddSomethingToday()),
                 );
               } else if (_selectedIndex == 1) {
                 final todoState = todoKey.currentState;
                 if (todoState != null) {
+                  Widget targetScreen;
                   if (todoState.selectedTab == 0) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const TodoScreen(),
-                      ),
-                    );
+                    targetScreen = const TodoScreen();
                   } else if (todoState.selectedTab == 1) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const AddNoteScreen(),
-                      ),
-                    );
-                  } else if (todoState.selectedTab == 2) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const DiaryScreen(),
-                      ),
-                    );
+                    targetScreen = const AddNoteScreen();
+                  } else {
+                    targetScreen = const DiaryScreen();
                   }
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => targetScreen),
+                  );
                 }
               } else if (_selectedIndex == 2) {
                 Navigator.push(
                   context,
-                  PageRouteBuilder(
-                    pageBuilder:
-                        (context, animation, secondaryAnimation) =>
-                            AddChallengeScreen(),
-                    transitionsBuilder: (
-                      context,
-                      animation,
-                      secondaryAnimation,
-                      child,
-                    ) {
-                      const begin = Offset(1.0, 0.0);
-                      const end = Offset.zero;
-                      const curve = Curves.ease;
-                      final tween = Tween(
-                        begin: begin,
-                        end: end,
-                      ).chain(CurveTween(curve: curve));
-                      return SlideTransition(
-                        position: animation.drive(tween),
-                        child: child,
-                      );
-                    },
-                    transitionDuration: const Duration(milliseconds: 300),
-                  ),
+                  CustomPageRoute(child: AddChallengeScreen()),
                 );
-                // abc
               } else if (_selectedIndex == 3) {
-                // Navigator.push(
-                //   context,
-                //   PageRouteBuilder(
-                //     pageBuilder:
-                //         (context, animation, secondaryAnimation) =>
-                //             SettingsPage(),
-                //     transitionsBuilder: (
-                //       context,
-                //       animation,
-                //       secondaryAnimation,
-                //       child,
-                //     ) {
-                //       const begin = Offset(1.0, 0.0);
-                //       const end = Offset.zero;
-                //       const curve = Curves.ease;
-                //       final tween = Tween(
-                //         begin: begin,
-                //         end: end,
-                //       ).chain(CurveTween(curve: curve));
-                //       return SlideTransition(
-                //         position: animation.drive(tween),
-                //         child: child,
-                //       );
-                //     },
-                //     transitionDuration: const Duration(milliseconds: 300),
-                //   ),
-                // );
-                // demo chuyển màn hình bằng route
                 Navigator.pushNamed(context, '/add_setting');
               } else {
+                // Navigator.push(
+                //   context,
+                //   CupertinoPageRoute(builder: (context) => SecondScreen()),
+                // );
                 Navigator.push(
                   context,
-                  PageRouteBuilder(
-                    pageBuilder:
-                        (context, animation, secondaryAnimation) =>
-                            RegularHabitScreen(
-                              initialStartDate: ChallengeScreen.selectedDate,
-                              formattedStartDate: DateFormat(
-                                'MMMM d, yyyy',
-                                'vi_VN',
-                              ).format(ChallengeScreen.selectedDate),
-                            ),
-                    transitionsBuilder: (
-                      context,
-                      animation,
-                      secondaryAnimation,
-                      child,
-                    ) {
-                      const begin = Offset(1.0, 0.0);
-                      const end = Offset.zero;
-                      const curve = Curves.ease;
-                      final tween = Tween(
-                        begin: begin,
-                        end: end,
-                      ).chain(CurveTween(curve: curve));
-                      return SlideTransition(
-                        position: animation.drive(tween),
-                        child: child,
-                      );
-                    },
-                    transitionDuration: const Duration(milliseconds: 300),
+                  CustomPageRoute(
+                    child: RegularHabitScreen(
+                      initialStartDate: ChallengeScreen.selectedDate,
+                      formattedStartDate: DateFormat(
+                        'MMMM d, yyyy',
+                        'vi_VN',
+                      ).format(ChallengeScreen.selectedDate),
+                    ),
                   ),
                 );
               }
@@ -295,4 +193,24 @@ class _MainScreenState extends State<MainScreen> {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
+}
+
+class CustomPageRoute extends PageRouteBuilder {
+  final Widget child;
+  CustomPageRoute({required this.child})
+    : super(
+        // pageBuilder: (context, animation, secondaryAnimation) => child,
+        pageBuilder: (context, animation, secondaryAnimation) => child,
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(1.0, 0.0);
+          const end = Offset.zero;
+          const curve = Curves.ease;
+          final tween = Tween(
+            begin: begin,
+            end: end,
+          ).chain(CurveTween(curve: curve));
+
+          return FadeTransition(opacity: animation, child: child);
+        },
+      );
 }

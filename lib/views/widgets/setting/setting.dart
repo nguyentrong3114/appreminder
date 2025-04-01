@@ -412,6 +412,7 @@ class SettingsPage extends StatelessWidget {
               ),
             ],
           ),
+          SizedBox(height: 100),
         ],
       ),
       // bottomNavigationBar: BottomAppBar(
