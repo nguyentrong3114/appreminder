@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_app/main.dart';
-import 'package:flutter_app/views/shared/register_screen.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:flutter_app/views/shared/fogotpassword_screen.dart';
+import 'package:flutter_app/views/shared/login_screen.dart';
 
-class LoginScreen extends StatelessWidget {
+class RegisterScreen extends StatelessWidget {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +41,10 @@ class LoginScreen extends StatelessWidget {
                     ),
                     Text(
                       "SCHEDULE",
-                      style: TextStyle(color: Colors.white, fontSize: 20),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                      ),
                     ),
                   ],
                 ),
@@ -52,7 +53,7 @@ class LoginScreen extends StatelessWidget {
 
             const SizedBox(height: 30),
 
-            // Login form
+            // Register form
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 30.0),
               child: Column(
@@ -60,7 +61,7 @@ class LoginScreen extends StatelessWidget {
                 children: [
                   const Center(
                     child: Text(
-                      "LOGIN",
+                      "REGISTER",
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -90,29 +91,20 @@ class LoginScreen extends StatelessWidget {
                       enabledBorder: UnderlineInputBorder(),
                     ),
                   ),
-                  const SizedBox(height: 10),
-
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ForgotPasswordScreen(),
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        "Forgot your password?",
-                        style: TextStyle(fontSize: 12),
-                      ),
-                    ),
-                  ),
-
                   const SizedBox(height: 20),
 
-                  // login button
+                  const Text("Confirm Password"),
+                  TextField(
+                    controller: confirmPasswordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      suffixIcon: Icon(Icons.visibility_off),
+                      enabledBorder: UnderlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+
+                  // Register button
                   Center(
                     child: Container(
                       width: double.infinity,
@@ -125,15 +117,12 @@ class LoginScreen extends StatelessWidget {
                       ),
                       child: TextButton(
                         onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => MainScreen(),
-                            ),
-                          );
+                          Navigator.push(context,  MaterialPageRoute(
+                            builder: (context) => LoginScreen(),
+                          ));
                         },
                         child: const Text(
-                          "LOGIN",
+                          "REGISTER",
                           style: TextStyle(color: Colors.white, fontSize: 16),
                         ),
                       ),
@@ -141,53 +130,15 @@ class LoginScreen extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 20),
-                  const Center(
-                    child: Text(
-                      "Or login with",
-                      style: TextStyle(fontSize: 14, color: Colors.black54),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
 
-                  // social
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // fb api 
-                      IconButton(
-                        icon: const Icon(
-                          FontAwesomeIcons.facebook,
-                          color: Color(0xFF1877F2),
-                          size: 32,
-                        ),
-                        onPressed: () {},
-                      ),
-                      const SizedBox(width: 20),
-
-                      // gg api
-                      IconButton(
-                        icon: const FaIcon(
-                          FontAwesomeIcons.google,
-                          color: Colors.red,
-                          size: 28,
-                        ),
-                        onPressed: () {
-                        },
-                      ),
-                    ],
-                  ),
+                  // Navigate to login
                   Center(
                     child: TextButton(
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => RegisterScreen(),
-                          ),
-                        );
+                        Navigator.pop(context); 
                       },
                       child: const Text(
-                        "Don't have an account? Sign Up",
+                        "Already have an account? Sign In",
                         style: TextStyle(color: Colors.blueAccent),
                       ),
                     ),
