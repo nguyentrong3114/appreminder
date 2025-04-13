@@ -12,12 +12,12 @@ class Todo extends StatefulWidget {
 }
 
 class TodoState extends State<Todo> {
-  int selectedTab = 0; // 0 = Todo, 1 = Notes, 2 = Diary
-  int selectedFilter = 1; // 0 = Đã hết hạn, 1 = Ngày, 2 = Tuần, 3 = Tháng
-  DateTime selectedDate = DateTime.now(); // Current date selected
-  late List<DateTime> allDays; // For day view
-  late List<List<DateTime>> allWeeks; // For week view
-  late List<DateTime> allMonths; // For month view
+  int selectedTab = 0; 
+  int selectedFilter = 1; 
+  DateTime selectedDate = DateTime.now(); 
+  late List<DateTime> allDays; 
+  late List<List<DateTime>> allWeeks; 
+  late List<DateTime> allMonths; 
   late ScrollController dayScrollController;
   late ScrollController weekScrollController;
   late ScrollController monthScrollController;
@@ -128,6 +128,8 @@ class TodoState extends State<Todo> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
+        //tắt mũi tên back 
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.grey[100],
         title: _buildTabBar(),
       ),
