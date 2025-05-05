@@ -329,11 +329,6 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
               Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.add_box_outlined),
-                    onPressed: _showChecklistDialog,
-                    tooltip: 'Danh sách kiểm tra',
-                  ),
-                  IconButton(
                     icon: const Icon(Icons.color_lens_outlined),
                     onPressed: _showColorPicker,
                     tooltip: 'Màu nền',
@@ -546,13 +541,6 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
           ],
         );
       },
-    );
-  }
-
-  void _showChecklistDialog() {
-    // Implementation would show checklist dialog
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Tính năng danh sách kiểm tra sẽ sớm ra mắt')),
     );
   }
 

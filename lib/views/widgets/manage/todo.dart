@@ -12,12 +12,12 @@ class Todo extends StatefulWidget {
 }
 
 class TodoState extends State<Todo> {
-  int selectedTab = 0; 
-  int selectedFilter = 1; 
-  DateTime selectedDate = DateTime.now(); 
-  late List<DateTime> allDays; 
-  late List<List<DateTime>> allWeeks; 
-  late List<DateTime> allMonths; 
+  int selectedTab = 0;
+  int selectedFilter = 1;
+  DateTime selectedDate = DateTime.now();
+  late List<DateTime> allDays;
+  late List<List<DateTime>> allWeeks;
+  late List<DateTime> allMonths;
   late ScrollController dayScrollController;
   late ScrollController weekScrollController;
   late ScrollController monthScrollController;
@@ -29,57 +29,50 @@ class TodoState extends State<Todo> {
   void initState() {
     super.initState();
     _initializeDates();
-    
-    // Initialize scroll controllers with initial positions
-    dayScrollController = ScrollController(
-      initialScrollOffset: math.max(0, (currentDayIndex - 3) * 49.0)
-    );
-    
-    weekScrollController = ScrollController(
-      initialScrollOffset: math.max(0, (currentWeekIndex - 1) * 120.0)
-    );
-    
-    monthScrollController = ScrollController(
-      initialScrollOffset: math.max(0, (currentMonthIndex - 2) * 80.0)
-    );
-  }
 
-  @override
-  void dispose() {
-    dayScrollController.dispose();
-    weekScrollController.dispose();
-    monthScrollController.dispose();
-    super.dispose();
+    // Cuộn đến ngày hiện tại
+    dayScrollController = ScrollController(
+      initialScrollOffset: math.max(0, (currentDayIndex - 3) * 49.0),
+    );
+
+    weekScrollController = ScrollController(
+      initialScrollOffset: math.max(0, (currentWeekIndex - 1) * 120.0),
+    );
+
+    monthScrollController = ScrollController(
+      initialScrollOffset: math.max(0, (currentMonthIndex - 2) * 80.0),
+    );
   }
 
   void _initializeDates() {
     DateTime now = DateTime.now();
-    
-    // Generate a large number of days for the day view (365 days before and after today)
+
+    // tạo ra ds ngày trong 2 năm gần nhất với năm hiện tại
     DateTime startDay = now.subtract(Duration(days: 365));
     allDays = List.generate(
       365 * 2, // 2 years of days
       (index) => startDay.add(Duration(days: index)),
     );
-    
-    // Find the index of today
-    currentDayIndex = allDays.indexWhere((date) => 
-      date.day == now.day && 
-      date.month == now.month && 
-      date.year == now.year
+
+    // Tìm kiếm ngày hiện tại đang nằm vị trí nào trong 730 ngày
+    currentDayIndex = allDays.indexWhere(
+      (date) =>
+          date.day == now.day &&
+          date.month == now.month &&
+          date.year == now.year,
     );
 
     // Generate a large number of weeks
-    DateTime startWeek = now.subtract(Duration(days: now.weekday - 1 + (52 * 7))); // Start 52 weeks before today
+    DateTime startWeek = now.subtract(
+      Duration(days: now.weekday - 1 + (52 * 7)),
+    ); // Start 52 weeks before today
     allWeeks = List.generate(
       104, // 2 years of weeks
       (index) => _getWeekRange(startWeek.add(Duration(days: 7 * index))),
     );
-    
+
     // Find index of current week
-    currentWeekIndex = allWeeks.indexWhere((week) => 
-      _isSameWeek(week[0], now)
-    );
+    currentWeekIndex = allWeeks.indexWhere((week) => _isSameWeek(week[0], now));
 
     // Generate a large number of months (48 months = 4 years)
     DateTime startMonth = DateTime(now.year - 2, 1, 1); // Start 2 years before
@@ -94,26 +87,29 @@ class TodoState extends State<Todo> {
         );
       },
     );
-    
+
     // Find index of current month
-    currentMonthIndex = allMonths.indexWhere((month) => 
-      month.month == now.month && 
-      month.year == now.year
+    currentMonthIndex = allMonths.indexWhere(
+      (month) => month.month == now.month && month.year == now.year,
     );
-    
+
     // Set selected date based on filter
     _updateSelectedDateBasedOnFilter();
   }
-  
+
   void _updateSelectedDateBasedOnFilter() {
     DateTime now = DateTime.now();
-    
-    if (selectedFilter == 1) { // Day
+
+    if (selectedFilter == 1) {
+      // Day
       selectedDate = now;
-    } else if (selectedFilter == 2) { // Week
+      
+    } else if (selectedFilter == 2) {
+      // Week
       // Set to first day of current week
       selectedDate = now.subtract(Duration(days: now.weekday - 1));
-    } else if (selectedFilter == 3) { // Month
+    } else if (selectedFilter == 3) {
+      // Month
       // Set to first day of current month
       selectedDate = DateTime(now.year, now.month, 1);
     }
@@ -128,7 +124,7 @@ class TodoState extends State<Todo> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        //tắt mũi tên back 
+        //tắt mũi tên back
         automaticallyImplyLeading: false,
         backgroundColor: Colors.grey[100],
         title: _buildTabBar(),
@@ -211,26 +207,29 @@ class TodoState extends State<Todo> {
             selectedFilter = index;
             // Update selected date based on new filter
             _updateSelectedDateBasedOnFilter();
-            
+
             // Scroll to current day/week/month when filter changes
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (index == 1) { // Day
+              if (index == 1) {
+                // Day
                 dayScrollController.animateTo(
                   math.max(0, (currentDayIndex - 3) * 49.0),
                   duration: Duration(milliseconds: 300),
-                  curve: Curves.easeOut
+                  curve: Curves.easeOut,
                 );
-              } else if (index == 2) { // Week
+              } else if (index == 2) {
+                // Week
                 weekScrollController.animateTo(
                   math.max(0, (currentWeekIndex - 1) * 120.0),
                   duration: Duration(milliseconds: 300),
-                  curve: Curves.easeOut
+                  curve: Curves.easeOut,
                 );
-              } else if (index == 3) { // Month
+              } else if (index == 3) {
+                // Month
                 monthScrollController.animateTo(
                   math.max(0, (currentMonthIndex - 2) * 80.0),
                   duration: Duration(milliseconds: 300),
-                  curve: Curves.easeOut
+                  curve: Curves.easeOut,
                 );
               }
             });
@@ -307,7 +306,7 @@ class TodoState extends State<Todo> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    day.day.toString(),
+                    "${day.day}/${day.month}",
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -455,10 +454,10 @@ class TodoState extends State<Todo> {
     // Check if two dates are in the same week
     DateTime startOfWeek1 = date1.subtract(Duration(days: date1.weekday - 1));
     DateTime startOfWeek2 = date2.subtract(Duration(days: date2.weekday - 1));
-    
-    return startOfWeek1.year == startOfWeek2.year && 
-           startOfWeek1.month == startOfWeek2.month && 
-           startOfWeek1.day == startOfWeek2.day;
+
+    return startOfWeek1.year == startOfWeek2.year &&
+        startOfWeek1.month == startOfWeek2.month &&
+        startOfWeek1.day == startOfWeek2.day;
   }
 
   // This widget decides what content to show based on the selected tab
@@ -481,7 +480,8 @@ class TodoState extends State<Todo> {
       subtitle = DateFormat('dd/MM/yyyy').format(selectedDate);
     } else if (selectedFilter == 2) {
       title = "Tuần này";
-      subtitle = "${DateFormat('dd/MM').format(selectedDate)} - ${DateFormat('dd/MM').format(selectedDate.add(Duration(days: 6)))}";
+      subtitle =
+          "${DateFormat('dd/MM').format(selectedDate)} - ${DateFormat('dd/MM').format(selectedDate.add(Duration(days: 6)))}";
     } else if (selectedFilter == 3) {
       title = "Tháng này";
       subtitle = "Tháng ${selectedDate.month}/${selectedDate.year}";
@@ -552,7 +552,6 @@ class TodoState extends State<Todo> {
   Widget _buildNotesContent() {
     return Expanded(child: NotesScreen());
   }
-
 
   Widget _buildDiaryContent() {
     return Expanded(child: DiaryScreen());
