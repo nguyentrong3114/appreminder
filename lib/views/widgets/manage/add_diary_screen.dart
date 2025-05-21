@@ -379,17 +379,6 @@ class DiaryScreenState extends State<DiaryScreen> {
             ),
           ),
           const Divider(height: 24),
-          _buildSettingRow(
-            icon: Icons.push_pin_rounded,
-            text: "Ghim nhật ký",
-            hasSwitch: true,
-            switchValue: _reminderEnabled,
-            onSwitchChanged: (value) {
-              setState(() {
-                _reminderEnabled = value;
-              });
-            },
-          ),
         ],
       ),
     );
