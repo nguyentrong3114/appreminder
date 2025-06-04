@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "714063615662",
+    "project_id": "appreminder-4a06d",
+    "storage_bucket": "appreminder-4a06d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:714063615662:android:0f815acd87d857de2f3f3f",
+        "android_client_info": {
+          "package_name": "flutter.vn.com.flutter_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCiMhnsg1RTFb4OzzpF28BcwPifeAvyGvM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
