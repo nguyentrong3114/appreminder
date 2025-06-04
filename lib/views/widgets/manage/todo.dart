@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'notes.dart';
 import 'dart:math' as math;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'todo_detail_screen.dart';
 
 class Todo extends StatefulWidget {
   const Todo({super.key});
@@ -133,7 +134,7 @@ class TodoState extends State<Todo> {
         children: [
           if (selectedTab == 0) _buildFilterOptions(),
           if (selectedTab == 0) _buildDateSelection(),
-          Expanded(child: _buildContent()), 
+          Expanded(child: _buildContent()),
         ],
       ),
     );
@@ -471,141 +472,222 @@ class TodoState extends State<Todo> {
   }
 
   Widget _buildTaskSummary() {
-  DateTime start, end;
-  if (selectedFilter == 1) {
-    start = DateTime(selectedDate.year, selectedDate.month, selectedDate.day, 0, 0, 0);
-    end = DateTime(selectedDate.year, selectedDate.month, selectedDate.day, 23, 59, 59);
-  } else if (selectedFilter == 2) {
-    start = selectedDate.subtract(Duration(days: selectedDate.weekday - 1));
-    end = start.add(const Duration(days: 6, hours: 23, minutes: 59, seconds: 59));
-  } else if (selectedFilter == 3) {
-    start = DateTime(selectedDate.year, selectedDate.month, 1);
-    end = DateTime(selectedDate.year, selectedDate.month + 1, 0, 23, 59, 59);
-  } else {
-    start = DateTime(2000);
-    end = DateTime.now().subtract(const Duration(seconds: 1));
-  }
+    DateTime start, end;
+    if (selectedFilter == 1) {
+      start = DateTime(
+        selectedDate.year,
+        selectedDate.month,
+        selectedDate.day,
+        0,
+        0,
+        0,
+      );
+      end = DateTime(
+        selectedDate.year,
+        selectedDate.month,
+        selectedDate.day,
+        23,
+        59,
+        59,
+      );
+    } else if (selectedFilter == 2) {
+      start = selectedDate.subtract(Duration(days: selectedDate.weekday - 1));
+      end = start.add(
+        const Duration(days: 6, hours: 23, minutes: 59, seconds: 59),
+      );
+    } else if (selectedFilter == 3) {
+      start = DateTime(selectedDate.year, selectedDate.month, 1);
+      end = DateTime(selectedDate.year, selectedDate.month + 1, 0, 23, 59, 59);
+    } else {
+      start = DateTime(2000);
+      end = DateTime.now().subtract(const Duration(seconds: 1));
+    }
 
-  String title = "";
-  String subtitle = "";
+    String title = "";
+    String subtitle = "";
 
-  if (selectedFilter == 1) {
-    title = "Hôm nay";
-    subtitle = DateFormat('dd/MM/yyyy').format(selectedDate);
-  } else if (selectedFilter == 2) {
-    title = "Tuần này";
-    subtitle = "${DateFormat('dd/MM').format(selectedDate)} - ${DateFormat('dd/MM').format(selectedDate.add(Duration(days: 6)))}";
-  } else if (selectedFilter == 3) {
-    title = "Tháng này";
-    subtitle = "Tháng ${selectedDate.month}/${selectedDate.year}";
-  } else {
-    title = "Đã hết hạn";
-  }
+    if (selectedFilter == 1) {
+      title = "Hôm nay";
+      subtitle = DateFormat('dd/MM/yyyy').format(selectedDate);
+    } else if (selectedFilter == 2) {
+      title = "Tuần này";
+      subtitle =
+          "${DateFormat('dd/MM').format(selectedDate)} - ${DateFormat('dd/MM').format(selectedDate.add(Duration(days: 6)))}";
+    } else if (selectedFilter == 3) {
+      title = "Tháng này";
+      subtitle = "Tháng ${selectedDate.month}/${selectedDate.year}";
+    } else {
+      title = "Đã hết hạn";
+    }
 
-  return StreamBuilder<QuerySnapshot>(
-    stream: FirebaseFirestore.instance
-        .collection('todos')
-        .where('startDateTime', isGreaterThanOrEqualTo: start.toIso8601String())
-        .where('startDateTime', isLessThanOrEqualTo: end.toIso8601String())
-        .snapshots(),
-    builder: (context, snapshot) {
-      int todoCount = 0;
-      final todos = <QueryDocumentSnapshot>[];
-      if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
-        todoCount = snapshot.data!.docs.length;
-        todos.addAll(snapshot.data!.docs);
-      }
+    return StreamBuilder<QuerySnapshot>(
+      stream:
+          FirebaseFirestore.instance
+              .collection('todos')
+              .where(
+                'startDateTime',
+                isGreaterThanOrEqualTo: start.toIso8601String(),
+              )
+              .where(
+                'startDateTime',
+                isLessThanOrEqualTo: end.toIso8601String(),
+              )
+              .snapshots(),
+      builder: (context, snapshot) {
+        final todos = snapshot.hasData ? snapshot.data!.docs : [];
+        final todoCount = todos.length;
 
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            margin: const EdgeInsets.all(10),
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-            decoration: BoxDecoration(
-              color: Color(0xFF4CD6A8),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(color: Colors.black, blurRadius: 4, offset: Offset(0, 2)),
-              ],
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      if (subtitle.isNotEmpty)
-                        Text(
-                          subtitle,
-                          style: TextStyle(color: Colors.white, fontSize: 14),
-                        ),
-                      SizedBox(height: 5),
-                      Text(
-                        "$todoCount nhiệm vụ",
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                      ),
-                    ],
+        // Tách nhiệm vụ hoàn thành và chưa hoàn thành, sau đó nối lại (chưa hoàn thành lên đầu)
+        final unDone =
+            todos
+                .where(
+                  (doc) =>
+                      (doc.data() as Map<String, dynamic>)['isDone'] != true,
+                )
+                .toList();
+        final done =
+            todos
+                .where(
+                  (doc) =>
+                      (doc.data() as Map<String, dynamic>)['isDone'] == true,
+                )
+                .toList();
+        final sortedTodos = [...unDone, ...done];
+
+        return ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            // Header thống kê
+            Container(
+              margin: const EdgeInsets.all(10),
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+              decoration: BoxDecoration(
+                color: Color(0xFF4CD6A8),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
                   ),
-                ),
-              ],
-            ),
-          ),
-          // Danh sách nhiệm vụ
-          if (todoCount > 0)
-            SizedBox(
-              height: 250,
-              child: ListView.builder(
-                itemCount: todos.length,
-                itemBuilder: (context, index) {
-                  final todo = todos[index].data() as Map<String, dynamic>;
-                  return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: _getColorFromName(todo['color'] ?? 'Xanh lá cây'),
-                        child: Icon(Icons.check, color: Colors.white),
-                      ),
-                      title: Text(todo['title'] ?? ''),
-                      subtitle: Text(todo['details'] ?? ''),
-                      trailing: todo['reminderEnabled'] == true
-                          ? const Icon(Icons.notifications_active, color: Colors.red)
-                          : null,
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (subtitle.isNotEmpty)
+                          Text(
+                            subtitle,
+                            style: TextStyle(color: Colors.white, fontSize: 14),
+                          ),
+                        SizedBox(height: 5),
+                        Text(
+                          "$todoCount nhiệm vụ",
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
+                      ],
                     ),
-                  );
-                },
+                  ),
+                ],
               ),
             ),
-          if (todoCount == 0)
-            const Padding(
-              padding: EdgeInsets.all(20),
-              child: Text("Không có nhiệm vụ nào", style: TextStyle(color: Colors.grey)),
-            )
-        ],
-      );
-    },
-  );
-}
-
+            if (todoCount > 0)
+              ...sortedTodos.map((doc) {
+                final todo = doc.data() as Map<String, dynamic>;
+                final isDone = todo['isDone'] == true;
+                return Card(
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  child: ListTile(
+                    onTap: () async {
+                      var result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => TodoDetailScreen(todo: doc),
+                        ),
+                      );
+                      if (result == 'deleted' || result == 'edited') {
+                        setState(() {});
+                      }
+                    },
+                    leading: Checkbox(
+                      value: isDone,
+                      activeColor: Color(0xFF4CD6A8),
+                      onChanged: (value) async {
+                        // Update trạng thái hoàn thành trên Firestore
+                        await doc.reference.update({'isDone': value});
+                        setState(() {});
+                      },
+                    ),
+                    title: Text(
+                      todo['title'] ?? '',
+                      style: TextStyle(
+                        decoration:
+                            isDone
+                                ? TextDecoration.lineThrough
+                                : TextDecoration.none,
+                        color: isDone ? Colors.grey : Colors.black,
+                      ),
+                    ),
+                    subtitle: Text(
+                      todo['details'] ?? '',
+                      style: TextStyle(
+                        decoration:
+                            isDone
+                                ? TextDecoration.lineThrough
+                                : TextDecoration.none,
+                        color: isDone ? Colors.grey : Colors.black54,
+                      ),
+                    ),
+                    trailing:
+                        todo['reminderEnabled'] == true
+                            ? const Icon(
+                              Icons.notifications_active,
+                              color: Colors.red,
+                            )
+                            : null,
+                  ),
+                );
+              }).toList(),
+            if (todoCount == 0)
+              const Padding(
+                padding: EdgeInsets.all(20),
+                child: Center(
+                  child: Text(
+                    "Không có nhiệm vụ nào",
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
 
   // Widget for Notes tab content
   Widget _buildNotesContent() {
-    return Expanded(child: NotesScreen());
+    return NotesScreen();
   }
 
   Widget _buildDiaryContent() {
-    return Expanded(child: DiaryScreen());
+    return DiaryScreen();
   }
 
-   Color _getColorFromName(String colorName) {
+  Color _getColorFromName(String colorName) {
     switch (colorName) {
       case "Xanh lá cây":
         return Colors.green;
@@ -629,22 +711,18 @@ class TodoState extends State<Todo> {
   }
 }
 
-  Widget buildNavItem(IconData icon, String label, bool isSelected) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          icon,
+Widget buildNavItem(IconData icon, String label, bool isSelected) {
+  return Column(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+      Icon(icon, color: isSelected ? Color(0xFF4CD6A8) : Colors.grey, size: 24),
+      Text(
+        label,
+        style: TextStyle(
           color: isSelected ? Color(0xFF4CD6A8) : Colors.grey,
-          size: 24,
+          fontSize: 12,
         ),
-        Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Color(0xFF4CD6A8) : Colors.grey,
-            fontSize: 12,
-          ),
-        ),
-      ],
-    );
+      ),
+    ],
+  );
 }

@@ -173,7 +173,9 @@ class _MainScreenState extends State<MainScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const TodoScreen(),
+                        builder: (context) =>  TodoScreen(
+                           initialStartDate: todoState.selectedDate
+                        ),
                       ),
                     );
                   } else if (todoState.selectedTab == 1) {

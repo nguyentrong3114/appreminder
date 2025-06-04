@@ -3,7 +3,9 @@ import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class TodoScreen extends StatefulWidget {
-  const TodoScreen({super.key});
+  final DateTime? initialStartDate;
+  final DocumentSnapshot? todoDoc;
+  const TodoScreen({super.key, this.initialStartDate, this.todoDoc});
 
   @override
   State<TodoScreen> createState() => TodoScreenState();
@@ -14,19 +16,14 @@ class TodoScreenState extends State<TodoScreen> {
   final TextEditingController _detailsController = TextEditingController();
   bool _isAllDayEnabled = false;
   bool _reminderEnabled = false;
-  bool _isPinnedEnabled = false;
-  bool _isRepeatEnabled = false;
   Color _activeColor = Colors.green;
   String selectedColor = "Xanh lá cây";
   bool hasUnsavedChanges = false;
 
-  // Datetime controllers
-  DateTime _startDate = DateTime.now();
-  TimeOfDay _startTime = TimeOfDay.now();
-  DateTime _endDate = DateTime.now().add(const Duration(hours: 1));
-  TimeOfDay _endTime = TimeOfDay.fromDateTime(
-    DateTime.now().add(const Duration(hours: 1)),
-  );
+  late DateTime _startDate;
+  late DateTime _endDate;
+  late TimeOfDay _startTime;
+  late TimeOfDay _endTime;
 
   String _reminderTime = "";
 
@@ -35,6 +32,24 @@ class TodoScreenState extends State<TodoScreen> {
     super.initState();
     _titleController.addListener(_onTextChanged);
     _detailsController.addListener(_onTextChanged);
+
+    if (widget.todoDoc != null) {
+      final data = widget.todoDoc!.data() as Map<String, dynamic>;
+      _titleController.text = data['title'] ?? '';
+      _detailsController.text = data['details'] ?? '';
+      _startDate = DateTime.parse(data['startDateTime']);
+      _endDate = DateTime.parse(data['endDateTime']);
+      _startTime = TimeOfDay(hour: _startDate.hour, minute: _startDate.minute);
+      _endTime = TimeOfDay(hour: _endDate.hour, minute: _endDate.minute);
+      selectedColor = data['color'] ?? "Xanh lá cây";
+      _reminderEnabled = data['reminderEnabled'] ?? false;
+      _reminderTime = data['reminderTime'] ?? "";
+    } else {
+      _startDate = widget.initialStartDate ?? DateTime.now();
+      _startTime = TimeOfDay.now();
+      _endDate = _startDate;
+      _endTime = _startTime.add(hour: 1);
+    }
   }
 
   @override
@@ -63,7 +78,20 @@ class TodoScreenState extends State<TodoScreen> {
       _endTime.minute,
     );
 
-    // Thêm dữ liệu vào Firestore
+  if (widget.todoDoc != null) {
+    // UPDATE
+    await widget.todoDoc!.reference.update({
+      'title': title,
+      'details': details,
+      'startDateTime': startDateTime.toIso8601String(),
+      'endDateTime': endDateTime.toIso8601String(),
+      'reminderEnabled': _reminderEnabled,
+      'reminderTime': _reminderEnabled ? _reminderTime : "",
+      'color': selectedColor,
+      'createdAt': DateTime.now().toIso8601String(),
+    });
+  } else {
+    // ADD
     await FirebaseFirestore.instance.collection('todos').add({
       'title': title,
       'details': details,
@@ -73,8 +101,10 @@ class TodoScreenState extends State<TodoScreen> {
       'reminderTime': _reminderEnabled ? _reminderTime : "",
       'color': selectedColor,
       'createdAt': DateTime.now().toIso8601String(),
-      // Có thể bổ sung các trường khác tùy ý
+      'isDone': false,
     });
+  }
+
   }
 
   void _onTextChanged() {
@@ -325,8 +355,7 @@ class TodoScreenState extends State<TodoScreen> {
             onSwitchChanged: (value) {
               setState(() {
                 _reminderEnabled = value;
-                if (!value)
-                  _reminderTime = "";
+                if (!value) _reminderTime = "";
               });
             },
           ),
@@ -750,51 +779,6 @@ class TodoScreenState extends State<TodoScreen> {
     );
   }
 
-  void _showRepeatOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Padding(
-                padding: EdgeInsets.only(bottom: 20),
-                child: Text(
-                  "Lặp lại",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ),
-              ...[
-                    "Không lặp lại",
-                    "Hàng ngày",
-                    "Hàng tuần",
-                    "Hàng tháng",
-                    "Hàng năm",
-                  ]
-                  .map(
-                    (option) => ListTile(
-                      title: Text(option),
-                      onTap: () {
-                        setState(() {
-                          _isRepeatEnabled = option != "Không lặp lại";
-                        });
-                        Navigator.pop(context);
-                      },
-                    ),
-                  )
-                  .toList(),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   String _formatTimeOfDay(TimeOfDay timeOfDay) {
     final now = DateTime.now();
     final dt = DateTime(
@@ -859,43 +843,42 @@ class TodoScreenState extends State<TodoScreen> {
 
   void _saveTodo() async {
     if (_titleController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Vui lòng nhập tiêu đề'),
-          backgroundColor: _activeColor,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          action: SnackBarAction(
-            label: 'OK',
-            textColor: Colors.white,
-            onPressed: () {},
-          ),
-        ),
+      await showDialog(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title: const Text('Lỗi'),
+              content: const Text('Vui lòng nhập tiêu đề'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
       );
       return;
     }
 
-    // Lưu lên Firestore
     await saveTodoToFirestore();
 
-    // Hiển thị thông báo thành công
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Đã lưu công việc thành công'),
-        backgroundColor: _activeColor,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        action: SnackBarAction(
-          label: 'OK',
-          textColor: Colors.white,
-          onPressed: () {},
-        ),
-      ),
+    if (!mounted) return;
+    await showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Thành công'),
+            content: const Text('Đã lưu công việc thành công!'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
     );
-
-    Navigator.of(context).pop();
+    if (!mounted) return;
+    Navigator.of(context).pop('edited');
   }
 }
 
