@@ -687,28 +687,6 @@ class TodoState extends State<Todo> {
     return DiaryScreen();
   }
 
-  Color _getColorFromName(String colorName) {
-    switch (colorName) {
-      case "Xanh lá cây":
-        return Colors.green;
-      case "Xanh da trời":
-        return Colors.blue;
-      case "Tím":
-        return Colors.purple;
-      case "Hồng":
-        return Colors.pink;
-      case "Vàng":
-        return Colors.amber;
-      case "Cam":
-        return Colors.orange;
-      case "Xanh ngọc":
-        return Colors.teal;
-      case "Xanh dương":
-        return Colors.indigo;
-      default:
-        return Colors.green;
-    }
-  }
 }
 
 Widget buildNavItem(IconData icon, String label, bool isSelected) {
