@@ -3,6 +3,7 @@ import 'package:flutter_app/views/widgets/manage/diary.dart';
 import 'package:intl/intl.dart';
 import 'notes.dart';
 import 'dart:math' as math;
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Todo extends StatefulWidget {
   const Todo({super.key});
@@ -103,7 +104,6 @@ class TodoState extends State<Todo> {
     if (selectedFilter == 1) {
       // Day
       selectedDate = now;
-      
     } else if (selectedFilter == 2) {
       // Week
       // Set to first day of current week
@@ -133,8 +133,7 @@ class TodoState extends State<Todo> {
         children: [
           if (selectedTab == 0) _buildFilterOptions(),
           if (selectedTab == 0) _buildDateSelection(),
-          _buildContent(),
-          Expanded(child: Container()), // Empty space
+          Expanded(child: _buildContent()), 
         ],
       ),
     );
@@ -472,81 +471,130 @@ class TodoState extends State<Todo> {
   }
 
   Widget _buildTaskSummary() {
-    String title = "";
-    String subtitle = "";
+  DateTime start, end;
+  if (selectedFilter == 1) {
+    start = DateTime(selectedDate.year, selectedDate.month, selectedDate.day, 0, 0, 0);
+    end = DateTime(selectedDate.year, selectedDate.month, selectedDate.day, 23, 59, 59);
+  } else if (selectedFilter == 2) {
+    start = selectedDate.subtract(Duration(days: selectedDate.weekday - 1));
+    end = start.add(const Duration(days: 6, hours: 23, minutes: 59, seconds: 59));
+  } else if (selectedFilter == 3) {
+    start = DateTime(selectedDate.year, selectedDate.month, 1);
+    end = DateTime(selectedDate.year, selectedDate.month + 1, 0, 23, 59, 59);
+  } else {
+    start = DateTime(2000);
+    end = DateTime.now().subtract(const Duration(seconds: 1));
+  }
 
-    if (selectedFilter == 1) {
-      title = "Hôm nay";
-      subtitle = DateFormat('dd/MM/yyyy').format(selectedDate);
-    } else if (selectedFilter == 2) {
-      title = "Tuần này";
-      subtitle =
-          "${DateFormat('dd/MM').format(selectedDate)} - ${DateFormat('dd/MM').format(selectedDate.add(Duration(days: 6)))}";
-    } else if (selectedFilter == 3) {
-      title = "Tháng này";
-      subtitle = "Tháng ${selectedDate.month}/${selectedDate.year}";
-    } else {
-      title = "Đã hết hạn";
-    }
+  String title = "";
+  String subtitle = "";
 
-    return Container(
-      margin: const EdgeInsets.all(10),
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-      decoration: BoxDecoration(
-        color: Color(0xFF4CD6A8),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(color: Colors.black, blurRadius: 4, offset: Offset(0, 2)),
-        ],
-      ),
-      child: Row(
+  if (selectedFilter == 1) {
+    title = "Hôm nay";
+    subtitle = DateFormat('dd/MM/yyyy').format(selectedDate);
+  } else if (selectedFilter == 2) {
+    title = "Tuần này";
+    subtitle = "${DateFormat('dd/MM').format(selectedDate)} - ${DateFormat('dd/MM').format(selectedDate.add(Duration(days: 6)))}";
+  } else if (selectedFilter == 3) {
+    title = "Tháng này";
+    subtitle = "Tháng ${selectedDate.month}/${selectedDate.year}";
+  } else {
+    title = "Đã hết hạn";
+  }
+
+  return StreamBuilder<QuerySnapshot>(
+    stream: FirebaseFirestore.instance
+        .collection('todos')
+        .where('startDateTime', isGreaterThanOrEqualTo: start.toIso8601String())
+        .where('startDateTime', isLessThanOrEqualTo: end.toIso8601String())
+        .snapshots(),
+    builder: (context, snapshot) {
+      int todoCount = 0;
+      final todos = <QueryDocumentSnapshot>[];
+      if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+        todoCount = snapshot.data!.docs.length;
+        todos.addAll(snapshot.data!.docs);
+      }
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Container(
+            margin: const EdgeInsets.all(10),
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+            decoration: BoxDecoration(
+              color: Color(0xFF4CD6A8),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(color: Colors.black, blurRadius: 4, offset: Offset(0, 2)),
+              ],
+            ),
+            child: Row(
               children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (subtitle.isNotEmpty)
+                        Text(
+                          subtitle,
+                          style: TextStyle(color: Colors.white, fontSize: 14),
+                        ),
+                      SizedBox(height: 5),
+                      Text(
+                        "$todoCount nhiệm vụ",
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                    ],
                   ),
-                ),
-                if (subtitle.isNotEmpty)
-                  Text(
-                    subtitle,
-                    style: TextStyle(color: Colors.white, fontSize: 14),
-                  ),
-                SizedBox(height: 5),
-                Text(
-                  "0 nhiệm vụ",
-                  style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ],
             ),
           ),
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              "100",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF4CD6A8),
+          // Danh sách nhiệm vụ
+          if (todoCount > 0)
+            SizedBox(
+              height: 250,
+              child: ListView.builder(
+                itemCount: todos.length,
+                itemBuilder: (context, index) {
+                  final todo = todos[index].data() as Map<String, dynamic>;
+                  return Card(
+                    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: _getColorFromName(todo['color'] ?? 'Xanh lá cây'),
+                        child: Icon(Icons.check, color: Colors.white),
+                      ),
+                      title: Text(todo['title'] ?? ''),
+                      subtitle: Text(todo['details'] ?? ''),
+                      trailing: todo['reminderEnabled'] == true
+                          ? const Icon(Icons.notifications_active, color: Colors.red)
+                          : null,
+                    ),
+                  );
+                },
               ),
             ),
-          ),
+          if (todoCount == 0)
+            const Padding(
+              padding: EdgeInsets.all(20),
+              child: Text("Không có nhiệm vụ nào", style: TextStyle(color: Colors.grey)),
+            )
         ],
-      ),
-    );
-  }
+      );
+    },
+  );
+}
+
 
   // Widget for Notes tab content
   Widget _buildNotesContent() {
@@ -556,6 +604,30 @@ class TodoState extends State<Todo> {
   Widget _buildDiaryContent() {
     return Expanded(child: DiaryScreen());
   }
+
+   Color _getColorFromName(String colorName) {
+    switch (colorName) {
+      case "Xanh lá cây":
+        return Colors.green;
+      case "Xanh da trời":
+        return Colors.blue;
+      case "Tím":
+        return Colors.purple;
+      case "Hồng":
+        return Colors.pink;
+      case "Vàng":
+        return Colors.amber;
+      case "Cam":
+        return Colors.orange;
+      case "Xanh ngọc":
+        return Colors.teal;
+      case "Xanh dương":
+        return Colors.indigo;
+      default:
+        return Colors.green;
+    }
+  }
+}
 
   Widget buildNavItem(IconData icon, String label, bool isSelected) {
     return Column(
@@ -575,5 +647,4 @@ class TodoState extends State<Todo> {
         ),
       ],
     );
-  }
 }

@@ -13,11 +13,13 @@ import 'package:flutter_app/views/widgets/manage/add_todo_screen.dart';
 import 'package:flutter_app/views/widgets/manage/add_diary_screen.dart';
 import 'package:flutter_app/views/widgets/manage/add_notes_screen.dart';
 import 'package:flutter_app/views/widgets/home/add_something_today.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('vi_VN', null);
-
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(
     MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -148,7 +150,7 @@ class _MainScreenState extends State<MainScreen> {
                       animation,
                       secondaryAnimation,
                       child,
-                    ) { 
+                    ) {
                       const begin = Offset(1.0, 0.0);
                       const end = Offset.zero;
                       const curve = Curves.ease;

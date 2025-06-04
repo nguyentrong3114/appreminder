@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class TodoScreen extends StatefulWidget {
   const TodoScreen({super.key});
@@ -18,17 +19,16 @@ class TodoScreenState extends State<TodoScreen> {
   Color _activeColor = Colors.green;
   String selectedColor = "Xanh lá cây";
   bool hasUnsavedChanges = false;
-  
+
   // Datetime controllers
   DateTime _startDate = DateTime.now();
   TimeOfDay _startTime = TimeOfDay.now();
   DateTime _endDate = DateTime.now().add(const Duration(hours: 1));
   TimeOfDay _endTime = TimeOfDay.fromDateTime(
-  DateTime.now().add(const Duration(hours: 1)),
-);
+    DateTime.now().add(const Duration(hours: 1)),
+  );
 
-  
-  String _reminderTime = "15 phút trước";
+  String _reminderTime = "";
 
   @override
   void initState() {
@@ -36,14 +36,47 @@ class TodoScreenState extends State<TodoScreen> {
     _titleController.addListener(_onTextChanged);
     _detailsController.addListener(_onTextChanged);
   }
-  
+
   @override
   void dispose() {
     _titleController.dispose();
     _detailsController.dispose();
     super.dispose();
   }
-  
+
+  Future<void> saveTodoToFirestore() async {
+    // Lấy thông tin cần lưu
+    String title = _titleController.text;
+    String details = _detailsController.text;
+    DateTime startDateTime = DateTime(
+      _startDate.year,
+      _startDate.month,
+      _startDate.day,
+      _startTime.hour,
+      _startTime.minute,
+    );
+    DateTime endDateTime = DateTime(
+      _endDate.year,
+      _endDate.month,
+      _endDate.day,
+      _endTime.hour,
+      _endTime.minute,
+    );
+
+    // Thêm dữ liệu vào Firestore
+    await FirebaseFirestore.instance.collection('todos').add({
+      'title': title,
+      'details': details,
+      'startDateTime': startDateTime.toIso8601String(),
+      'endDateTime': endDateTime.toIso8601String(),
+      'reminderEnabled': _reminderEnabled,
+      'reminderTime': _reminderEnabled ? _reminderTime : "",
+      'color': selectedColor,
+      'createdAt': DateTime.now().toIso8601String(),
+      // Có thể bổ sung các trường khác tùy ý
+    });
+  }
+
   void _onTextChanged() {
     if (!hasUnsavedChanges) {
       setState(() {
@@ -121,7 +154,7 @@ class TodoScreenState extends State<TodoScreen> {
               child: Text(
                 "TO DO",
                 style: TextStyle(
-                  fontSize: 18, 
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.2,
                 ),
@@ -140,11 +173,11 @@ class TodoScreenState extends State<TodoScreen> {
   }
 
   Widget _buildIconButton(
-    IconData icon, 
-    Color color, 
-    VoidCallback onTap, 
-    {String? tooltip}
-  ) {
+    IconData icon,
+    Color color,
+    VoidCallback onTap, {
+    String? tooltip,
+  }) {
     return Tooltip(
       message: tooltip ?? '',
       child: Material(
@@ -183,10 +216,7 @@ class TodoScreenState extends State<TodoScreen> {
               border: InputBorder.none,
               contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             ),
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-            ),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
           ),
           const Divider(height: 1, thickness: 1, indent: 16, endIndent: 16),
           TextField(
@@ -198,10 +228,7 @@ class TodoScreenState extends State<TodoScreen> {
               border: InputBorder.none,
               contentPadding: const EdgeInsets.all(16),
             ),
-            style: const TextStyle(
-              fontSize: 16,
-              height: 1.5,
-            ),
+            style: const TextStyle(fontSize: 16, height: 1.5),
           ),
         ],
       ),
@@ -233,15 +260,16 @@ class TodoScreenState extends State<TodoScreen> {
                   color: _activeColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(Icons.calendar_today_rounded, color: _activeColor, size: 20),
+                child: Icon(
+                  Icons.calendar_today_rounded,
+                  color: _activeColor,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 16),
               const Text(
                 "Thời gian",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
               ),
             ],
           ),
@@ -297,6 +325,8 @@ class TodoScreenState extends State<TodoScreen> {
             onSwitchChanged: (value) {
               setState(() {
                 _reminderEnabled = value;
+                if (!value)
+                  _reminderTime = "";
               });
             },
           ),
@@ -328,7 +358,10 @@ class TodoScreenState extends State<TodoScreen> {
                     onTap: () => _showReminderOptions(context),
                     borderRadius: BorderRadius.circular(8),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 4,
+                        horizontal: 4,
+                      ),
                       child: Row(
                         children: [
                           Container(
@@ -337,7 +370,11 @@ class TodoScreenState extends State<TodoScreen> {
                               color: _activeColor.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Icon(Icons.add, color: _activeColor, size: 20),
+                            child: Icon(
+                              Icons.add,
+                              color: _activeColor,
+                              size: 20,
+                            ),
                           ),
                           const SizedBox(width: 16),
                           Text(
@@ -360,7 +397,7 @@ class TodoScreenState extends State<TodoScreen> {
       ),
     );
   }
-  
+
   Widget _buildColorSelection() {
     List<Color> colors = [
       Colors.green,
@@ -422,15 +459,31 @@ class TodoScreenState extends State<TodoScreen> {
                   setState(() {
                     _activeColor = colors[index];
                     // Update color name
-                    switch(index) {
-                      case 0: selectedColor = "Xanh lá cây"; break;
-                      case 1: selectedColor = "Xanh da trời"; break;
-                      case 2: selectedColor = "Tím"; break;
-                      case 3: selectedColor = "Hồng"; break;
-                      case 4: selectedColor = "Vàng"; break;
-                      case 5: selectedColor = "Cam"; break;
-                      case 6: selectedColor = "Xanh ngọc"; break;
-                      case 7: selectedColor = "Xanh dương"; break;
+                    switch (index) {
+                      case 0:
+                        selectedColor = "Xanh lá cây";
+                        break;
+                      case 1:
+                        selectedColor = "Xanh da trời";
+                        break;
+                      case 2:
+                        selectedColor = "Tím";
+                        break;
+                      case 3:
+                        selectedColor = "Hồng";
+                        break;
+                      case 4:
+                        selectedColor = "Vàng";
+                        break;
+                      case 5:
+                        selectedColor = "Cam";
+                        break;
+                      case 6:
+                        selectedColor = "Xanh ngọc";
+                        break;
+                      case 7:
+                        selectedColor = "Xanh dương";
+                        break;
                     }
                   });
                 },
@@ -441,22 +494,29 @@ class TodoScreenState extends State<TodoScreen> {
                   decoration: BoxDecoration(
                     color: colors[index],
                     shape: BoxShape.circle,
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: colors[index].withOpacity(0.4),
-                              blurRadius: 8,
-                              spreadRadius: 2,
-                            )
-                          ]
-                        : null,
-                    border: isSelected
-                        ? Border.all(color: Colors.white, width: 3)
-                        : null,
+                    boxShadow:
+                        isSelected
+                            ? [
+                              BoxShadow(
+                                color: colors[index].withOpacity(0.4),
+                                blurRadius: 8,
+                                spreadRadius: 2,
+                              ),
+                            ]
+                            : null,
+                    border:
+                        isSelected
+                            ? Border.all(color: Colors.white, width: 3)
+                            : null,
                   ),
-                  child: isSelected
-                      ? const Icon(Icons.check, color: Colors.white, size: 24)
-                      : null,
+                  child:
+                      isSelected
+                          ? const Icon(
+                            Icons.check,
+                            color: Colors.white,
+                            size: 24,
+                          )
+                          : null,
                 ),
               );
             }),
@@ -485,11 +545,8 @@ class TodoScreenState extends State<TodoScreen> {
         ),
         const SizedBox(width: 16),
         Text(
-          text, 
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
+          text,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
         ),
         const Spacer(),
         if (hasSwitch)
@@ -525,20 +582,14 @@ class TodoScreenState extends State<TodoScreen> {
           ),
           const SizedBox(width: 16),
           Text(
-            text, 
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
+            text,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
           const Spacer(),
           if (trailing != null)
             Text(
               trailing,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
           if (showArrow)
             Icon(Icons.chevron_right, size: 20, color: Colors.grey[400]),
@@ -576,7 +627,7 @@ class TodoScreenState extends State<TodoScreen> {
         _startDate = picked;
       });
     }
-    
+
     if (!_isAllDayEnabled) {
       final TimeOfDay? pickedTime = await showTimePicker(
         context: context,
@@ -626,7 +677,7 @@ class TodoScreenState extends State<TodoScreen> {
         _endDate = picked;
       });
     }
-    
+
     if (!_isAllDayEnabled) {
       final TimeOfDay? pickedTime = await showTimePicker(
         context: context,
@@ -672,22 +723,26 @@ class TodoScreenState extends State<TodoScreen> {
                 ),
               ),
               ...[
-                "Tại thời điểm bắt đầu",
-                "5 phút trước",
-                "15 phút trước",
-                "30 phút trước",
-                "1 giờ trước",
-                "1 ngày trước",
-              ].map((option) => ListTile(
-                title: Text(option),
-                onTap: () {
-                  setState(() {
-                    _reminderTime = option;
-                    _reminderEnabled = true;
-                  });
-                  Navigator.pop(context);
-                },
-              )).toList(),
+                    "Tại thời điểm bắt đầu",
+                    "5 phút trước",
+                    "15 phút trước",
+                    "30 phút trước",
+                    "1 giờ trước",
+                    "1 ngày trước",
+                  ]
+                  .map(
+                    (option) => ListTile(
+                      title: Text(option),
+                      onTap: () {
+                        setState(() {
+                          _reminderTime = option;
+                          _reminderEnabled = true;
+                        });
+                        Navigator.pop(context);
+                      },
+                    ),
+                  )
+                  .toList(),
             ],
           ),
         );
@@ -715,20 +770,24 @@ class TodoScreenState extends State<TodoScreen> {
                 ),
               ),
               ...[
-                "Không lặp lại",
-                "Hàng ngày",
-                "Hàng tuần",
-                "Hàng tháng",
-                "Hàng năm",
-              ].map((option) => ListTile(
-                title: Text(option),
-                onTap: () {
-                  setState(() {
-                    _isRepeatEnabled = option != "Không lặp lại";
-                  });
-                  Navigator.pop(context);
-                },
-              )).toList(),
+                    "Không lặp lại",
+                    "Hàng ngày",
+                    "Hàng tuần",
+                    "Hàng tháng",
+                    "Hàng năm",
+                  ]
+                  .map(
+                    (option) => ListTile(
+                      title: Text(option),
+                      onTap: () {
+                        setState(() {
+                          _isRepeatEnabled = option != "Không lặp lại";
+                        });
+                        Navigator.pop(context);
+                      },
+                    ),
+                  )
+                  .toList(),
             ],
           ),
         );
@@ -738,28 +797,36 @@ class TodoScreenState extends State<TodoScreen> {
 
   String _formatTimeOfDay(TimeOfDay timeOfDay) {
     final now = DateTime.now();
-    final dt = DateTime(now.year, now.month, now.day, timeOfDay.hour, timeOfDay.minute);
+    final dt = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      timeOfDay.hour,
+      timeOfDay.minute,
+    );
     final format = DateFormat.jm();
     return format.format(dt);
   }
 
   void _handleCloseButton() {
-    if (hasUnsavedChanges || 
-        _titleController.text.isNotEmpty || 
+    if (hasUnsavedChanges ||
+        _titleController.text.isNotEmpty ||
         _detailsController.text.isNotEmpty) {
       _showDiscardChangesDialog();
     } else {
       Navigator.of(context).pop();
     }
   }
-  
+
   void _showDiscardChangesDialog() {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Hủy thay đổi?'),
-          content: const Text('Bạn có thay đổi chưa lưu. Bạn có muốn hủy bỏ những thay đổi này không?'),
+          content: const Text(
+            'Bạn có thay đổi chưa lưu. Bạn có muốn hủy bỏ những thay đổi này không?',
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -789,8 +856,8 @@ class TodoScreenState extends State<TodoScreen> {
       },
     );
   }
-  
-  void _saveTodo() {
+
+  void _saveTodo() async {
     if (_titleController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -809,16 +876,17 @@ class TodoScreenState extends State<TodoScreen> {
       );
       return;
     }
-    
+
+    // Lưu lên Firestore
+    await saveTodoToFirestore();
+
     // Hiển thị thông báo thành công
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text('Đã lưu công việc thành công'),
         backgroundColor: _activeColor,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         action: SnackBarAction(
           label: 'OK',
           textColor: Colors.white,
@@ -826,7 +894,7 @@ class TodoScreenState extends State<TodoScreen> {
         ),
       ),
     );
-    
+
     Navigator.of(context).pop();
   }
 }
@@ -834,9 +902,6 @@ class TodoScreenState extends State<TodoScreen> {
 // Extension for adding hours to TimeOfDay
 extension TimeOfDayExtension on TimeOfDay {
   TimeOfDay add({int hour = 0, int minute = 0}) {
-    return replacing(
-      hour: this.hour + hour,
-      minute: this.minute + minute,
-    );
+    return replacing(hour: this.hour + hour, minute: this.minute + minute);
   }
 }
