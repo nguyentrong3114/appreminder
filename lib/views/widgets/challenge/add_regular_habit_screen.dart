@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'dart:math';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../../models/habit.dart';
+// Import habit service (nếu bạn tạo file service)
+import '../../../services/habit_service.dart';
 
 class RegularHabitScreen extends StatefulWidget {
   final String? initialTitle;
@@ -33,7 +38,8 @@ class Tag {
   Tag({required this.id, required this.name, required this.color});
 }
 
-enum RepeatType { daily, weekly, monthly, yearly }
+// enum RepeatType { daily, weekly, monthly, yearly } // Removed, use from models/habit.dart
+// Make sure to only use RepeatType from models/habit.dart
 
 class _RegularHabitScreenState extends State<RegularHabitScreen> {
   late bool reminderEnabled;
@@ -46,6 +52,147 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
   late String formattedStartDate;
   List<TimeOfDay> reminders = [];
   List<Tag> tags = [];
+  final HabitService _habitService = HabitService();
+  bool _isSaving = false;
+  // Helper methods để chuyển đổi dữ liệu
+  String _iconToString(IconData icon) {
+    return icon.codePoint.toString();
+  }
+
+  IconData _stringToIcon(String iconString) {
+    return IconData(int.parse(iconString));
+  }
+
+  String _colorToString(Color color) {
+    return color.value.toString();
+  }
+
+  Color _stringToColor(String colorString) {
+    return Color(int.parse(colorString));
+  }
+
+  List<String> _timeOfDayListToStringList(List<TimeOfDay> times) {
+    return times
+        .map(
+          (time) =>
+              '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
+        )
+        .toList();
+  }
+
+  List<Map<String, dynamic>> _tagsToMap(List<Tag> tags) {
+    return tags
+        .map(
+          (tag) => {
+            'id': tag.id,
+            'name': tag.name,
+            'color': _colorToString(tag.color),
+          },
+        )
+        .toList();
+  }
+
+  // Cập nhật hàm lưu trong nút "Lưu"
+  Future<void> _saveHabit() async {
+    // Validation trước khi lưu
+    if (_titleController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Vui lòng nhập tên thử thách'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Kiểm tra ngày bắt đầu không được trong quá khứ
+    if (startDate.isBefore(DateTime.now().subtract(Duration(days: 1)))) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Ngày bắt đầu không được trong quá khứ'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Validation cho weekly repeat
+    if (repeatType == RepeatType.weekly && selectedWeekdays.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Vui lòng chọn ít nhất một ngày trong tuần'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Validation cho endDate
+    if (hasEndDate && endDate != null && endDate!.isBefore(startDate)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Ngày kết thúc phải sau ngày bắt đầu'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      final now = DateTime.now();
+
+      // Tạo Habit object
+      final habit = Habit(
+        id: '', // Firebase sẽ tự tạo ID
+        title: _titleController.text.trim(),
+        iconCodePoint: _iconToString(selectedIcon),
+        colorValue: _colorToString(selectedColor),
+        startDate: startDate,
+        endDate: hasEndDate ? endDate : null,
+        hasEndDate: hasEndDate,
+        type: HabitType.regular, // Đánh dấu là regular habit
+        repeatType: repeatType, // Có repeatType
+        selectedWeekdays: selectedWeekdays,
+        monthlyDay: monthlyDay,
+        reminderEnabled: reminderEnabled,
+        reminderTimes: _timeOfDayListToStringList(reminders),
+        streakEnabled: streakEnabled,
+        tags: _tagsToMap(tags),
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      // Lưu vào Firebase
+      final habitId = await _habitService.saveHabit(habit);
+
+      // Hiển thị thông báo thành công
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Đã lưu thử thách thành công!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Quay về màn hình trước
+      Navigator.pop(context, habitId);
+    } catch (e) {
+      // Hiển thị lỗi
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi khi lưu thử thách: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isSaving = false;
+      });
+    }
+  }
 
   RepeatType repeatType = RepeatType.daily;
   DateTime? endDate;
@@ -2114,65 +2261,7 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
                   width: MediaQuery.of(context).size.width * 0.6,
                   height: 54,
                   child: ElevatedButton(
-                    onPressed: () {
-                      // Validation trước khi lưu
-                      if (_titleController.text.trim().isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Vui lòng nhập tên thử thách'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                        return;
-                      }
-
-                      // Kiểm tra ngày bắt đầu không được trong quá khứ
-                      if (startDate.isBefore(
-                        DateTime.now().subtract(Duration(days: 1)),
-                      )) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Ngày bắt đầu không được trong quá khứ',
-                            ),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                        return;
-                      }
-
-                      // Validation cho weekly repeat
-                      if (repeatType == RepeatType.weekly &&
-                          selectedWeekdays.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Vui lòng chọn ít nhất một ngày trong tuần',
-                            ),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                        return;
-                      }
-
-                      // Validation cho endDate
-                      if (hasEndDate &&
-                          endDate != null &&
-                          endDate!.isBefore(startDate)) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Ngày kết thúc phải sau ngày bắt đầu',
-                            ),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                        return;
-                      }
-
-                      // Lưu habit
-                      Navigator.pop(context);
-                    },
+                    onPressed: _isSaving ? null : _saveHabit,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: selectedColor,
                       shape: RoundedRectangleBorder(
@@ -2180,14 +2269,24 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
                       ),
                       elevation: 4,
                     ),
-                    child: Text(
-                      'Lưu',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
+                    child:
+                        _isSaving
+                            ? SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                            : Text(
+                              'Lưu',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
                   ),
                 ),
               ),

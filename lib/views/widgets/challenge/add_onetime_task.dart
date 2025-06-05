@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'dart:math';
+import '../../../models/habit.dart';
+import '../../../services/habit_service.dart';
 
 class OnetimeTask extends StatefulWidget {
   final DateTime? initialStartDate;
@@ -44,6 +46,9 @@ class _OnetimeTask extends State<OnetimeTask> {
   late String formattedStartDate;
   List<TimeOfDay> reminders = [];
   List<Tag> tags = [];
+  // Services
+  final HabitService _habitService = HabitService();
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -657,10 +662,114 @@ class _OnetimeTask extends State<OnetimeTask> {
     );
   }
 
+  // Save method cho Onetime Task
+  Future<void> _saveOnetimeTask() async {
+    if (_titleController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Vui lòng nhập tên nhiệm vụ'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Validation ngày bắt đầu
+    if (startDate.isBefore(DateTime.now().subtract(Duration(days: 1)))) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Ngày bắt đầu không được trong quá khứ'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      final now = DateTime.now();
+
+      final habit = Habit(
+        id: '',
+        title: _titleController.text.trim(),
+        iconCodePoint: _iconToString(selectedIcon),
+        colorValue: _colorToString(selectedColor),
+        startDate: startDate,
+        endDate: null,
+        hasEndDate: false,
+        type: HabitType.onetime, // Đánh dấu là onetime task
+        repeatType: null, // Không lặp lại
+        selectedWeekdays: [],
+        monthlyDay: 1,
+        reminderEnabled: reminderEnabled,
+        reminderTimes: _timeOfDayListToStringList(reminders),
+        streakEnabled: streakEnabled,
+        tags: _tagsToMap(tags),
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      final habitId = await _habitService.saveHabit(habit);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Đã lưu nhiệm vụ thành công!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pop(context, habitId);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi khi lưu nhiệm vụ: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isSaving = false;
+      });
+    }
+  }
+
   void _deleteTag(Tag tag) {
     setState(() {
       tags.removeWhere((t) => t.id == tag.id);
     });
+  }
+
+  // Helper methods để chuyển đổi dữ liệu
+  String _iconToString(IconData icon) {
+    return icon.codePoint.toString();
+  }
+
+  String _colorToString(Color color) {
+    return color.value.toString();
+  }
+
+  List<String> _timeOfDayListToStringList(List<TimeOfDay> times) {
+    return times
+        .map(
+          (time) =>
+              '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
+        )
+        .toList();
+  }
+
+  List<Map<String, dynamic>> _tagsToMap(List<Tag> tags) {
+    return tags
+        .map(
+          (tag) => {
+            'id': tag.id,
+            'name': tag.name,
+            'color': _colorToString(tag.color),
+          },
+        )
+        .toList();
   }
 
   void _showIconSelector() {
@@ -1135,21 +1244,34 @@ class _OnetimeTask extends State<OnetimeTask> {
                   width: MediaQuery.of(context).size.width * 0.6,
                   height: 54,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed:
+                        _isSaving
+                            ? null
+                            : _saveOnetimeTask, // Thay đổi từ () {} thành _saveOnetimeTask
                     style: ElevatedButton.styleFrom(
                       backgroundColor: selectedColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(28),
                       ),
                     ),
-                    child: Text(
-                      'Lưu',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
+                    child:
+                        _isSaving // Thêm loading indicator
+                            ? SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                            : Text(
+                              'Lưu',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
                   ),
                 ),
               ),
