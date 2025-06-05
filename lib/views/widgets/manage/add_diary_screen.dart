@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class DiaryScreen extends StatefulWidget {
-  const DiaryScreen({super.key});
+class AddDiaryScreen extends StatefulWidget {
+  final Map<String, dynamic>? initData;
+  final String? docId;
+  const AddDiaryScreen({super.key, this.initData, this.docId});
   @override
   DiaryScreenState createState() => DiaryScreenState();
 }
 
-class DiaryScreenState extends State<DiaryScreen> {
-  final TextEditingController _titleController = TextEditingController();
+class DiaryScreenState extends State<AddDiaryScreen> {
   final TextEditingController _contentController = TextEditingController();
   int _selectedMoodIndex = 0;
-  bool _timeEnabled = true;
-  bool _reminderEnabled = false;
   String selectedColor = "Xanh lá cây";
   Color _activeColor = Colors.green;
   bool hasUnsavedChanges = false;
-  
+
   // Datetime controller
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
@@ -24,17 +24,38 @@ class DiaryScreenState extends State<DiaryScreen> {
   @override
   void initState() {
     super.initState();
-    _titleController.addListener(_onTextChanged);
+
+    // Fill dữ liệu nếu là sửa diary
+    final d = widget.initData;
+    if (d != null) {
+      _contentController.text = d['content'] ?? '';
+      // Xác định index mood:
+      final moods = ["😊", "😍", "❤️", "😎", "😴"];
+      _selectedMoodIndex = moods.indexOf(d['mood'] ?? "😊");
+      selectedColor = d['color'] ?? "Xanh lá cây";
+      _activeColor = _colorFromName(selectedColor);
+      // Xử lý ngày/giờ
+      DateTime date = DateTime.now();
+      if (d['date'] != null) {
+        if (d['date'] is Timestamp) {
+          date = (d['date'] as Timestamp).toDate();
+        } else if (d['date'] is DateTime) {
+          date = d['date'];
+        }
+      }
+      _selectedDate = date;
+      _selectedTime = TimeOfDay(hour: date.hour, minute: date.minute);
+    }
+
     _contentController.addListener(_onTextChanged);
   }
-  
+
   @override
   void dispose() {
-    _titleController.dispose();
     _contentController.dispose();
     super.dispose();
   }
-  
+
   void _onTextChanged() {
     if (!hasUnsavedChanges) {
       setState(() {
@@ -69,7 +90,6 @@ class DiaryScreenState extends State<DiaryScreen> {
                   physics: const BouncingScrollPhysics(),
                   child: Column(
                     children: [
-                     
                       _buildDiaryEntryField(),
                       _buildMoodSelection(),
                       _buildTimeSettings(),
@@ -79,12 +99,34 @@ class DiaryScreenState extends State<DiaryScreen> {
                   ),
                 ),
               ),
-             
             ],
           ),
         ),
       ),
     );
+  }
+
+  Color _colorFromName(String colorName) {
+    switch (colorName) {
+      case "Xanh lá cây":
+        return Colors.green;
+      case "Xanh da trời":
+        return Colors.blue;
+      case "Tím":
+        return Colors.purple;
+      case "Hồng":
+        return Colors.pink;
+      case "Vàng":
+        return Colors.amber;
+      case "Cam":
+        return Colors.orange;
+      case "Xanh ngọc":
+        return Colors.teal;
+      case "Xanh dương":
+        return Colors.indigo;
+      default:
+        return Colors.green;
+    }
   }
 
   Widget _buildDiaryHeader() {
@@ -114,7 +156,7 @@ class DiaryScreenState extends State<DiaryScreen> {
               child: Text(
                 "NHẬT KÝ",
                 style: TextStyle(
-                  fontSize: 18, 
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.2,
                 ),
@@ -133,11 +175,11 @@ class DiaryScreenState extends State<DiaryScreen> {
   }
 
   Widget _buildIconButton(
-    IconData icon, 
-    Color color, 
-    VoidCallback onTap, 
-    {String? tooltip}
-  ) {
+    IconData icon,
+    Color color,
+    VoidCallback onTap, {
+    String? tooltip,
+  }) {
     return Tooltip(
       message: tooltip ?? '',
       child: Material(
@@ -158,8 +200,6 @@ class DiaryScreenState extends State<DiaryScreen> {
     );
   }
 
-  
-
   Widget _buildDiaryEntryField() {
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 8, 20, 16),
@@ -171,10 +211,7 @@ class DiaryScreenState extends State<DiaryScreen> {
       child: TextField(
         controller: _contentController,
         maxLines: 8,
-        style: const TextStyle(
-          fontSize: 16,
-          height: 1.5,
-        ),
+        style: const TextStyle(fontSize: 16, height: 1.5),
         decoration: InputDecoration(
           hintText: "Hôm nay bạn cảm thấy thế nào?",
           hintStyle: TextStyle(color: Colors.grey[400]),
@@ -222,13 +259,17 @@ class DiaryScreenState extends State<DiaryScreen> {
                     color: _activeColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(Icons.emoji_emotions_outlined, color: _activeColor, size: 20),
+                  child: Icon(
+                    Icons.emoji_emotions_outlined,
+                    color: _activeColor,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Text(
                   "Cảm xúc của bạn",
                   style: TextStyle(
-                    fontSize: 16, 
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
                   ),
@@ -238,25 +279,28 @@ class DiaryScreenState extends State<DiaryScreen> {
           ),
           const Divider(height: 8),
           const SizedBox(height: 16),
-          
+
           // Mood selectors - responsive layout
           LayoutBuilder(
             builder: (context, constraints) {
               // Calculate item width based on available width
               final double totalWidth = constraints.maxWidth;
               // Allow each item to be responsive but with min/max size
-              final double itemWidth = 
-                  totalWidth < 350 ? totalWidth / moods.length : 
-                  totalWidth < 500 ? 65 : 
-                  80;
-              
+              final double itemWidth =
+                  totalWidth < 350
+                      ? totalWidth / moods.length
+                      : totalWidth < 500
+                      ? 65
+                      : 80;
+
               return SizedBox(
                 height: 100,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  physics: totalWidth < (itemWidth * moods.length) 
-                      ? const BouncingScrollPhysics()
-                      : const NeverScrollableScrollPhysics(),
+                  physics:
+                      totalWidth < (itemWidth * moods.length)
+                          ? const BouncingScrollPhysics()
+                          : const NeverScrollableScrollPhysics(),
                   itemCount: moods.length,
                   itemBuilder: (context, index) {
                     return Container(
@@ -270,16 +314,21 @@ class DiaryScreenState extends State<DiaryScreen> {
                         },
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                            horizontal: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: _selectedMoodIndex == index
-                                ? moods[index]["color"].withOpacity(0.12)
-                                : Colors.transparent,
+                            color:
+                                _selectedMoodIndex == index
+                                    ? moods[index]["color"].withOpacity(0.12)
+                                    : Colors.transparent,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: _selectedMoodIndex == index
-                                  ? moods[index]["color"]
-                                  : Colors.transparent,
+                              color:
+                                  _selectedMoodIndex == index
+                                      ? moods[index]["color"]
+                                      : Colors.transparent,
                               width: 1.5,
                             ),
                           ),
@@ -292,9 +341,12 @@ class DiaryScreenState extends State<DiaryScreen> {
                                 height: 48,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: _selectedMoodIndex == index
-                                      ? moods[index]["color"].withOpacity(0.2)
-                                      : Colors.grey.withOpacity(0.08),
+                                  color:
+                                      _selectedMoodIndex == index
+                                          ? moods[index]["color"].withOpacity(
+                                            0.2,
+                                          )
+                                          : Colors.grey.withOpacity(0.08),
                                 ),
                                 child: Center(
                                   child: Text(
@@ -304,7 +356,6 @@ class DiaryScreenState extends State<DiaryScreen> {
                                 ),
                               ),
                               const SizedBox(height: 6),
-                              
                             ],
                           ),
                         ),
@@ -340,42 +391,23 @@ class DiaryScreenState extends State<DiaryScreen> {
           _buildSettingRow(
             icon: Icons.calendar_today_rounded,
             text: "Thời gian",
-            hasSwitch: true,
-            switchValue: _timeEnabled,
-            onSwitchChanged: (value) {
-              setState(() {
-                _timeEnabled = value;
-              });
-            },
           ),
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            height: _timeEnabled ? null : 0,
-            child: AnimatedOpacity(
-              opacity: _timeEnabled ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 300),
-              child: Column(
-                children: [
-                  const Divider(height: 24),
-                  InkWell(
-                    onTap: () => _selectDate(context),
-                    borderRadius: BorderRadius.circular(8),
-                    child: _buildTimeSettingRow(
-                      icon: Icons.calendar_month_rounded,
-                      text: DateFormat('dd/MM/yyyy').format(_selectedDate),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  InkWell(
-                    onTap: () => _selectTime(context),
-                    borderRadius: BorderRadius.circular(8),
-                    child: _buildTimeSettingRow(
-                      icon: Icons.access_time_rounded,
-                      text: _formatTimeOfDay(_selectedTime),
-                    ),
-                  ),
-                ],
-              ),
+          const Divider(height: 24),
+          InkWell(
+            onTap: () => _selectDate(context),
+            borderRadius: BorderRadius.circular(8),
+            child: _buildTimeSettingRow(
+              icon: Icons.calendar_month_rounded,
+              text: DateFormat('dd/MM/yyyy').format(_selectedDate),
+            ),
+          ),
+          const SizedBox(height: 12),
+          InkWell(
+            onTap: () => _selectTime(context),
+            borderRadius: BorderRadius.circular(8),
+            child: _buildTimeSettingRow(
+              icon: Icons.access_time_rounded,
+              text: _formatTimeOfDay(_selectedTime),
             ),
           ),
           const Divider(height: 24),
@@ -383,7 +415,7 @@ class DiaryScreenState extends State<DiaryScreen> {
       ),
     );
   }
-  
+
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -436,18 +468,18 @@ class DiaryScreenState extends State<DiaryScreen> {
 
   String _formatTimeOfDay(TimeOfDay timeOfDay) {
     final now = DateTime.now();
-    final dt = DateTime(now.year, now.month, now.day, timeOfDay.hour, timeOfDay.minute);
+    final dt = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      timeOfDay.hour,
+      timeOfDay.minute,
+    );
     final format = DateFormat.jm();
     return format.format(dt);
   }
 
-  Widget _buildSettingRow({
-    required IconData icon,
-    required String text,
-    required bool hasSwitch,
-    bool switchValue = false,
-    Function(bool)? onSwitchChanged,
-  }) {
+  Widget _buildSettingRow({required IconData icon, required String text}) {
     return Row(
       children: [
         Container(
@@ -460,28 +492,15 @@ class DiaryScreenState extends State<DiaryScreen> {
         ),
         const SizedBox(width: 16),
         Text(
-          text, 
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
+          text,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
         ),
         const Spacer(),
-        if (hasSwitch)
-          Switch(
-            value: switchValue,
-            onChanged: onSwitchChanged,
-            activeColor: _activeColor,
-            activeTrackColor: _activeColor.withOpacity(0.4),
-          ),
       ],
     );
   }
 
-  Widget _buildTimeSettingRow({
-    required IconData icon,
-    required String text,
-  }) {
+  Widget _buildTimeSettingRow({required IconData icon, required String text}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
       child: Row(
@@ -496,11 +515,8 @@ class DiaryScreenState extends State<DiaryScreen> {
           ),
           const SizedBox(width: 16),
           Text(
-            text, 
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
+            text,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
           const Spacer(),
           Icon(Icons.chevron_right, size: 20, color: Colors.grey[400]),
@@ -551,10 +567,7 @@ class DiaryScreenState extends State<DiaryScreen> {
               const SizedBox(width: 16),
               const Text(
                 "Màu sắc",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
               ),
             ],
           ),
@@ -570,15 +583,31 @@ class DiaryScreenState extends State<DiaryScreen> {
                   setState(() {
                     _activeColor = colors[index];
                     // Update color name
-                    switch(index) {
-                      case 0: selectedColor = "Xanh lá cây"; break;
-                      case 1: selectedColor = "Xanh da trời"; break;
-                      case 2: selectedColor = "Tím"; break;
-                      case 3: selectedColor = "Hồng"; break;
-                      case 4: selectedColor = "Vàng"; break;
-                      case 5: selectedColor = "Cam"; break;
-                      case 6: selectedColor = "Xanh ngọc"; break;
-                      case 7: selectedColor = "Xanh dương"; break;
+                    switch (index) {
+                      case 0:
+                        selectedColor = "Xanh lá cây";
+                        break;
+                      case 1:
+                        selectedColor = "Xanh da trời";
+                        break;
+                      case 2:
+                        selectedColor = "Tím";
+                        break;
+                      case 3:
+                        selectedColor = "Hồng";
+                        break;
+                      case 4:
+                        selectedColor = "Vàng";
+                        break;
+                      case 5:
+                        selectedColor = "Cam";
+                        break;
+                      case 6:
+                        selectedColor = "Xanh ngọc";
+                        break;
+                      case 7:
+                        selectedColor = "Xanh dương";
+                        break;
                     }
                   });
                 },
@@ -589,22 +618,29 @@ class DiaryScreenState extends State<DiaryScreen> {
                   decoration: BoxDecoration(
                     color: colors[index],
                     shape: BoxShape.circle,
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: colors[index].withOpacity(0.4),
-                              blurRadius: 8,
-                              spreadRadius: 2,
-                            )
-                          ]
-                        : null,
-                    border: isSelected
-                        ? Border.all(color: Colors.white, width: 3)
-                        : null,
+                    boxShadow:
+                        isSelected
+                            ? [
+                              BoxShadow(
+                                color: colors[index].withOpacity(0.4),
+                                blurRadius: 8,
+                                spreadRadius: 2,
+                              ),
+                            ]
+                            : null,
+                    border:
+                        isSelected
+                            ? Border.all(color: Colors.white, width: 3)
+                            : null,
                   ),
-                  child: isSelected
-                      ? const Icon(Icons.check, color: Colors.white, size: 24)
-                      : null,
+                  child:
+                      isSelected
+                          ? const Icon(
+                            Icons.check,
+                            color: Colors.white,
+                            size: 24,
+                          )
+                          : null,
                 ),
               );
             }),
@@ -615,22 +651,22 @@ class DiaryScreenState extends State<DiaryScreen> {
   }
 
   void _handleCloseButton() {
-    if (hasUnsavedChanges || 
-        _titleController.text.isNotEmpty || 
-        _contentController.text.isNotEmpty) {
+    if (hasUnsavedChanges || _contentController.text.isNotEmpty) {
       _showDiscardChangesDialog();
     } else {
       Navigator.of(context).pop();
     }
   }
-  
+
   void _showDiscardChangesDialog() {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Hủy thay đổi?'),
-          content: const Text('Bạn có thay đổi chưa lưu. Bạn có muốn hủy bỏ những thay đổi này không?'),
+          content: const Text(
+            'Bạn có thay đổi chưa lưu. Bạn có muốn hủy bỏ những thay đổi này không?',
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -660,44 +696,122 @@ class DiaryScreenState extends State<DiaryScreen> {
       },
     );
   }
-  
-  void _saveTodo() {
-    if (_titleController.text.isEmpty && _contentController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Vui lòng nhập nội dung nhật ký'),
-          backgroundColor: _activeColor,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          action: SnackBarAction(
-            label: 'OK',
-            textColor: Colors.white,
-            onPressed: () {},
-          ),
-        ),
+
+  void _saveTodo() async {
+    if (_contentController.text.isEmpty) {
+      showDialog(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title: Text('Thiếu nội dung'),
+              content: Text('Vui lòng nhập nội dung nhật ký!'),
+              actions: [
+                TextButton(
+                  child: Text('OK'),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
       );
       return;
     }
-    
-    // Hiển thị thông báo thành công
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Đã lưu nhật ký thành công'),
-        backgroundColor: _activeColor,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        action: SnackBarAction(
-          label: 'OK',
-          textColor: Colors.white,
-          onPressed: () {},
-        ),
+
+    final moodList = ["😊", "😍", "❤️", "😎", "😴"];
+    final mood = moodList[_selectedMoodIndex];
+    Map<String, dynamic> diaryData = {
+      "content": _contentController.text,
+      "mood": mood,
+      "color": selectedColor,
+      "created_at": FieldValue.serverTimestamp(),
+      "date": DateTime(
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+        _selectedTime.hour,
+        _selectedTime.minute,
       ),
-    );
-    
-    Navigator.of(context).pop();
+    };
+
+    try {
+      if (widget.docId != null) {
+        await FirebaseFirestore.instance
+            .collection('diaries')
+            .doc(widget.docId)
+            .update(diaryData);
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder:
+                (context) => AlertDialog(
+                  content: Row(
+                    children: [
+                      Icon(Icons.check_circle, color: Colors.green),
+                      SizedBox(width: 12),
+                      Text('Cập nhật nhật ký thành công!'),
+                    ],
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  actions: [
+                    TextButton(
+                      child: Text('Đóng'),
+                      onPressed: () {
+                        Navigator.of(context).pop(); // Đóng dialog
+                        Navigator.of(context).pop(); // Đóng màn sửa
+                      },
+                    ),
+                  ],
+                ),
+          );
+        }
+      } else {
+        await FirebaseFirestore.instance.collection('diaries').add(diaryData);
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder:
+                (context) => AlertDialog(
+                  content: Row(
+                    children: [
+                      Icon(Icons.check_circle, color: Colors.green),
+                      SizedBox(width: 12),
+                      Text('Lưu nhật ký thành công!'),
+                    ],
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  actions: [
+                    TextButton(
+                      child: Text('Đóng'),
+                      onPressed: () {
+                        Navigator.of(context).pop(); // Đóng dialog
+                        Navigator.of(context).pop(); // Đóng màn thêm
+                      },
+                    ),
+                  ],
+                ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: Text('Lỗi'),
+                content: Text('Không thể lưu nhật ký: $e'),
+                actions: [
+                  TextButton(
+                    child: Text('OK'),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+        );
+      }
+    }
   }
 }
