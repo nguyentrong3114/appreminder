@@ -140,13 +140,23 @@ class DiaryScreenState extends State<DiaryScreen> {
         }
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return Center(
-            child: Text(
-              "Không có nhật ký trong tháng này.",
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.black54,
-                fontWeight: FontWeight.w500,
-              ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset(
+                  'assets/images/cat_relaxation.png', 
+                  height: 100,
+                ),
+                SizedBox(height: 18),
+                Text(
+                  "Không có nhật ký trong tháng này.",
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.black54,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           );
         }

@@ -599,6 +599,10 @@ class TodoState extends State<Todo> {
                       ],
                     ),
                   ),
+                  Image.asset(
+                    'assets/images/holidays.png', 
+                    height: 100,
+                  ),
                 ],
               ),
             ),
@@ -686,7 +690,6 @@ class TodoState extends State<Todo> {
   Widget _buildDiaryContent() {
     return DiaryScreen();
   }
-
 }
 
 Widget buildNavItem(IconData icon, String label, bool isSelected) {
