@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // Import thư viện định dạng ngày tháng
 
+void main() {
+  runApp(
+    MaterialApp(debugShowCheckedModeBanner: false, home: AddEventScreen()),
+  );
+}
+
 class AddEventScreen extends StatefulWidget {
   @override
   _AddEventScreenState createState() => _AddEventScreenState();

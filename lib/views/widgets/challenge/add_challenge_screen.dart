@@ -35,8 +35,8 @@ class AddChallengeScreen extends StatelessWidget {
             Text(
               'Tạo riêng cho bạn',
               style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+                fontSize: 20,
+                fontWeight: FontWeight.w600, // Semi-bold, not as bold as w700
                 color: Colors.black87,
               ),
             ),
@@ -101,7 +101,7 @@ class AddChallengeScreen extends StatelessWidget {
               'Hoặc chọn từ những danh mục này',
               style: TextStyle(
                 fontSize: 18,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w600,
                 color: Colors.black87,
               ),
             ),
@@ -237,11 +237,11 @@ class OptionTile extends StatelessWidget {
             color: Colors.green.withOpacity(0.2),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, color: Colors.green, size: 24),
+          child: Icon(icon, color: Color(0xFF4FCA9C), size: 24),
         ),
         title: Text(
           title,
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
         ),
         trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
         onTap: onTap,
@@ -289,7 +289,7 @@ class CategoryCard extends StatelessWidget {
               alignment: Alignment.topRight,
               child: Text(
                 title,
-                style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 25, fontWeight: FontWeight.w500),
                 textAlign: TextAlign.right,
               ),
             ),

@@ -29,7 +29,7 @@ class HealthyEatingScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.green),
+          icon: Icon(Icons.arrow_back, color: Colors.orange.shade200),
           onPressed: () => Navigator.pop(context),
         ),
       ),
