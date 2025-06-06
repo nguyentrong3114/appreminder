@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_app/theme/app_colors.dart';
 import 'package:flutter_app/services/auth_service.dart';
 import 'package:flutter_app/views/shared/login_screen.dart';
-
+import 'package:flutter_app/views/widgets/Home/week_day_calendar.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,58 +19,33 @@ class _HomeScreenState extends State<HomeScreen> {
   DateTime selectedDate = DateTime.now();
   int selectedTab = 0;
   int selectedDayIndex = 0;
-  int selectedWeekIndex = 0;
+
+  List<CalendarEvent> allEvents = [
+    CalendarEvent(
+      title: "Cuộc họp nhóm phát triển ứng dụng Flutter siêu dài...",
+      startTime: DateTime(2025, 6, 1, 8, 0),
+      endTime: DateTime(2025, 6, 1, 9, 0),
+      description: "Thảo luận dự án Flutter, phân chia công việc, cập nhật tiến độ...",
+      location: "Phòng họp A",
+    ),
+    CalendarEvent(
+      title: "Tập Gym",
+      startTime: DateTime(2025, 6, 1, 10, 0),
+      endTime: DateTime(2025, 6, 1, 12, 0),
+      description: "Luyện tập thể lực tại phòng gym trung tâm",
+      location: "California Fitness",
+    ),
+    CalendarEvent(
+      title: "Đi siêu thị",
+      startTime: DateTime(2025, 6, 2, 20, 0),
+      endTime: DateTime(2025, 6, 2, 21, 0),
+      description: "Mua đồ dùng gia đình, thực phẩm, vật dụng cá nhân...",
+      location: "Vinmart",
+    ),
+  ];
+
   final AuthService _authService = AuthService();
-
   final List<String> tabTitles = ["Tháng", "Danh Sách", "Tuần", "Ngày"];
-
-  // Dummy data, replace with your real data source
-  final Map<String, List<Map<String, String>>> allEvents = {
-    "1": [
-      {
-        "title": "Cuộc họp nhóm phát triển ứng dụng Flutter siêu dài...",
-        "description": "Thảo luận dự án Flutter, phân chia công việc, cập nhật tiến độ...",
-        "weekDay": "T2",
-        "time": "8:00 - 9:00",
-      },
-      {
-        "title": "Tập Gym",
-        "description": "Luyện tập thể lực tại phòng gym trung tâm",
-        "weekDay": "T2",
-        "time": "10:00 - 12:00",
-      },
-    ],
-    "2": [
-      {
-        "title": "Đi siêu thị",
-        "description": "Mua đồ dùng gia đình, thực phẩm, vật dụng cá nhân...",
-        "weekDay": "T3",
-        "time": "20:00 - 21:00",
-      },
-      {
-        "title": "Học tiếng Anh",
-        "description": "Ôn luyện từ vựng và ngữ pháp",
-        "weekDay": "T3",
-        "time": "18:00 - 19:00",
-      },
-    ],
-    "5": [
-      {
-        "title": "Xem phim",
-        "description": "Thư giãn cuối tuần cùng bạn bè tại rạp",
-        "weekDay": "T6",
-        "time": "20:00 - 21:00",
-      },
-    ],
-    "10": [
-      {
-        "title": "Sinh nhật mẹ",
-        "description": "Chuẩn bị quà và tổ chức tiệc sinh nhật",
-        "weekDay": "CN",
-        "time": "Cả ngày",
-      },
-    ],
-  };
 
   Future<void> _logout(BuildContext context) async {
     await _authService.signOut();
@@ -90,8 +65,21 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showAddEventDialog() {
     showDialog(
       context: context,
-      builder: (context) => AddEventWidget(selectedDate: selectedDate),
+      builder: (context) => AddEventWidget(
+        selectedDate: selectedDate,
+        onAdd: (event) {
+          setState(() => allEvents.add(event as CalendarEvent));
+        },
+      ),
     );
+  }
+
+  List<CalendarEvent> eventsOfDay(DateTime date) {
+    return allEvents.where((e) =>
+      e.startTime.year == date.year &&
+      e.startTime.month == date.month &&
+      e.startTime.day == date.day
+    ).toList();
   }
 
   @override
@@ -112,11 +100,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             Text(
               DateFormat('MM yyyy', 'vi').format(selectedDate),
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.text,
-              ),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.text),
             ),
             IconButton(
               icon: const Icon(Icons.arrow_forward, color: AppColors.primary),
@@ -134,7 +118,6 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: _showAddEventDialog,
           ),
           IconButton(icon: const Icon(Icons.menu, color: AppColors.secondary), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.search, color: AppColors.secondary), onPressed: () {}),
         ],
       ),
       body: Column(
@@ -194,16 +177,48 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMonthView() {
+    // Convert List<CalendarEvent> to Map<String, List<Map<String, String>>>
+    Map<String, List<Map<String, String>>> eventsMap = {};
+    for (var event in allEvents) {
+      String dateKey = DateFormat('yyyy-MM-dd').format(event.startTime);
+      eventsMap.putIfAbsent(dateKey, () => []);
+      eventsMap[dateKey]!.add({
+        'title': event.title,
+        'description': event.description,
+        'location': event.location,
+        'startTime': DateFormat('HH:mm').format(event.startTime),
+        'endTime': DateFormat('HH:mm').format(event.endTime),
+      });
+    }
+
     return ListCalendar(
       selectedDate: selectedDate,
       onDateSelected: (date) => setState(() => selectedDate = date),
+      allEvents: eventsMap,
     );
   }
 
   Widget _buildListView() {
-    final eventDays = allEvents.keys.toList()..sort((a, b) => int.parse(a).compareTo(int.parse(b)));
-    final currentIndex = (selectedDayIndex >= 0 && selectedDayIndex < eventDays.length) ? selectedDayIndex : 0;
-    final events = allEvents[eventDays[currentIndex]] ?? [];
+    // Lấy danh sách các ngày có sự kiện (dạng DateTime, không chỉ lấy day để tránh trùng ngày khác tháng/năm)
+    final eventDays = allEvents
+        .map((e) => DateTime(e.startTime.year, e.startTime.month, e.startTime.day))
+        .toSet()
+        .toList()
+      ..sort((a, b) => a.compareTo(b));
+
+    final currentIndex = (selectedDayIndex >= 0 && selectedDayIndex < eventDays.length)
+        ? selectedDayIndex
+        : 0;
+
+    final currentDay = eventDays.isNotEmpty ? eventDays[currentIndex] : null;
+
+    final events = currentDay != null
+        ? allEvents.where((e) =>
+            e.startTime.year == currentDay.year &&
+            e.startTime.month == currentDay.month &&
+            e.startTime.day == currentDay.day)
+        .toList()
+        : [];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -222,25 +237,25 @@ class _HomeScreenState extends State<HomeScreen> {
                     return ListTile(
                       leading: const Icon(Icons.event, color: AppColors.primary),
                       title: Text(
-                        _shorten(event["title"] ?? ""),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.text,
-                        ),
+                        _shorten(event.title),
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.text),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
                       ),
                       subtitle: Text(
-                        _shorten(event["description"] ?? ""),
+                        _shorten(event.description),
                         style: const TextStyle(color: AppColors.text),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
                       ),
                       trailing: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text(event["weekDay"] ?? "", style: const TextStyle(fontSize: 12, color: AppColors.secondary)),
-                          Text(event["time"] ?? "", style: const TextStyle(fontSize: 12, color: AppColors.secondary)),
+                          Text(DateFormat('dd/MM/yyyy').format(event.startTime)),
+                          Text("${DateFormat('HH:mm').format(event.startTime)} - ${DateFormat('HH:mm').format(event.endTime)}"),
+                          if (event.location.isNotEmpty)
+                            Text(event.location, style: const TextStyle(fontSize: 12, color: AppColors.secondary)),
                         ],
                       ),
                     );
@@ -257,7 +272,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildDaySelector(List<String> eventDays, int currentIndex) {
+  Widget _buildDaySelector(List<DateTime> eventDays, int currentIndex) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
@@ -277,7 +292,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               child: Text(
-                "Ngày ${eventDays[index]}",
+                DateFormat("dd/MM").format(eventDays[index]),
                 style: TextStyle(
                   color: isSelected ? Colors.white : AppColors.text,
                   fontWeight: FontWeight.w600,
@@ -295,11 +310,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildDayView() {
-    return const Center(
-      child: Text(
-        "Lịch Ngày",
-        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.text),
-      ),
+    final events = eventsOfDay(selectedDate);
+    return WeekDayCalendar(
+      selectedDate: selectedDate,
+      events: events,
     );
   }
 

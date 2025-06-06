@@ -1,22 +1,28 @@
 import 'dart:ui';
 
 class CalendarEvent {
-  String title;
-  DateTime startTime;
-  DateTime endTime;
-  String description;
-  Color color;
-  String url;
-  String location;
+  final String title;
+  final String detail;
+  final String location;
+  final String description;
+  final DateTime startTime;
+  final DateTime endTime;
+  final bool allDay;
+  final bool reminder;
+  final bool alarmReminder;
+
   CalendarEvent({
     required this.title,
+    required this.detail,
+    required this.location,
+    required this.description,
     required this.startTime,
     required this.endTime,
-    this.description = '',
-    this.url = '',
-    this.location = '',
-    this.color = const Color(0xFF4CD080),
+    required this.allDay,
+    required this.reminder,
+    required this.alarmReminder,
   });
+
 
   @override
   String toString() {

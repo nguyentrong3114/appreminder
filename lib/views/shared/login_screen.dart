@@ -5,10 +5,16 @@ import 'package:flutter_app/views/shared/register_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_app/views/shared/fogotpassword_screen.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final AuthService _authService = AuthService();
+  bool _obscurePassword = true;
 
   @override
   Widget build(BuildContext context) {
@@ -86,10 +92,19 @@ class LoginScreen extends StatelessWidget {
                   const Text("Password"),
                   TextField(
                     controller: passwordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      suffixIcon: Icon(Icons.visibility_off),
-                      enabledBorder: UnderlineInputBorder(),
+                    obscureText: _obscurePassword,
+                    decoration: InputDecoration(
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
+                      enabledBorder: const UnderlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -147,10 +162,38 @@ class LoginScreen extends StatelessWidget {
                           try {
                             final user = await _authService.signInWithEmail(email, password);
                             if (user != null) {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(builder: (context) => MainScreen()),
-                              );
+                              await user.reload(); // Đảm bảo trạng thái mới nhất
+                              if (user.emailVerified) {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => MainScreen()),
+                                );
+                              } else {
+                                // Show dialog to ask user to verify email
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Kích hoạt tài khoản'),
+                                    content: const Text('Tài khoản của bạn chưa được kích hoạt. Vui lòng kiểm tra email (bao gồm cả mục spam) để xác thực tài khoản.'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () async {
+                                          await user.sendEmailVerification();
+                                          Navigator.pop(context);
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text('Đã gửi lại email xác thực!')),
+                                          );
+                                        },
+                                        child: const Text('Gửi lại email xác thực'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: const Text('Đóng'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text('Sai username hoặc password')),

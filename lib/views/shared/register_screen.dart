@@ -3,11 +3,19 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_app/services/auth_service.dart';
 import 'package:flutter_app/views/shared/login_screen.dart';
 
-class RegisterScreen extends StatelessWidget {
+class RegisterScreen extends StatefulWidget {
+  @override
+  State<RegisterScreen> createState() => _RegisterScreenState();
+}
+
+class _RegisterScreenState extends State<RegisterScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
   final AuthService _authService = AuthService();
+
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   Widget build(BuildContext context) {
@@ -88,10 +96,19 @@ class RegisterScreen extends StatelessWidget {
                   const Text("Password"),
                   TextField(
                     controller: passwordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      suffixIcon: Icon(Icons.visibility_off),
-                      enabledBorder: UnderlineInputBorder(),
+                    obscureText: _obscurePassword,
+                    decoration: InputDecoration(
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
+                      enabledBorder: const UnderlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -99,10 +116,19 @@ class RegisterScreen extends StatelessWidget {
                   const Text("Confirm Password"),
                   TextField(
                     controller: confirmPasswordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      suffixIcon: Icon(Icons.visibility_off),
-                      enabledBorder: UnderlineInputBorder(),
+                    obscureText: _obscureConfirmPassword,
+                    decoration: InputDecoration(
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscureConfirmPassword = !_obscureConfirmPassword;
+                          });
+                        },
+                      ),
+                      enabledBorder: const UnderlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 30),
@@ -152,8 +178,9 @@ class RegisterScreen extends StatelessWidget {
                           try {
                             final user = await _authService.signUpWithEmail(email, password);
                             if (user != null) {
+                              await user.sendEmailVerification(); // Gửi email xác thực
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Đăng ký thành công!')),
+                                const SnackBar(content: Text('Đăng ký thành công! Vui lòng kiểm tra email để kích hoạt tài khoản.')),
                               );
                               Navigator.pushReplacement(
                                 context,
@@ -167,18 +194,30 @@ class RegisterScreen extends StatelessWidget {
                           } on FirebaseAuthException catch (e) {
                             String message = 'Đăng ký thất bại';
                             if (e.code == 'email-already-in-use') {
-                              message = 'Email đã được sử dụng';
+                              message = 'Email này đã được đăng ký. Vui lòng dùng email khác.';
                             } else if (e.code == 'invalid-email') {
-                              message = 'Email không hợp lệ';
+                              message = 'Email không hợp lệ.';
                             } else if (e.code == 'weak-password') {
-                              message = 'Mật khẩu quá yếu';
+                              message = 'Mật khẩu quá yếu. Vui lòng chọn mật khẩu mạnh hơn.';
+                            } else if (e.message != null && e.message!.isNotEmpty) {
+                              message = e.message!;
                             }
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(message)),
+                              SnackBar(
+                                content: Text(message),
+                                backgroundColor: Colors.redAccent,
+                                behavior: SnackBarBehavior.floating,
+                                margin: const EdgeInsets.all(16),
+                              ),
                             );
                           } catch (e) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Có lỗi xảy ra, vui lòng thử lại sau')),
+                              const SnackBar(
+                                content: Text('Có lỗi xảy ra, vui lòng thử lại sau'),
+                                backgroundColor: Colors.redAccent,
+                                behavior: SnackBarBehavior.floating,
+                                margin: EdgeInsets.all(16),
+                              ),
                             );
                           }
                         },

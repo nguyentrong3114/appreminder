@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_app/models/Calendar.dart';
 
 class AddEventWidget extends StatefulWidget {
   final DateTime selectedDate;
+  final void Function(CalendarEvent event) onAdd;
 
-  const AddEventWidget({required this.selectedDate, super.key});
+  const AddEventWidget({
+    required this.selectedDate,
+    required this.onAdd,
+    super.key,
+  });
 
   @override
   State<AddEventWidget> createState() => _AddEventWidgetState();
@@ -84,10 +90,10 @@ class _AddEventWidgetState extends State<AddEventWidget> {
                       child: AbsorbPointer(
                         absorbing: allDay,
                         child: TextFormField(
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'Bắt đầu',
-                            border: const OutlineInputBorder(),
-                            prefixIcon: const Icon(Icons.access_time),
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.access_time),
                           ),
                           controller: TextEditingController(
                             text: allDay
@@ -164,8 +170,34 @@ class _AddEventWidgetState extends State<AddEventWidget> {
         ElevatedButton(
           onPressed: () {
             if (_formKey.currentState!.validate()) {
-              // TODO: Xử lý lưu sự kiện ở đây
+              final now = DateTime.now();
+              final DateTime start = allDay
+                  ? DateTime(widget.selectedDate.year, widget.selectedDate.month,
+                      widget.selectedDate.day, 0, 0)
+                  : DateTime(widget.selectedDate.year, widget.selectedDate.month,
+                      widget.selectedDate.day, _startTime?.hour ?? now.hour, _startTime?.minute ?? now.minute);
+
+              final DateTime end = allDay
+                  ? DateTime(widget.selectedDate.year, widget.selectedDate.month,
+                      widget.selectedDate.day, 23, 59)
+                  : DateTime(widget.selectedDate.year, widget.selectedDate.month,
+                      widget.selectedDate.day, _endTime?.hour ?? now.hour, _endTime?.minute ?? now.minute);
+
+              final event = CalendarEvent(
+                title: _titleController.text.trim(),
+                detail: _detailController.text.trim(),
+                location: _locationController.text.trim(),
+                startTime: start,
+                endTime: end,
+                allDay: allDay,
+                reminder: reminder,
+                alarmReminder: alarmReminder,
+                description: '',
+              );
+
+              widget.onAdd(event);
               Navigator.pop(context);
+
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Đã thêm sự kiện!')),
               );

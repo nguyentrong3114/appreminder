@@ -58,4 +58,15 @@ class AuthService {
       return null;
     }
   }
+
+  // Gửi email đặt lại mật khẩu (quên mật khẩu)
+  Future<bool> sendPasswordResetEmail(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+      return true;
+    } catch (e) {
+      print('Lỗi gửi email đặt lại mật khẩu: $e');
+      return false;
+    }
+  }
 }
