@@ -1,38 +1,85 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_app/theme/app_colors.dart';
 
-class ListCalendar extends StatelessWidget {
-  final Function(DateTime) onDateSelected;
-  final DateTime selectedDate;
+/// Lịch dạng lưới cuộn ngang, tự quản lý trạng thái ngày được chọn.
+class ListCalendar extends StatefulWidget {
+  /// Map<dayString, List<event>>
   final Map<String, List<Map<String, String>>> allEvents;
 
-  const ListCalendar({
-    required this.onDateSelected,
-    required this.selectedDate,
-    required this.allEvents,
-    super.key,
-  });
+  /// Gọi khi người dùng chọn ngày mới (tùy chọn).
+  final void Function(DateTime)? onDateSelected;
 
-  static const List<String> weekDays = [
-    'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'
-  ];
+  /// Gọi khi double-tap vào ô ngày (tùy chọn) – thường để thêm sự kiện.
+  final void Function(DateTime)? onAddEvent;
+
+  /// Ngày được chọn ban đầu, mặc định là hôm nay.
+  final DateTime initialDate;
+
+  ListCalendar({
+    super.key,
+    required this.allEvents,
+    this.onDateSelected,
+    this.onAddEvent,
+    DateTime? initialDate, required DateTime selectedDate,
+  }) : initialDate = initialDate ?? DateTime.now();
+
+  @override
+  State<ListCalendar> createState() => _ListCalendarState();
+}
+
+class _ListCalendarState extends State<ListCalendar> {
+  static const List<String> _weekDays = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+
+  late DateTime _selectedDate;
+
+  /// Danh sách tất cả ô (bao gồm ô trống) trong tháng hiện tại.
+  late List<DateTime> _daysInView;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDate = widget.initialDate;
+    _daysInView = _generateDaysForMonth(_selectedDate);
+  }
+
+  @override
+  void didUpdateWidget(covariant ListCalendar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Nếu cha gửi xuống tháng khác, cập nhật lại.
+    if (!_isSameMonth(oldWidget.initialDate, widget.initialDate)) {
+      _selectedDate = widget.initialDate;
+      _daysInView = _generateDaysForMonth(_selectedDate);
+    }
+  }
+
+  bool _isSameMonth(DateTime a, DateTime b) => a.year == b.year && a.month == b.month;
+
+  /// Tạo list DateTime chứa cả các ô rỗng đầu tháng.
+  List<DateTime> _generateDaysForMonth(DateTime date) {
+    final firstDay = DateTime(date.year, date.month, 1);
+    final totalDays = DateUtils.getDaysInMonth(date.year, date.month);
+    final leadingEmpty = firstDay.weekday - 1; // số ô trống đầu tuần
+    return List<DateTime>.generate(
+      leadingEmpty + totalDays,
+      (i) => i < leadingEmpty ? DateTime(0) : DateTime(date.year, date.month, i - leadingEmpty + 1),
+      growable: false,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final firstDayOfMonth = DateTime(selectedDate.year, selectedDate.month, 1);
-    final daysInMonth = DateUtils.getDaysInMonth(selectedDate.year, selectedDate.month);
     final today = DateTime.now();
-
     final double gridWidth = MediaQuery.of(context).size.width * 1.5;
 
-    return Expanded(
+    return Scrollbar(
+      thumbVisibility: true,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: SizedBox(
           width: gridWidth,
           child: Column(
             children: [
-              // Dòng tiêu đề thứ/ngày trong tuần
+              // Hàng tiêu đề thứ/ngày
               Row(
                 children: List.generate(7, (index) {
                   final isSunday = index == 6;
@@ -46,73 +93,52 @@ class ListCalendar extends StatelessWidget {
                         ),
                       ),
                       child: Text(
-                        weekDays[index],
+                        _weekDays[index],
+                        textAlign: TextAlign.center,
                         style: TextStyle(
                           color: isSunday ? AppColors.error : AppColors.text,
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
                         ),
-                        textAlign: TextAlign.center,
                       ),
                     ),
                   );
                 }),
               ),
+              const SizedBox(height: 4),
+              // Lưới ngày
               Expanded(
                 child: GridView.builder(
-                  physics: const NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  padding: const EdgeInsets.all(10),
+                  scrollDirection: Axis.vertical,
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 7,
                     mainAxisSpacing: 8,
                     crossAxisSpacing: 8,
                     childAspectRatio: 0.8,
                   ),
-                  itemCount: daysInMonth + firstDayOfMonth.weekday - 1,
+                  itemCount: _daysInView.length,
                   itemBuilder: (context, index) {
-                    if (index < firstDayOfMonth.weekday - 1) {
-                      return const SizedBox.shrink();
-                    }
-                    final day = index - firstDayOfMonth.weekday + 2;
-                    final date = DateTime(selectedDate.year, selectedDate.month, day);
-                    final isSelected = DateUtils.isSameDay(date, selectedDate);
-                    final isToday = DateUtils.isSameDay(date, today);
+                    final date = _daysInView[index];
+                    if (date.year == 0) return const SizedBox.shrink(); // ô trống
 
-                    String dayKey = day.toString();
-                    final events = allEvents[dayKey] ?? [];
+                    final day = date.day;
+                    final isSelected = DateUtils.isSameDay(date, _selectedDate);
+                    final isToday = DateUtils.isSameDay(date, today);
+                    final events = widget.allEvents[day.toString()] ?? [];
 
                     return GestureDetector(
-                      onTap: () => onDateSelected(date),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
-                        decoration: BoxDecoration(
-                          color: isSelected ? AppColors.primary : Colors.transparent,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: isSelected ? AppColors.primary : Colors.grey.shade300,
-                            width: 1,
-                          ),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Text(
-                              '$day',
-                              style: TextStyle(
-                                color: isSelected
-                                    ? Colors.white
-                                    : isToday
-                                        ? AppColors.secondary // Ngày hiện tại sẽ có màu nổi bật
-                                        : AppColors.text,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                              ),
-                            ),
-                            if (events.isNotEmpty)
-                              ..._buildEventTitles(events, isSelected),
-                          ],
-                        ),
+                      onTap: () {
+                        setState(() => _selectedDate = date);
+                        widget.onDateSelected?.call(date);
+                      },
+                      onDoubleTap: () => widget.onAddEvent?.call(date),
+                      child: _DayCell(
+                        day: day,
+                        date: date,
+                        events: events,
+                        isSelected: isSelected,
+                        isToday: isToday,
+                        onAddEvent: widget.onAddEvent,
                       ),
                     );
                   },
@@ -124,51 +150,88 @@ class ListCalendar extends StatelessWidget {
       ),
     );
   }
+}
 
-  List<Widget> _buildEventTitles(List<Map<String, String>> events, bool isSelected) {
-    List<Widget> widgets = [];
-    int maxShow = 2;
-    for (int i = 0; i < events.length && i < maxShow; i++) {
-      widgets.add(
-        Padding(
-          padding: const EdgeInsets.only(top: 2),
-          child: Text(
-            _shorten(events[i]['title'] ?? ''),
-            style: TextStyle(
-              color: isSelected ? Colors.white : AppColors.secondary,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
-            textAlign: TextAlign.center,
+/// Widget ô ngày riêng để tránh build toàn lưới.
+class _DayCell extends StatefulWidget {
+  final int day;
+  final DateTime date;
+  final List<Map<String, String>> events;
+  final bool isSelected;
+  final bool isToday;
+  final void Function(DateTime)? onAddEvent;
+
+  const _DayCell({
+    required this.day,
+    required this.date,
+    required this.events,
+    required this.isSelected,
+    required this.isToday,
+    this.onAddEvent,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  State<_DayCell> createState() => _DayCellState();
+}
+
+class _DayCellState extends State<_DayCell> {
+  bool _isHovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovering = true),
+      onExit: (_) => setState(() => _isHovering = false),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+        decoration: BoxDecoration(
+          color: widget.isSelected ? AppColors.primary.withOpacity(0.08) : null,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: widget.isSelected ? AppColors.primary : Colors.grey.shade300,
+            width: widget.isSelected ? 2 : 1,
           ),
         ),
-      );
-    }
-    if (events.length > maxShow) {
-      widgets.add(
-        Padding(
-          padding: const EdgeInsets.only(top: 2),
-          child: Text(
-            '+${events.length - maxShow} sự kiện',
-            style: TextStyle(
-              color: isSelected ? Colors.white : AppColors.error,
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
+        child: Stack(
+          children: [
+            Column(
+              children: [
+                Text(
+                  '${widget.day}',
+                  style: TextStyle(
+                    color: widget.isToday
+                        ? AppColors.secondary
+                        : widget.isSelected
+                            ? AppColors.primary
+                            : AppColors.text,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                // ...hiển thị sự kiện nếu muốn...
+              ],
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-          ),
+            if (_isHovering)
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: GestureDetector(
+                  onTap: () => widget.onAddEvent?.call(widget.date),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    padding: const EdgeInsets.all(2),
+                    child: const Icon(Icons.add, color: Colors.white, size: 16),
+                  ),
+                ),
+              ),
+          ],
         ),
-      );
-    }
-    return widgets;
-  }
-
-  String _shorten(String text, {int max = 14}) {
-    if (text.length <= max) return text;
-    return text.substring(0, max - 3) + '...';
+      ),
+    );
   }
 }
+

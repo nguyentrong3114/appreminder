@@ -98,9 +98,16 @@ class _HomeScreenState extends State<HomeScreen> {
               icon: const Icon(Icons.arrow_back, color: AppColors.primary),
               onPressed: () => _changeMonth(-1),
             ),
-            Text(
-              DateFormat('MM yyyy', 'vi').format(selectedDate),
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.text),
+            Builder(
+              builder: (context) {
+                final is2025 = selectedDate.year == 2025;
+                final monthStr = 'Tháng ${selectedDate.month}';
+                final title = is2025 ? monthStr : '$monthStr/${selectedDate.year}';
+                return Text(
+                  title,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.text),
+                );
+              },
             ),
             IconButton(
               icon: const Icon(Icons.arrow_forward, color: AppColors.primary),
