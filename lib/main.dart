@@ -26,25 +26,27 @@ void main() async {
       theme: ThemeData(primarySwatch: Colors.blue),
       home: LoginScreen(),
       routes: {
+        '/main': (context) => MainScreen(), // Thêm route cho MainScreen
+        '/login': (context) => LoginScreen(), // Thêm route cho LoginScreen
         '/add_todo': (context) => TodoScreen(),
         '/add_setting': (context) => SettingsPage(),
         '/add_regular_habit':
             (context) => RegularHabitScreen(
-              initialStartDate: ChallengeScreen.selectedDate,
+              initialStartDate: ChallengeScreen.selectedDate ?? DateTime.now(),
               formattedStartDate: DateFormat(
                 'MMMM d, yyyy',
                 'vi_VN',
-              ).format(ChallengeScreen.selectedDate),
+              ).format(ChallengeScreen.selectedDate ?? DateTime.now()),
             ),
         '/add_events_home': (context) => AddSomethingToday(),
         '/add_challenge': (context) => AddChallengeScreen(),
         '/add_onetime_task':
             (context) => OnetimeTask(
-              initialStartDate: ChallengeScreen.selectedDate,
+              initialStartDate: ChallengeScreen.selectedDate ?? DateTime.now(),
               formattedStartDate: DateFormat(
                 'MMMM d, yyyy',
                 'vi_VN',
-              ).format(ChallengeScreen.selectedDate),
+              ).format(ChallengeScreen.selectedDate ?? DateTime.now()),
             ),
       },
     ),
@@ -55,7 +57,10 @@ class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
   @override
-  _MainScreenState createState() => _MainScreenState();
+  _MainScreenState createState() {
+    print("Tạo MainScreenState");
+    return _MainScreenState();
+  }
 }
 
 class _MainScreenState extends State<MainScreen> {
@@ -67,6 +72,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
+    print("MainScreen initState");
     _screens = [
       HomeScreen(),
       Todo(key: todoKey),
@@ -109,8 +115,8 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    print("MainScreen build");
     return Scaffold(
-      //kh reload
       body: IndexedStack(index: _selectedIndex, children: _screens),
       extendBody: true,
       bottomNavigationBar: BottomAppBar(
@@ -173,9 +179,10 @@ class _MainScreenState extends State<MainScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>  TodoScreen(
-                           initialStartDate: todoState.selectedDate
-                        ),
+                        builder:
+                            (context) => TodoScreen(
+                              initialStartDate: todoState.selectedDate,
+                            ),
                       ),
                     );
                   } else if (todoState.selectedTab == 1) {
@@ -222,36 +229,7 @@ class _MainScreenState extends State<MainScreen> {
                     transitionDuration: const Duration(milliseconds: 300),
                   ),
                 );
-                // abc
               } else if (_selectedIndex == 3) {
-                // Navigator.push(
-                //   context,
-                //   PageRouteBuilder(
-                //     pageBuilder:
-                //         (context, animation, secondaryAnimation) =>
-                //             SettingsPage(),
-                //     transitionsBuilder: (
-                //       context,
-                //       animation,
-                //       secondaryAnimation,
-                //       child,
-                //     ) {
-                //       const begin = Offset(1.0, 0.0);
-                //       const end = Offset.zero;
-                //       const curve = Curves.ease;
-                //       final tween = Tween(
-                //         begin: begin,
-                //         end: end,
-                //       ).chain(CurveTween(curve: curve));
-                //       return SlideTransition(
-                //         position: animation.drive(tween),
-                //         child: child,
-                //       );
-                //     },
-                //     transitionDuration: const Duration(milliseconds: 300),
-                //   ),
-                // );
-                // demo chuyển màn hình bằng route
                 Navigator.pushNamed(context, '/add_setting');
               } else {
                 Navigator.push(
@@ -260,11 +238,15 @@ class _MainScreenState extends State<MainScreen> {
                     pageBuilder:
                         (context, animation, secondaryAnimation) =>
                             RegularHabitScreen(
-                              initialStartDate: ChallengeScreen.selectedDate,
+                              initialStartDate:
+                                  ChallengeScreen.selectedDate ??
+                                  DateTime.now(),
                               formattedStartDate: DateFormat(
                                 'MMMM d, yyyy',
                                 'vi_VN',
-                              ).format(ChallengeScreen.selectedDate),
+                              ).format(
+                                ChallengeScreen.selectedDate ?? DateTime.now(),
+                              ),
                             ),
                     transitionsBuilder: (
                       context,

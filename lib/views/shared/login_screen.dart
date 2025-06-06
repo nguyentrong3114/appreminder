@@ -96,7 +96,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     decoration: InputDecoration(
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
                         ),
                         onPressed: () {
                           setState(() {
@@ -140,68 +142,84 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         borderRadius: BorderRadius.circular(25),
                       ),
-                      child: TextButton(
+                      child: // Thay thế phần xử lý đăng nhập trong LoginScreen
+                      // Thay thế phần xử lý đăng nhập trong LoginScreen
+                      TextButton(
                         onPressed: () async {
                           final email = emailController.text.trim();
                           final password = passwordController.text.trim();
 
-                          // Kiểm tra định dạng email
                           if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(email)) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Email không hợp lệ')),
+                              const SnackBar(
+                                content: Text('Email không hợp lệ'),
+                              ),
                             );
                             return;
                           }
                           if (email.isEmpty || password.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Vui lòng nhập đầy đủ thông tin')),
+                              const SnackBar(
+                                content: Text('Vui lòng nhập đầy đủ thông tin'),
+                              ),
                             );
                             return;
                           }
 
                           try {
-                            final user = await _authService.signInWithEmail(email, password);
+                            print('Bắt đầu xử lý đăng nhập...');
+
+                            final user = await _authService.signInWithEmail(
+                              email,
+                              password,
+                            );
+
                             if (user != null) {
-                              await user.reload(); // Đảm bảo trạng thái mới nhất
-                              if (user.emailVerified) {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => MainScreen()),
+                              print('User không null, tiến hành reload...');
+                              await user.reload();
+
+                              print('Đã reload, bắt đầu navigation...');
+                              print('Context mounted: ${mounted}');
+
+                              if (mounted) {
+                                print(
+                                  'Context vẫn mounted, thực hiện navigation',
                                 );
+
+                                try {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) {
+                                        print('Đang build MainScreen...');
+                                        return MainScreen();
+                                      },
+                                    ),
+                                  );
+                                  print('Navigation completed!');
+                                } catch (navError) {
+                                  print('Lỗi navigation: $navError');
+                                }
                               } else {
-                                // Show dialog to ask user to verify email
-                                showDialog(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text('Kích hoạt tài khoản'),
-                                    content: const Text('Tài khoản của bạn chưa được kích hoạt. Vui lòng kiểm tra email (bao gồm cả mục spam) để xác thực tài khoản.'),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () async {
-                                          await user.sendEmailVerification();
-                                          Navigator.pop(context);
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(content: Text('Đã gửi lại email xác thực!')),
-                                          );
-                                        },
-                                        child: const Text('Gửi lại email xác thực'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(context),
-                                        child: const Text('Đóng'),
-                                      ),
-                                    ],
-                                  ),
-                                );
+                                print('Context không còn mounted!');
                               }
                             } else {
+                              print('User null - đăng nhập thất bại');
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Sai username hoặc password')),
+                                const SnackBar(
+                                  content: Text('Sai email hoặc mật khẩu'),
+                                ),
                               );
                             }
                           } catch (e) {
+                            print('Exception trong quá trình đăng nhập: $e');
+                            print('Stack trace: ${StackTrace.current}');
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Sai username hoặc password')),
+                              const SnackBar(
+                                content: Text(
+                                  'Có lỗi xảy ra, vui lòng thử lại',
+                                ),
+                              ),
                             );
                           }
                         },
@@ -236,13 +254,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         onPressed: () async {
                           final user = await _authService.signInWithGoogle();
                           if (user != null) {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(builder: (context) => MainScreen()),
-                            );
+                            Navigator.pushReplacementNamed(context, '/main');
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Đăng nhập Google thất bại')),
+                              SnackBar(
+                                content: Text('Đăng nhập Google thất bại'),
+                              ),
                             );
                           }
                         },

@@ -7,10 +7,17 @@ class AuthService {
   // Đăng nhập bằng email và password
   Future<User?> signInWithEmail(String email, String password) async {
     try {
+      print('Bắt đầu đăng nhập với email: $email');
+
       UserCredential result = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
+
+      print('Đăng nhập thành công!');
+      print('User ID: ${result.user?.uid}');
+      print('Email verified: ${result.user?.emailVerified}');
+
       return result.user;
     } catch (e) {
       print('Lỗi đăng nhập email: $e');
@@ -21,10 +28,16 @@ class AuthService {
   // Đăng nhập bằng Google
   Future<User?> signInWithGoogle() async {
     try {
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) return null;
+      print('Bắt đầu đăng nhập Google');
 
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) {
+        print('Google sign-in bị hủy');
+        return null;
+      }
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
 
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
@@ -32,6 +45,10 @@ class AuthService {
       );
 
       UserCredential result = await _auth.signInWithCredential(credential);
+
+      print('Đăng nhập Google thành công!');
+      print('User ID: ${result.user?.uid}');
+
       return result.user;
     } catch (e) {
       print('Lỗi đăng nhập Google: $e');
@@ -59,7 +76,7 @@ class AuthService {
     }
   }
 
-  // Gửi email đặt lại mật khẩu (quên mật khẩu)
+  // Gửi email đặt lại mật khẩu
   Future<bool> sendPasswordResetEmail(String email) async {
     try {
       await _auth.sendPasswordResetEmail(email: email);
