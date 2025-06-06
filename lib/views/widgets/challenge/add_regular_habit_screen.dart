@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'dart:math';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../../../models/habit.dart';
 // Import habit service (nếu bạn tạo file service)
 import '../../../services/habit_service.dart';
@@ -59,16 +57,8 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
     return icon.codePoint.toString();
   }
 
-  IconData _stringToIcon(String iconString) {
-    return IconData(int.parse(iconString));
-  }
-
   String _colorToString(Color color) {
     return color.value.toString();
-  }
-
-  Color _stringToColor(String colorString) {
-    return Color(int.parse(colorString));
   }
 
   List<String> _timeOfDayListToStringList(List<TimeOfDay> times) {

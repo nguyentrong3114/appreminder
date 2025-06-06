@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_app/views/widgets/manage/add_notes_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class NotesScreen extends StatefulWidget {
   const NotesScreen({super.key});
@@ -20,45 +22,143 @@ class NotesScreenState extends State<NotesScreen> {
   }
 
   Widget _buildNotesList() {
-    // Empty state with cat illustration
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Image.asset(
-          //   'assets/images/cat_notes.png', // Make sure to add this image to your assets
-          //   width: 120,
-          //   height: 120,
-          // ),
-          SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(
-                  Icons.add_circle,
-                  color: Color(0xFF4CD6A8),
-                  size: 28,
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const AddNoteScreen(),
-                    ),
-                  );
-                },
-              ),
+    final user = FirebaseAuth.instance.currentUser;
 
-              const Text(
-                "Thêm ghi chú ở đây",
-                style: TextStyle(color: Color(0xFF4CD6A8), fontSize: 16),
+    if (user == null) {
+      return Center(
+        child: Text(
+          'Bạn chưa đăng nhập.',
+          style: TextStyle(fontSize: 16, color: Colors.grey),
+        ),
+      );
+    }
+
+    return StreamBuilder<QuerySnapshot>(
+      stream:
+          FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .collection('notes')
+              .orderBy('isPinned', descending: true)
+              .orderBy('updatedAt', descending: true)
+              .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          // Không có note nào
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Image.asset('assets/images/cat_notes.png', width: 120, height: 120), // Uncomment nếu có ảnh
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      icon: const Icon(
+                        Icons.add_circle,
+                        color: Color(0xFF4CD6A8),
+                        size: 28,
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AddNoteScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    const Text(
+                      "Thêm ghi chú ở đây",
+                      style: TextStyle(color: Color(0xFF4CD6A8), fontSize: 16),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        }
+
+        final notes = snapshot.data!.docs;
+
+        return ListView.separated(
+          padding: const EdgeInsets.all(16),
+          itemCount: notes.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            final note = notes[index].data() as Map<String, dynamic>;
+            final title = note['title'] ?? '';
+            final content = note['content'] ?? '';
+            final isPinned = note['isPinned'] ?? false;
+            final noteColor =
+                note['color'] != null ? Color(note['color']) : Colors.white;
+            final updatedAt =
+                (note['updatedAt'] != null && note['updatedAt'] is Timestamp)
+                    ? (note['updatedAt'] as Timestamp).toDate()
+                    : null;
+
+            return Material(
+              color: noteColor,
+              borderRadius: BorderRadius.circular(18),
+              elevation: isPinned ? 3 : 1,
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 12,
+                ),
+                leading:
+                    isPinned
+                        ? const Icon(Icons.push_pin, color: Colors.orange)
+                        : null,
+                title: Text(
+                  title.isEmpty ? "(Không có tiêu đề)" : title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 17,
+                  ),
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (content.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: Text(
+                          content,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
+                    if (updatedAt != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text(
+                          'Cập nhật: ${_formatTime(updatedAt)}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                onTap: () {},
               ),
-            ],
-          ),
-        ],
-      ),
+            );
+          },
+        );
+      },
     );
+  }
+
+  String _formatTime(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} '
+        '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 
   Widget buildNavItem(IconData icon, String label, bool isSelected) {
