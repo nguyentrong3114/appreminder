@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_app/main.dart';
+import 'package:flutter_app/services/auth_service.dart';
 import 'package:flutter_app/views/shared/register_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_app/views/shared/fogotpassword_screen.dart';
@@ -7,6 +8,7 @@ import 'package:flutter_app/views/shared/fogotpassword_screen.dart';
 class LoginScreen extends StatelessWidget {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  final AuthService _authService = AuthService();
 
   @override
   Widget build(BuildContext context) {
@@ -124,13 +126,41 @@ class LoginScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(25),
                       ),
                       child: TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => MainScreen(),
-                            ),
-                          );
+                        onPressed: () async {
+                          final email = emailController.text.trim();
+                          final password = passwordController.text.trim();
+
+                          // Kiểm tra định dạng email
+                          if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(email)) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Email không hợp lệ')),
+                            );
+                            return;
+                          }
+                          if (email.isEmpty || password.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Vui lòng nhập đầy đủ thông tin')),
+                            );
+                            return;
+                          }
+
+                          try {
+                            final user = await _authService.signInWithEmail(email, password);
+                            if (user != null) {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(builder: (context) => MainScreen()),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Sai username hoặc password')),
+                              );
+                            }
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Sai username hoặc password')),
+                            );
+                          }
                         },
                         child: const Text(
                           "LOGIN",
@@ -153,25 +183,25 @@ class LoginScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // fb api 
-                      IconButton(
-                        icon: const Icon(
-                          FontAwesomeIcons.facebook,
-                          color: Color(0xFF1877F2),
-                          size: 32,
-                        ),
-                        onPressed: () {},
-                      ),
-                      const SizedBox(width: 20),
-
-                      // gg api
+                      // fb api
                       IconButton(
                         icon: const FaIcon(
                           FontAwesomeIcons.google,
                           color: Colors.red,
                           size: 28,
                         ),
-                        onPressed: () {
+                        onPressed: () async {
+                          final user = await _authService.signInWithGoogle();
+                          if (user != null) {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (context) => MainScreen()),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Đăng nhập Google thất bại')),
+                            );
+                          }
                         },
                       ),
                     ],

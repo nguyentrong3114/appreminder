@@ -73,4 +73,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'appreminder-4a06d.firebasestorage.app',
     measurementId: 'G-W405VL847Z',
   );
+
 }

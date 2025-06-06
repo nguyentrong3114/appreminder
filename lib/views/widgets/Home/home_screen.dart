@@ -1,6 +1,8 @@
 import 'package:intl/intl.dart';
 import 'list_calendar_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_app/services/auth_service.dart';
+import 'package:flutter_app/views/shared/login_screen.dart';
 import 'package:flutter_app/views/widgets/Home/week_selector.dart';
 import 'package:flutter_app/views/widgets/Home/event_calendar.dart';
 import 'package:flutter_app/views/widgets/Home/week_view_calendar.dart';
@@ -20,6 +22,8 @@ class _HomeScreenState extends State<HomeScreen> {
   int selectedIndex = 0;
   int selectedDayIndex = 0;
   int selectedWeekIndex = 3;
+  final AuthService _authService = AuthService();
+
   void _onDateSelected(DateTime date) {
     setState(() {
       selectedDate = date;
@@ -89,11 +93,25 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _logout(BuildContext context) async {
+    await _authService.signOut();
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => LoginScreen()),
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: const Icon(Icons.star),
+        leading: IconButton(
+          icon: const Icon(Icons.logout_outlined),
+          onPressed: () async {
+            await _logout(context);
+          },
+        ),
         actions: [
           IconButton(onPressed: () {}, icon: const Icon(Icons.menu)),
           IconButton(onPressed: () {}, icon: const Icon(Icons.search)),
