@@ -1,276 +1,179 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_app/views/widgets/home/bottom_selected_time.dart';
 
 class AddEventWidget extends StatefulWidget {
   final DateTime selectedDate;
 
-  AddEventWidget({required this.selectedDate});
+  const AddEventWidget({required this.selectedDate, super.key});
 
   @override
-  _AddEventWidgetState createState() => _AddEventWidgetState();
+  State<AddEventWidget> createState() => _AddEventWidgetState();
 }
 
 class _AddEventWidgetState extends State<AddEventWidget> {
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _detailController = TextEditingController();
+  final TextEditingController _locationController = TextEditingController();
+  TimeOfDay? _startTime;
+  TimeOfDay? _endTime;
   bool allDay = false;
   bool reminder = false;
   bool alarmReminder = false;
-  late DateTime selectedDate;
-  List<String> selectedTime = ["Đúng giờ", "15 phút trước"];
-  final List<String> options = [
-    "Đúng giờ",
-    "15 phút trước",
-    "30 phút trước",
-    "1 giờ trước",
-    "2 giờ trước",
-    "6 giờ trước",
-    "12 giờ trước",
-    "1 ngày trước",
-    "2 ngày trước",
-    "1 tuần trước",
-  ];
-  List<Color> colors = [
-    const Color(0xFF4CD080), // Green
-    const Color(0xFFFFBE55), // Yellow/Orange
-    const Color(0xFFFF6B81), // Pink
-    const Color(0xFF8F9BFF), // Purple/Blue
-    const Color(0xFFFF8A65), // Orange
-    Colors.black,
-  ];
-  Color selectedColor = const Color(0xFF4CD080); // Màu mặc định
-  @override
-  void initState() {
-    super.initState();
-    selectedDate = widget.selectedDate;
-  }
-
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: selectedDate,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-    );
-
-    if (picked != null) {
-      setState(() {
-        selectedDate = picked;
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("Thêm sự kiện")),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-            left: 16,
-            right: 16,
-            top: 10,
-          ),
+    return AlertDialog(
+      title: const Text('Thêm sự kiện'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Thanh tiêu đề
+              Text(
+                'Ngày: ${widget.selectedDate.day}/${widget.selectedDate.month}/${widget.selectedDate.year}',
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _titleController,
+                decoration: const InputDecoration(
+                  labelText: 'Tên sự kiện',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.title),
+                ),
+                validator: (value) =>
+                    value == null || value.trim().isEmpty ? 'Nhập tên sự kiện' : null,
+              ),
+              const SizedBox(height: 10),
+              TextFormField(
+                controller: _detailController,
+                decoration: const InputDecoration(
+                  labelText: 'Chi tiết',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.notes),
+                ),
+                minLines: 1,
+                maxLines: 3,
+              ),
+              const SizedBox(height: 10),
+              TextFormField(
+                controller: _locationController,
+                decoration: const InputDecoration(
+                  labelText: 'Địa điểm',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.location_on),
+                ),
+              ),
+              const SizedBox(height: 10),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconButton(
-                    icon: Icon(Icons.close, color: selectedColor),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  Text(
-                    "Tạo Sự Kiện Mới",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.check, color: selectedColor),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                  ),
-                ],
-              ),
-              SizedBox(height: 10),
-              // Nhập tiêu đề
-              TextField(
-                autofocus: true,
-                textCapitalization: TextCapitalization.characters,
-                decoration: InputDecoration(
-                  focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: selectedColor, width: 2.0),
-                  ),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(
-                      color: const Color.fromARGB(255, 62, 63, 62),
-                      width: 2.0,
-                    ),
-                  ),
-                  hintText: "Tiêu đề",
-                  hintStyle: TextStyle(
-                    color: Colors.grey,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  border: InputBorder.none,
-                ),
-              ),
-              TextField(
-                autofocus: true,
-                decoration: InputDecoration(
-                  focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: selectedColor, width: 2.0),
-                  ),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(
-                      color: const Color.fromARGB(255, 62, 63, 62),
-                      width: 2.0,
-                    ),
-                  ),
-                  hintText: "Nội dung",
-                  hintStyle: TextStyle(
-                    color: Colors.grey,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  border: InputBorder.none,
-                ),
-              ),
-              // Cài đặt Cả ngày
-              SwitchListTile(
-                title: Text(
-                  "Cả ngày",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                secondary: Icon(Icons.access_time, color: selectedColor),
-                value: allDay,
-                onChanged: (value) => setState(() => allDay = value),
-              ),
-
-              // Chọn ngày
-              ListTile(
-                leading: Icon(Icons.calendar_today, color: selectedColor),
-                title: Text(
-                  "${selectedDate.day}/${selectedDate.month}/${selectedDate.year}",
-                ),
-                onTap: () => _selectDate(context),
-              ),
-              Divider(),
-
-              // Cài đặt Nhắc nhở
-              SwitchListTile(
-                title: Text(
-                  "Cài đặt nhắc nhở",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                secondary: Icon(
-                  Icons.notifications_active,
-                  color: selectedColor,
-                ),
-                value: reminder,
-                onChanged: (value) => setState(() => reminder = value),
-              ),
-              if (reminder)
-                Column(
-                  children: [
-                    ...selectedTime.map(
-                      (time) => ListTile(
-                        leading: Icon(Icons.access_time, color: selectedColor),
-                        title: Text(time, style: TextStyle(fontSize: 16)),
-                        trailing: IconButton(
-                          icon: Icon(Icons.remove_circle, color: selectedColor),
-                          onPressed: () {
-                            setState(() {
-                              selectedTime.remove(time);
-                            });
-                          },
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: allDay
+                          ? null
+                          : () async {
+                              final picked = await showTimePicker(
+                                context: context,
+                                initialTime: _startTime ?? TimeOfDay.now(),
+                              );
+                              if (picked != null) {
+                                setState(() => _startTime = picked);
+                              }
+                            },
+                      child: AbsorbPointer(
+                        absorbing: allDay,
+                        child: TextFormField(
+                          decoration: InputDecoration(
+                            labelText: 'Bắt đầu',
+                            border: const OutlineInputBorder(),
+                            prefixIcon: const Icon(Icons.access_time),
+                          ),
+                          controller: TextEditingController(
+                            text: allDay
+                                ? 'Cả ngày'
+                                : _startTime != null
+                                    ? _startTime!.format(context)
+                                    : '',
+                          ),
+                          enabled: false,
                         ),
                       ),
                     ),
-                    ListTile(
-                      leading: Icon(Icons.add, color: selectedColor),
-                      title: Text("Thêm thời gian nhắc nhở"),
-                      onTap: () async {
-                        final List<String> remainingOptions =
-                            options
-                                .where(
-                                  (option) => !selectedTime.contains(option),
-                                )
-                                .toList();
-
-                        if (remainingOptions.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text("Không còn thời gian nào để chọn!"),
-                            ),
-                          );
-                          return;
-                        }
-
-                        final String? pickedTime =
-                            await showModalBottomSheet<String>(
-                              isScrollControlled: true,
-                              context: context,
-                              builder: (BuildContext context) {
-                                return BottomPopup(
-                                  listToSelected: remainingOptions,
-                                );
-                              },
-                            );
-
-                        if (pickedTime != null) {
-                          setState(() {
-                            selectedTime.add(pickedTime);
-                          });
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              // Nhắc nhở báo thức
-              SwitchListTile(
-                title: Text(
-                  "Nhắc nhở báo thức",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                secondary: Icon(Icons.alarm, color: selectedColor),
-                value: alarmReminder,
-                onChanged: (value) => setState(() => alarmReminder = value),
-              ),
-              Divider(),
-              ListTile(
-                leading: Icon(Icons.color_lens, color: selectedColor),
-                title: Text("Màu sắc sự kiện"),
-                trailing: Wrap(
-                  spacing: 5,
-                  children: List.generate(colors.length, (index) {
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          selectedColor = colors[index];
-                        });
-                      },
-                      child: CircleAvatar(
-                        radius: 12,
-                        backgroundColor: colors[index],
-                        child:
-                            selectedColor == colors[index]
-                                ? Icon(
-                                  Icons.check,
-                                  color: Colors.white,
-                                  size: 14,
-                                )
-                                : null,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: allDay
+                          ? null
+                          : () async {
+                              final picked = await showTimePicker(
+                                context: context,
+                                initialTime: _endTime ?? TimeOfDay.now(),
+                              );
+                              if (picked != null) {
+                                setState(() => _endTime = picked);
+                              }
+                            },
+                      child: AbsorbPointer(
+                        absorbing: allDay,
+                        child: TextFormField(
+                          decoration: const InputDecoration(
+                            labelText: 'Kết thúc',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.access_time),
+                          ),
+                          controller: TextEditingController(
+                            text: allDay
+                                ? 'Cả ngày'
+                                : _endTime != null
+                                    ? _endTime!.format(context)
+                                    : '',
+                          ),
+                          enabled: false,
+                        ),
                       ),
-                    );
-                  }),
-                ),
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(height: 10),
+              CheckboxListTile(
+                value: allDay,
+                onChanged: (v) => setState(() => allDay = v ?? false),
+                title: const Text('Cả ngày'),
+              ),
+              CheckboxListTile(
+                value: reminder,
+                onChanged: (v) => setState(() => reminder = v ?? false),
+                title: const Text('Nhắc nhở'),
+              ),
+              CheckboxListTile(
+                value: alarmReminder,
+                onChanged: (v) => setState(() => alarmReminder = v ?? false),
+                title: const Text('Báo thức'),
+              ),
             ],
           ),
         ),
       ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Hủy'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            if (_formKey.currentState!.validate()) {
+              // TODO: Xử lý lưu sự kiện ở đây
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Đã thêm sự kiện!')),
+              );
+            }
+          },
+          child: const Text('Lưu'),
+        ),
+      ],
     );
   }
 }

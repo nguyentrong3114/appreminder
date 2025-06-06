@@ -1,97 +1,76 @@
+import 'add_event.dart';
 import 'package:intl/intl.dart';
+import 'week_view_calendar.dart';
 import 'list_calendar_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_app/theme/app_colors.dart';
 import 'package:flutter_app/services/auth_service.dart';
 import 'package:flutter_app/views/shared/login_screen.dart';
-import 'package:flutter_app/views/widgets/Home/week_selector.dart';
-import 'package:flutter_app/views/widgets/Home/event_calendar.dart';
-import 'package:flutter_app/views/widgets/Home/week_view_calendar.dart';
-import 'package:flutter_app/views/widgets/Home/renctangle_calender.dart';
+
 
 class HomeScreen extends StatefulWidget {
-  static DateTime selectedDate = DateTime.now();
-
   const HomeScreen({super.key});
-  
-  _HomeScreenState createState() => _HomeScreenState();
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
   DateTime selectedDate = DateTime.now();
-  final List<String> items = ["Tháng", "Danh Sách", "Tuần", "Ngày"];
-  int selectedIndex = 0;
+  int selectedTab = 0;
   int selectedDayIndex = 0;
-  int selectedWeekIndex = 3;
+  int selectedWeekIndex = 0;
   final AuthService _authService = AuthService();
 
-  void _onDateSelected(DateTime date) {
-    setState(() {
-      selectedDate = date;
-    });
-  }
+  final List<String> tabTitles = ["Tháng", "Danh Sách", "Tuần", "Ngày"];
 
-  void _onDaySelected(int index) {
-    setState(() {
-      selectedDayIndex = index;
-    });
-  }
-
-  // Hàm cập nhật tháng
-  void _changeMonth(int step) {
-    setState(() {
-      int newMonth = selectedDate.month + step;
-      int newYear = selectedDate.year;
-
-      if (newMonth > 12) {
-        newYear += (newMonth - 1) ~/ 12;
-        newMonth = (newMonth - 1) % 12 + 1;
-      } else if (newMonth < 1) {
-        newYear += (newMonth ~/ 12) - 1;
-        newMonth = 12 + (newMonth % 12);
-      }
-
-      selectedDate = DateTime(newYear, newMonth, 1);
-    });
-  }
-
-  Widget _buildTabBar() {
-    return Container(
-      height: 50,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: ListView.builder(
-        shrinkWrap: true,
-        scrollDirection: Axis.horizontal,
-        itemCount: items.length,
-        itemBuilder: (context, index) {
-          bool isSelected = selectedIndex == index;
-          return GestureDetector(
-            onTap:
-                () => setState(
-                  () => selectedIndex = index,
-                ), 
-            child: Container(
-              height: 50,
-              margin: const EdgeInsets.symmetric(horizontal: 6),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: isSelected ? Colors.blue : Colors.grey[300],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Center(
-                child: Text(
-                  items[index],
-                  style: TextStyle(
-                    color: isSelected ? Colors.white : Colors.black,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
+  // Dummy data, replace with your real data source
+  final Map<String, List<Map<String, String>>> allEvents = {
+    "1": [
+      {
+        "title": "Cuộc họp nhóm phát triển ứng dụng Flutter siêu dài...",
+        "description": "Thảo luận dự án Flutter, phân chia công việc, cập nhật tiến độ...",
+        "weekDay": "T2",
+        "time": "8:00 - 9:00",
+      },
+      {
+        "title": "Tập Gym",
+        "description": "Luyện tập thể lực tại phòng gym trung tâm",
+        "weekDay": "T2",
+        "time": "10:00 - 12:00",
+      },
+    ],
+    "2": [
+      {
+        "title": "Đi siêu thị",
+        "description": "Mua đồ dùng gia đình, thực phẩm, vật dụng cá nhân...",
+        "weekDay": "T3",
+        "time": "20:00 - 21:00",
+      },
+      {
+        "title": "Học tiếng Anh",
+        "description": "Ôn luyện từ vựng và ngữ pháp",
+        "weekDay": "T3",
+        "time": "18:00 - 19:00",
+      },
+    ],
+    "5": [
+      {
+        "title": "Xem phim",
+        "description": "Thư giãn cuối tuần cùng bạn bè tại rạp",
+        "weekDay": "T6",
+        "time": "20:00 - 21:00",
+      },
+    ],
+    "10": [
+      {
+        "title": "Sinh nhật mẹ",
+        "description": "Chuẩn bị quà và tổ chức tiệc sinh nhật",
+        "weekDay": "CN",
+        "time": "Cả ngày",
+      },
+    ],
+  };
 
   Future<void> _logout(BuildContext context) async {
     await _authService.signOut();
@@ -102,46 +81,68 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _changeMonth(int step) {
+    setState(() {
+      selectedDate = DateTime(selectedDate.year, selectedDate.month + step, 1);
+    });
+  }
+
+  void _showAddEventDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AddEventWidget(selectedDate: selectedDate),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.logout_outlined),
-          onPressed: () async {
-            await _logout(context);
-          },
+          icon: const Icon(Icons.logout_outlined, color: AppColors.primary),
+          onPressed: () => _logout(context),
         ),
-        actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.menu)),
-          IconButton(onPressed: () {}, icon: const Icon(Icons.search)),
-        ],
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              icon: const Icon(Icons.arrow_back),
+              icon: const Icon(Icons.arrow_back, color: AppColors.primary),
               onPressed: () => _changeMonth(-1),
             ),
             Text(
               DateFormat('MM yyyy', 'vi').format(selectedDate),
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.text,
+              ),
             ),
             IconButton(
-              icon: const Icon(Icons.arrow_forward),
+              icon: const Icon(Icons.arrow_forward, color: AppColors.primary),
               onPressed: () => _changeMonth(1),
             ),
           ],
         ),
         centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 1,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add, color: AppColors.secondary),
+            tooltip: "Thêm sự kiện",
+            onPressed: _showAddEventDialog,
+          ),
+          IconButton(icon: const Icon(Icons.menu, color: AppColors.secondary), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.search, color: AppColors.secondary), onPressed: () {}),
+        ],
       ),
       body: Column(
         children: [
           _buildTabBar(),
           Expanded(
             child: IndexedStack(
-              index: selectedIndex,
+              index: selectedTab,
               children: [
                 _buildMonthView(),
                 _buildListView(),
@@ -152,179 +153,158 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+      floatingActionButton: selectedTab == 1
+          ? FloatingActionButton(
+              backgroundColor: AppColors.primary,
+              onPressed: _showAddEventDialog,
+              child: const Icon(Icons.add, color: Colors.white),
+              tooltip: "Thêm sự kiện",
+            )
+          : null,
     );
   }
 
-  //UI
-  //Hiện toàn bộ lịch
+  Widget _buildTabBar() {
+    return Container(
+      height: 48,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: tabTitles.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final isSelected = selectedTab == index;
+          return ChoiceChip(
+            label: Text(
+              tabTitles[index],
+              style: TextStyle(
+                color: isSelected ? Colors.white : AppColors.text,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            selected: isSelected,
+            selectedColor: AppColors.primary,
+            backgroundColor: AppColors.background,
+            onSelected: (_) => setState(() => selectedTab = index),
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildMonthView() {
     return ListCalendar(
       selectedDate: selectedDate,
-      onDateSelected: _onDateSelected,
+      onDateSelected: (date) => setState(() => selectedDate = date),
     );
   }
 
-  // Menu Danh sách
-
   Widget _buildListView() {
-    Map<String, List<Map<String, String>>> allEvents = {
-      "1": [
-        {
-          "title": "Cuộc họp nhóm",
-          "description": "Thảo luận dự án Flutter",
-          "weekDay": "T2",
-          "time": "8 a.m - 9 a.m",
-        },
-        {
-          "title": "Tập Gym",
-          "description": "Luyện tập thể lực",
-          "weekDay": "T2",
-          "time": "10 a.m - 12 p.m",
-        },
-      ],
-      "2": [
-        {
-          "title": "Đi siêu thị",
-          "description": "Mua đồ dùng gia đình",
-          "weekDay": "T3",
-          "time": "8 a.m - 9 p.m",
-        },
-      ],
-      "5": [
-        {
-          "title": "Xem phim",
-          "description": "Thư giãn cuối tuần",
-          "weekDay": "T6",
-          "time": "8 a.m - 9 p.m",
-        },
-      ],
-    };
-
-    List<String> eventDays =
-        allEvents.keys.toList()
-          ..sort((a, b) => int.parse(a).compareTo(int.parse(b)));
-
-    int currentIndex =
-        (selectedDayIndex >= 0 && selectedDayIndex < eventDays.length)
-            ? selectedDayIndex
-            : 0;
-
-    List<Map<String, String>> events = allEvents[eventDays[currentIndex]] ?? [];
-
-    int dayNumber = int.parse(eventDays[currentIndex]);
-    DateTime selectedEventDate = DateTime(
-      selectedDate.year,
-      selectedDate.month,
-      dayNumber,
-    );
+    final eventDays = allEvents.keys.toList()..sort((a, b) => int.parse(a).compareTo(int.parse(b)));
+    final currentIndex = (selectedDayIndex >= 0 && selectedDayIndex < eventDays.length) ? selectedDayIndex : 0;
+    final events = allEvents[eventDays[currentIndex]] ?? [];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 18),
-
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DaySelector(
-            allEvents: allEvents,
-            selectedIndex: currentIndex,
-            onSelected: (index) {
-              setState(() {
-                selectedDayIndex = index;
-              });
-            },
-          ),
-        ),
-
+        const SizedBox(height: 12),
+        _buildDaySelector(eventDays, currentIndex),
         const SizedBox(height: 10),
-
-        if (events.isNotEmpty)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  "Sự Kiện Hôm Nay",
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+        Expanded(
+          child: events.isNotEmpty
+              ? ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  itemCount: events.length,
+                  separatorBuilder: (_, __) => const Divider(),
+                  itemBuilder: (context, idx) {
+                    final event = events[idx];
+                    return ListTile(
+                      leading: const Icon(Icons.event, color: AppColors.primary),
+                      title: Text(
+                        _shorten(event["title"] ?? ""),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.text,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                      subtitle: Text(
+                        _shorten(event["description"] ?? ""),
+                        style: const TextStyle(color: AppColors.text),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                      trailing: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(event["weekDay"] ?? "", style: const TextStyle(fontSize: 12, color: AppColors.secondary)),
+                          Text(event["time"] ?? "", style: const TextStyle(fontSize: 12, color: AppColors.secondary)),
+                        ],
+                      ),
+                    );
+                  },
+                )
+              : const Center(
+                  child: Text(
+                    "Không có sự kiện nào trong ngày này",
+                    style: TextStyle(fontSize: 16, color: AppColors.text),
                   ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                height: 160,
-                child: EventCalendar(date: selectedEventDate, events: events),
-              ),
-            ],
-          )
-        else
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-            child: Text(
-              "Không có sự kiện nào trong ngày này",
-              style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-            ),
-          ),
+        ),
       ],
     );
   }
 
-  //Menu Tuần
-  Widget _buildWeekView() {
-    Map<String, List<String>> _generateWeeks() {
-      DateTime now = DateTime.now();
-      List<String> weeks = [];
-      List<String> months = [];
-
-      for (int i = -2; i <= 6; i++) {
-        DateTime startOfWeek = now.add(Duration(days: i * 7));
-        DateTime endOfWeek = startOfWeek.add(Duration(days: 6));
-
-        weeks.add(
-          "${DateFormat('dd').format(startOfWeek)} - ${DateFormat('dd').format(endOfWeek)}",
-        );
-
-        months.add(DateFormat('MM').format(startOfWeek));
-      }
-
-      return {'weeks': weeks, 'months': months};
-    }
-
-    final weekData = _generateWeeks();
-    final List<String> months = weekData['months']!;
-    final List<String> weeks = weekData['weeks']!;
-
-    return StatefulBuilder(
-      builder: (context, setState) {
-        void onWeekSelected(int index) {
-          setState(() {
-            selectedWeekIndex = index;
-          });
-        }
-
-        return Column(
-          children: [
-            WeekSelector(
-              months: months,
-              weeks: weeks,
-              selectedIndex: selectedWeekIndex,
-              onWeekSelected: onWeekSelected,
+  Widget _buildDaySelector(List<String> eventDays, int currentIndex) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: List.generate(eventDays.length, (index) {
+          final isSelected = currentIndex == index;
+          return GestureDetector(
+            onTap: () => setState(() => selectedDayIndex = index),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primary : AppColors.background,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isSelected ? AppColors.primary : AppColors.secondary,
+                  width: 1,
+                ),
+              ),
+              child: Text(
+                "Ngày ${eventDays[index]}",
+                style: TextStyle(
+                  color: isSelected ? Colors.white : AppColors.text,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
-            const Expanded(child: WeekView()),
-          ],
-        );
-      },
+          );
+        }),
+      ),
     );
   }
 
+  Widget _buildWeekView() {
+    return const WeekView();
+  }
+
   Widget _buildDayView() {
-    return Center(
+    return const Center(
       child: Text(
         "Lịch Ngày",
-        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.text),
       ),
     );
+  }
+
+  String _shorten(String text, {int max = 28}) {
+    if (text.length <= max) return text;
+    return text.substring(0, max - 3) + '...';
   }
 }

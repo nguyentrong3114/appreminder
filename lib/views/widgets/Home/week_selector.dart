@@ -1,82 +1,41 @@
 import 'package:flutter/material.dart';
 
-class WeekSelector extends StatefulWidget {
+class WeekSelector extends StatelessWidget {
   final List<String> weeks;
   final int selectedIndex;
   final ValueChanged<int> onWeekSelected;
 
-  final List<String> months;
-
   const WeekSelector({
-    Key? key,
     required this.weeks,
-    required this.months,
     required this.selectedIndex,
     required this.onWeekSelected,
-  }) : super(key: key);
+    super.key,
+  });
 
-  @override
-  State<WeekSelector> createState() => _WeekSelectorState();
-}
-
-class _WeekSelectorState extends State<WeekSelector> {
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 90,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: widget.weeks.length,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        itemBuilder: (context, index) {
-          final isSelected = index == widget.selectedIndex;
-          return GestureDetector(
-            onTap: () => widget.onWeekSelected(index),
-            child: Container(
-              alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-              decoration: BoxDecoration(
-                color:
-                    isSelected ? Colors.green.shade600 : Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow:
-                    isSelected
-                        ? [
-                          BoxShadow(
-                            color: Colors.green.withOpacity(0.3),
-                            blurRadius: 6,
-                            offset: const Offset(0, 3),
-                          ),
-                        ]
-                        : [],
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    widget.weeks[index],
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.normal,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    "Thg ${widget.months[index]}",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.normal,
-                    ),
-                  ),
-                ],
+    return Row(
+      children: List.generate(weeks.length, (index) {
+        final isSelected = selectedIndex == index;
+        return GestureDetector(
+          onTap: () => onWeekSelected(index),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: isSelected ? Colors.blue : Colors.grey[300],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              weeks[index],
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.black87,
+                fontWeight: FontWeight.w600,
               ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      }),
     );
   }
 }

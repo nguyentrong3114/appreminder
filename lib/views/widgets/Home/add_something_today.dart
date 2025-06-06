@@ -1,5 +1,7 @@
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
+import 'add_event.dart'; // Import màn hình thêm sự kiện nếu có
+// import 'add_note.dart'; // Nếu có màn hình thêm ghi chú
 
 class AddSomethingToday extends StatelessWidget {
   const AddSomethingToday({super.key});
@@ -7,75 +9,63 @@ class AddSomethingToday extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     DateTime today = DateTime.now();
-    String todayFormat = DateFormat(
-      'EEEE, dd MMMM yyyy, HH:mm',
-      'vi',
-    ).format(today);
+    String todayFormat = DateFormat('dd/MM/yyyy').format(today);
     return Scaffold(
-      appBar: AppBar(
-        title: Text('HÔM NAY', style: TextStyle(fontWeight: FontWeight.bold)),
-        centerTitle: true,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: Padding(
-        padding: EdgeInsets.all(16.0),
+      appBar: AppBar(title: const Text('Thêm gì hôm nay')),
+      body: Center(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              decoration: BoxDecoration(
-                color: Colors.green.shade300,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                todayFormat,
-                style: TextStyle(color: Colors.white, fontSize: 16),
-              ),
+            Text('Hôm nay: $todayFormat', style: const TextStyle(fontSize: 18)),
+            const SizedBox(height: 20),
+            _buildOption(
+              context,
+              Icons.event,
+              "Thêm sự kiện",
+              Colors.blue,
+              () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AddEventWidget(selectedDate: today),
+                );
+              },
             ),
-            SizedBox(height: 20),
-            Text(
-              'Bạn có kế hoạch gì không?',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildOption(Icons.event, 'Event', Colors.green),
-                _buildOption(Icons.check_circle, 'To do', Colors.red),
-                _buildOption(Icons.note, 'Note', Colors.orange),
-                _buildOption(Icons.edit, 'Diary', Colors.blue),
-              ],
+            _buildOption(
+              context,
+              Icons.note,
+              "Thêm ghi chú",
+              Colors.green,
+              () {
+                // Navigator.push(context, MaterialPageRoute(builder: (_) => AddNoteWidget(selectedDate: today)));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Chức năng đang phát triển!')),
+                );
+              },
             ),
           ],
         ),
       ),
     );
   }
-}
 
-Widget _buildOption(IconData icon, String label, Color color) {
-  return GestureDetector(
-    onTap: () => {
-    },
-    child: Column(
-      children: [
-        CircleAvatar(
-          backgroundColor: color.withOpacity(0.2),
-          radius: 25,
-          child: Icon(icon, color: color, size: 28),
+  Widget _buildOption(
+    BuildContext context,
+    IconData icon,
+    String label,
+    Color color,
+    VoidCallback onPressed,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: ElevatedButton.icon(
+        icon: Icon(icon, color: Colors.white),
+        label: Text(label),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          minimumSize: const Size(180, 48),
         ),
-        SizedBox(height: 5),
-        Text(label, style: TextStyle(fontSize: 14)),
-      ],
-    ),
-  );
+        onPressed: onPressed,
+      ),
+    );
+  }
 }
