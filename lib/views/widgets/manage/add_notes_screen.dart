@@ -4,7 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class AddNoteScreen extends StatefulWidget {
-  const AddNoteScreen({super.key});
+  final DocumentSnapshot? noteDoc;
+  const AddNoteScreen({super.key, this.noteDoc});
 
   @override
   State<AddNoteScreen> createState() => _AddNoteScreenState();
@@ -16,6 +17,20 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
   final TextEditingController _contentController = TextEditingController();
   bool _isPinned = false;
   Color _noteColor = Colors.white;
+  bool get isEditMode => widget.noteDoc != null;
+  @override
+  void initState() {
+    super.initState();
+
+    // Nếu là chế độ edit, load dữ liệu hiện có
+    if (isEditMode) {
+      final data = widget.noteDoc!.data() as Map<String, dynamic>;
+      _titleController.text = data['title'] ?? '';
+      _contentController.text = data['content'] ?? '';
+      _isPinned = data['isPinned'] ?? false;
+      _noteColor = data['color'] != null ? Color(data['color']) : Colors.white;
+    }
+  }
 
   @override
   void dispose() {
@@ -39,21 +54,22 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
       backgroundColor: _noteColor,
       elevation: 0,
       systemOverlayStyle: SystemUiOverlayStyle.dark,
+      title: Text(
+        isEditMode ? 'Chỉnh sửa ghi chú' : 'Thêm ghi chú',
+      ), // Thay đổi title
       leading: IconButton(
         icon: const Icon(Icons.arrow_back),
         onPressed: () => Navigator.pop(context),
         tooltip: 'Quay lại',
       ),
       actions: [
-        IconButton(
-          icon: Icon(_isPinned ? Icons.push_pin : Icons.push_pin_outlined),
-          onPressed: () {
-            setState(() {
-              _isPinned = !_isPinned;
-            });
-          },
-          tooltip: _isPinned ? 'Bỏ ghim' : 'Ghim lên trên',
-        ),
+        // Thêm nút xóa nếu là chế độ edit
+        if (isEditMode)
+          IconButton(
+            icon: const Icon(Icons.delete, color: Colors.red),
+            onPressed: _showDeleteDialog,
+            tooltip: 'Xóa',
+          ),
       ],
     );
   }
@@ -127,6 +143,17 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
               Row(
                 children: [
                   IconButton(
+                    icon: Icon(
+                      _isPinned ? Icons.push_pin : Icons.push_pin_outlined,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isPinned = !_isPinned;
+                      });
+                    },
+                    tooltip: _isPinned ? 'Bỏ ghim' : 'Ghim lên trên',
+                  ),
+                  IconButton(
                     icon: const Icon(Icons.color_lens_outlined),
                     onPressed: _showColorPicker,
                     tooltip: 'Màu nền',
@@ -143,6 +170,58 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
         ),
       ),
     );
+  }
+
+  void _showDeleteDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Xóa ghi chú'),
+          content: const Text('Bạn có chắc chắn muốn xóa ghi chú này không?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Hủy'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _deleteNote();
+              },
+              child: const Text('Xóa', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _deleteNote() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('notes')
+          .doc(widget.noteDoc!.id)
+          .delete();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đã xóa ghi chú thành công!')),
+        );
+        Navigator.of(context).pop(true); // Return true để báo đã xóa
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Lỗi khi xóa: $e')));
+      }
+    }
   }
 
   void _showColorPicker() {
@@ -217,7 +296,6 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
     final title = _titleController.text.trim();
     final content = _contentController.text.trim();
 
-    // Lấy user hiện tại
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       await showDialog(
@@ -267,24 +345,40 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
         'updatedAt': FieldValue.serverTimestamp(),
       };
 
-      // Lưu vào users/{uid}/notes/
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('notes')
-          .add(noteData);
+      if (isEditMode) {
+        // Cập nhật note hiện có
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('notes')
+            .doc(widget.noteDoc!.id)
+            .update(noteData);
+      } else {
+        // Tạo note mới
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('notes')
+            .add(noteData);
+      }
 
       await showDialog(
         context: context,
         builder:
             (ctx) => AlertDialog(
               title: const Text('Thành công'),
-              content: const Text('Đã lưu ghi chú thành công!'),
+              content: Text(
+                isEditMode
+                    ? 'Đã cập nhật ghi chú thành công!'
+                    : 'Đã lưu ghi chú thành công!',
+              ),
               actions: [
                 TextButton(
                   onPressed: () {
                     Navigator.of(ctx).pop();
-                    Navigator.of(context).pop();
+                    Navigator.of(
+                      context,
+                    ).pop(true); // Return true để báo đã lưu
                   },
                   child: const Text('OK'),
                 ),

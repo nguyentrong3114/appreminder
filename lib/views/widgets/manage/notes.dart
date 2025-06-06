@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_app/views/widgets/manage/add_notes_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'note_detail_screen.dart';
 
 class NotesScreen extends StatefulWidget {
   const NotesScreen({super.key});
@@ -39,8 +40,6 @@ class NotesScreenState extends State<NotesScreen> {
               .collection('users')
               .doc(user.uid)
               .collection('notes')
-              .orderBy('isPinned', descending: true)
-              .orderBy('updatedAt', descending: true)
               .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -52,7 +51,7 @@ class NotesScreenState extends State<NotesScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Image.asset('assets/images/cat_notes.png', width: 120, height: 120), // Uncomment nếu có ảnh
+                Image.asset('assets/images/cat_heart.png',height: 100), 
                 const SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -147,7 +146,15 @@ class NotesScreenState extends State<NotesScreen> {
                       ),
                   ],
                 ),
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => NoteDetailScreen(noteDoc: notes[index]),
+                    ),
+                  );
+                },
               ),
             );
           },
