@@ -5,6 +5,7 @@ import 'notes.dart';
 import 'dart:math' as math;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'todo_detail_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class Todo extends StatefulWidget {
   const Todo({super.key});
@@ -472,6 +473,199 @@ class TodoState extends State<Todo> {
   }
 
   Widget _buildTaskSummary() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return const Center(
+        child: Text(
+          "Vui lòng đăng nhập để xem nhiệm vụ",
+          style: TextStyle(color: Colors.grey),
+        ),
+      );
+    }
+
+    // Xử lý logic cho từng filter
+    if (selectedFilter == 0) {
+      // Filter "Đã hết hạn" - chỉ lấy nhiệm vụ đã hết hạn và chưa hoàn thành
+      return _buildExpiredTasksView(user);
+    } else {
+      // Các filter khác (Ngày, Tuần, Tháng)
+      return _buildRegularTasksView(user);
+    }
+  }
+
+  Widget _buildExpiredTasksView(User user) {
+  DateTime now = DateTime.now();
+
+  return StreamBuilder<QuerySnapshot>(
+    stream: FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('todos')
+        .where('isDone', isEqualTo: false)
+        .snapshots(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return Center(child: CircularProgressIndicator());
+      }
+      final allTodos = snapshot.hasData ? snapshot.data!.docs : [];
+      // Lọc các nhiệm vụ đã hết hạn (endDateTime < now)
+      final expiredTodos = allTodos.where((doc) {
+        final todo = doc.data() as Map<String, dynamic>;
+        try {
+          final endDateTime = DateTime.parse(todo['endDateTime']);
+          return endDateTime.isBefore(now);
+        } catch (e) {
+          return false;
+        }
+      }).toList();
+
+      final todoCount = expiredTodos.length;
+
+      return ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          // Header thống kê
+          Container(
+            margin: const EdgeInsets.all(10),
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+            decoration: BoxDecoration(
+              color: Colors.red[400],
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 4,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Đã hết hạn",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 5),
+                      Text(
+                        "$todoCount nhiệm vụ đã hết hạn",
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.white,
+                  size: 50,
+                ),
+              ],
+            ),
+          ),
+          if (todoCount > 0)
+            ...expiredTodos.map((doc) {
+              final todo = doc.data() as Map<String, dynamic>;
+              final endDateTime = DateTime.parse(todo['endDateTime']);
+              final difference = now.difference(endDateTime);
+
+              String expiredText = "";
+              if (difference.inDays > 0) {
+                expiredText = "Hết hạn ${difference.inDays} ngày trước";
+              } else if (difference.inHours > 0) {
+                expiredText = "Hết hạn ${difference.inHours} giờ trước";
+              } else {
+                expiredText = "Hết hạn ${difference.inMinutes} phút trước";
+              }
+
+              return Card(
+                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                child: ListTile(
+                  onTap: () async {
+                    var result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => TodoDetailScreen(todo: doc),
+                      ),
+                    );
+                    if (result == 'deleted' || result == 'edited') {
+                      setState(() {});
+                    }
+                  },
+                  leading: Checkbox(
+                    value: false, // Luôn false vì chỉ hiện nhiệm vụ chưa hoàn thành
+                    activeColor: Color(0xFF4CD6A8),
+                    onChanged: (value) async {
+                      // Đánh dấu hoàn thành task
+                      await doc.reference.update({'isDone': value});
+                      setState(() {});
+                    },
+                  ),
+                  title: Text(
+                    todo['title'] ?? '',
+                    style: TextStyle(color: Colors.black),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (todo['details'] != null && todo['details'].isNotEmpty)
+                        Text(
+                          todo['details'],
+                          style: TextStyle(color: Colors.black54),
+                        ),
+                      Text(
+                        expiredText,
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (todo['reminderEnabled'] == true)
+                        const Icon(
+                          Icons.notifications_active,
+                          color: Colors.red,
+                        ),
+                      SizedBox(width: 8),
+                      Icon(
+                        Icons.warning,
+                        color: Colors.red,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          if (todoCount == 0)
+            const Padding(
+              padding: EdgeInsets.all(20),
+              child: Center(
+                child: Text(
+                  "Không có nhiệm vụ nào đã hết hạn",
+                  style: TextStyle(color: Colors.grey, fontSize: 16),
+                ),
+              ),
+            ),
+        ],
+      );
+    },
+  );
+}
+
+
+
+  Widget _buildRegularTasksView(User user) {
     DateTime start, end;
     if (selectedFilter == 1) {
       start = DateTime(
@@ -516,13 +710,13 @@ class TodoState extends State<Todo> {
     } else if (selectedFilter == 3) {
       title = "Tháng này";
       subtitle = "Tháng ${selectedDate.month}/${selectedDate.year}";
-    } else {
-      title = "Đã hết hạn";
     }
 
     return StreamBuilder<QuerySnapshot>(
       stream:
           FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
               .collection('todos')
               .where(
                 'startDateTime',
@@ -599,10 +793,7 @@ class TodoState extends State<Todo> {
                       ],
                     ),
                   ),
-                  Image.asset(
-                    'assets/images/holidays.png', 
-                    height: 100,
-                  ),
+                  Image.asset('assets/images/holidays.png', height: 100),
                 ],
               ),
             ),

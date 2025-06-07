@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_app/views/widgets/manage/add_diary_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class DiaryScreen extends StatefulWidget {
   const DiaryScreen({super.key});
@@ -122,6 +123,26 @@ class DiaryScreenState extends State<DiaryScreen> {
   }
 
   Widget _buildDiaryContent() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.person_off, size: 80, color: Colors.grey[400]),
+            SizedBox(height: 16),
+            Text(
+              "Vui lòng đăng nhập để xem nhật ký",
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     // Lấy ngày bắt đầu & kết thúc của tháng đang chọn
     final start = DateTime(currentMonth.year, currentMonth.month, 1);
     final end = DateTime(currentMonth.year, currentMonth.month + 1, 1);
@@ -129,7 +150,9 @@ class DiaryScreenState extends State<DiaryScreen> {
     return StreamBuilder<QuerySnapshot>(
       stream:
           FirebaseFirestore.instance
-              .collection('diaries')
+              .collection('users')
+              .doc(user.uid) // Truy cập document của user hiện tại
+              .collection('diaries') // Truy cập subcollection diaries
               .where('date', isGreaterThanOrEqualTo: start)
               .where('date', isLessThan: end)
               .orderBy('date', descending: true)
@@ -143,10 +166,7 @@ class DiaryScreenState extends State<DiaryScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset(
-                  'assets/images/cat_relaxation.png', 
-                  height: 100,
-                ),
+                Image.asset('assets/images/cat_relaxation.png', height: 100),
                 SizedBox(height: 18),
                 Text(
                   "Không có nhật ký trong tháng này.",
@@ -183,18 +203,37 @@ class DiaryScreenState extends State<DiaryScreen> {
             // Xử lý màu
             final colorName = data['color'] ?? "Xanh lá cây";
             final color = _colorFromName(colorName);
-
+            final moodImagePath = data['mood'] ?? "assets/images/1star.png";
             return Container(
               decoration: BoxDecoration(
                 color: color.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: color,
-                  child: Text(
-                    (data['mood'] ?? '😊').toString(),
-                    style: const TextStyle(fontSize: 22),
+                leading: Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(25),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Image.asset(
+                        moodImagePath,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          // Fallback nếu không load được hình
+                          return Icon(
+                            Icons.sentiment_satisfied,
+                            color: Colors.white,
+                            size: 24,
+                          );
+                        },
+                      ),
+                    ),
                   ),
                 ),
                 title: Text(
@@ -254,21 +293,40 @@ class DiaryScreenState extends State<DiaryScreen> {
       context: context,
       builder: (context) {
         final color = _colorFromName(data['color'] ?? "Xanh lá cây");
+        final moodImagePath = data['mood'] ?? "assets/images/1star.png";
+
         return AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
           title: Row(
             children: [
-              CircleAvatar(
-                backgroundColor: color,
-                child: Text(
-                  (data['mood'] ?? '😊').toString(),
-                  style: const TextStyle(fontSize: 22),
+              Container(
+                width: 45,
+                height: 45,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(22.5),
+                  child: Padding(
+                    padding: const EdgeInsets.all(6.0),
+                    child: Image.asset(
+                      moodImagePath,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Icon(
+                          Icons.sentiment_satisfied,
+                          color: Colors.white,
+                          size: 20,
+                        );
+                      },
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
-              Text("Chi tiết nhật ký", style: TextStyle(color: color)),
+              Expanded(
+                child: Text("Chi tiết nhật ký", style: TextStyle(color: color)),
+              ),
             ],
           ),
           content: Column(
@@ -344,6 +402,8 @@ class DiaryScreenState extends State<DiaryScreen> {
                 if (confirm == true) {
                   Navigator.pop(context);
                   await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(FirebaseAuth.instance.currentUser!.uid)
                       .collection('diaries')
                       .doc(doc.id)
                       .delete();

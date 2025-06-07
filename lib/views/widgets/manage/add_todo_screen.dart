@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class TodoScreen extends StatefulWidget {
   final DateTime? initialStartDate;
@@ -61,6 +62,10 @@ class TodoScreenState extends State<TodoScreen> {
 
   Future<void> saveTodoToFirestore() async {
     // Lấy thông tin cần lưu
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw Exception('Vui lòng đăng nhập để lưu công việc');
+    }
     String title = _titleController.text;
     String details = _detailsController.text;
     DateTime startDateTime = DateTime(
@@ -78,33 +83,36 @@ class TodoScreenState extends State<TodoScreen> {
       _endTime.minute,
     );
 
-  if (widget.todoDoc != null) {
-    // UPDATE
-    await widget.todoDoc!.reference.update({
-      'title': title,
-      'details': details,
-      'startDateTime': startDateTime.toIso8601String(),
-      'endDateTime': endDateTime.toIso8601String(),
-      'reminderEnabled': _reminderEnabled,
-      'reminderTime': _reminderEnabled ? _reminderTime : "",
-      'color': selectedColor,
-      'createdAt': DateTime.now().toIso8601String(),
-    });
-  } else {
-    // ADD
-    await FirebaseFirestore.instance.collection('todos').add({
-      'title': title,
-      'details': details,
-      'startDateTime': startDateTime.toIso8601String(),
-      'endDateTime': endDateTime.toIso8601String(),
-      'reminderEnabled': _reminderEnabled,
-      'reminderTime': _reminderEnabled ? _reminderTime : "",
-      'color': selectedColor,
-      'createdAt': DateTime.now().toIso8601String(),
-      'isDone': false,
-    });
-  }
-
+    if (widget.todoDoc != null) {
+      // UPDATE
+      await widget.todoDoc!.reference.update({
+        'title': title,
+        'details': details,
+        'startDateTime': startDateTime.toIso8601String(),
+        'endDateTime': endDateTime.toIso8601String(),
+        'reminderEnabled': _reminderEnabled,
+        'reminderTime': _reminderEnabled ? _reminderTime : "",
+        'color': selectedColor,
+        'updatedAt': DateTime.now().toIso8601String(),
+      });
+    } else {
+      // ADD
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('todos')
+          .add({
+            'title': title,
+            'details': details,
+            'startDateTime': startDateTime.toIso8601String(),
+            'endDateTime': endDateTime.toIso8601String(),
+            'reminderEnabled': _reminderEnabled,
+            'reminderTime': _reminderEnabled ? _reminderTime : "",
+            'color': selectedColor,
+            'createdAt': DateTime.now().toIso8601String(),
+            'isDone': false,
+          });
+    }
   }
 
   void _onTextChanged() {

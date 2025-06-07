@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AddDiaryScreen extends StatefulWidget {
   final Map<String, dynamic>? initData;
@@ -30,8 +31,15 @@ class DiaryScreenState extends State<AddDiaryScreen> {
     if (d != null) {
       _contentController.text = d['content'] ?? '';
       // Xác định index mood:
-      final moods = ["😊", "😍", "❤️", "😎", "😴"];
-      _selectedMoodIndex = moods.indexOf(d['mood'] ?? "😊");
+     final moodImages = [
+      "assets/images/1star.png",
+      "assets/images/2star.png", 
+      "assets/images/3star.png",
+      "assets/images/4star.png",
+      "assets/images/5star.png"
+    ];
+      _selectedMoodIndex = moodImages.indexOf(d['mood'] ?? "assets/images/1star.png");
+      if (_selectedMoodIndex == -1) _selectedMoodIndex = 0;
       selectedColor = d['color'] ?? "Xanh lá cây";
       _activeColor = _colorFromName(selectedColor);
       // Xử lý ngày/giờ
@@ -224,11 +232,11 @@ class DiaryScreenState extends State<AddDiaryScreen> {
 
   Widget _buildMoodSelection() {
     List<Map<String, dynamic>> moods = [
-      {"color": Colors.green, "icon": "😊"},
-      {"color": Colors.pink, "icon": "😍"},
-      {"color": Colors.red, "icon": "❤️"},
-      {"color": Colors.amber, "icon": "😎"},
-      {"color": Colors.blue, "icon": "😴"},
+      {"color": Colors.green, "image": "assets/images/1star.png"},
+      {"color": Colors.pink, "image": "assets/images/2star.png"},
+      {"color": Colors.red, "image": "assets/images/3star.png"},
+      {"color": Colors.amber, "image": "assets/images/4star.png"},
+      {"color": Colors.blue, "image": "assets/images/5star.png"},
     ];
 
     return Container(
@@ -260,14 +268,14 @@ class DiaryScreenState extends State<AddDiaryScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
-                    Icons.emoji_emotions_outlined,
+                    Icons.star_rate_outlined,
                     color: _activeColor,
                     size: 20,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  "Cảm xúc của bạn",
+                  "Cảm xúc hôm nay",
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -280,12 +288,10 @@ class DiaryScreenState extends State<AddDiaryScreen> {
           const Divider(height: 8),
           const SizedBox(height: 16),
 
-          // Mood selectors - responsive layout
+          // Mood selectors
           LayoutBuilder(
             builder: (context, constraints) {
-              // Calculate item width based on available width
               final double totalWidth = constraints.maxWidth;
-              // Allow each item to be responsive but with min/max size
               final double itemWidth =
                   totalWidth < 350
                       ? totalWidth / moods.length
@@ -335,7 +341,6 @@ class DiaryScreenState extends State<AddDiaryScreen> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              // Emoji with background
                               Container(
                                 width: 48,
                                 height: 48,
@@ -349,13 +354,22 @@ class DiaryScreenState extends State<AddDiaryScreen> {
                                           : Colors.grey.withOpacity(0.08),
                                 ),
                                 child: Center(
-                                  child: Text(
-                                    moods[index]["icon"],
-                                    style: const TextStyle(fontSize: 24),
+                                  child: Image.asset(
+                                    moods[index]["image"],
+                                    width: 32,
+                                    height: 32,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      // Fallback nếu không load được hình
+                                      return Icon(
+                                        Icons.star,
+                                        size: 24,
+                                        color: moods[index]["color"],
+                                      );
+                                    },
                                   ),
                                 ),
                               ),
-                              const SizedBox(height: 6),
                             ],
                           ),
                         ),
@@ -715,9 +729,33 @@ class DiaryScreenState extends State<AddDiaryScreen> {
       );
       return;
     }
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      showDialog(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title: Text('Lỗi'),
+              content: Text('Vui lòng đăng nhập để lưu nhật ký!'),
+              actions: [
+                TextButton(
+                  child: Text('OK'),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+      );
+      return;
+    }
 
-    final moodList = ["😊", "😍", "❤️", "😎", "😴"];
-    final mood = moodList[_selectedMoodIndex];
+    final moodImages = [
+    "assets/images/1star.png",
+    "assets/images/2star.png", 
+    "assets/images/3star.png",
+    "assets/images/4star.png",
+    "assets/images/5star.png"
+  ];
+    final mood = moodImages[_selectedMoodIndex];
     Map<String, dynamic> diaryData = {
       "content": _contentController.text,
       "mood": mood,
@@ -735,6 +773,8 @@ class DiaryScreenState extends State<AddDiaryScreen> {
     try {
       if (widget.docId != null) {
         await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
             .collection('diaries')
             .doc(widget.docId)
             .update(diaryData);
@@ -766,7 +806,11 @@ class DiaryScreenState extends State<AddDiaryScreen> {
           );
         }
       } else {
-        await FirebaseFirestore.instance.collection('diaries').add(diaryData);
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('diaries')
+            .add(diaryData);
         if (mounted) {
           showDialog(
             context: context,
