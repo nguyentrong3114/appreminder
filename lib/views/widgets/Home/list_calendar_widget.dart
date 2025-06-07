@@ -69,85 +69,75 @@ class _ListCalendarState extends State<ListCalendar> {
   @override
   Widget build(BuildContext context) {
     final today = DateTime.now();
-    final double gridWidth = MediaQuery.of(context).size.width * 1.5;
 
-    return Scrollbar(
-      thumbVisibility: true,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: SizedBox(
-          width: gridWidth,
-          child: Column(
-            children: [
-              // Hàng tiêu đề thứ/ngày
-              Row(
-                children: List.generate(7, (index) {
-                  final isSunday = index == 6;
-                  return Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      decoration: BoxDecoration(
-                        color: isSunday ? AppColors.error.withOpacity(0.08) : AppColors.background,
-                        border: Border(
-                          bottom: BorderSide(color: Colors.grey.shade300, width: 1),
-                        ),
-                      ),
-                      child: Text(
-                        _weekDays[index],
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: isSunday ? AppColors.error : AppColors.text,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-              ),
-              const SizedBox(height: 4),
-              // Lưới ngày
-              Expanded(
-                child: GridView.builder(
-                  scrollDirection: Axis.vertical,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 7,
-                    mainAxisSpacing: 8,
-                    crossAxisSpacing: 8,
-                    childAspectRatio: 0.8,
+    return Column(
+      children: [
+        // Hàng tiêu đề thứ/ngày
+        Row(
+          children: List.generate(7, (index) {
+            final isSunday = index == 6;
+            return Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                decoration: BoxDecoration(
+                  color: isSunday ? AppColors.error.withOpacity(0.08) : AppColors.background,
+                  border: Border(
+                    bottom: BorderSide(color: Colors.grey.shade300, width: 1),
                   ),
-                  itemCount: _daysInView.length,
-                  itemBuilder: (context, index) {
-                    final date = _daysInView[index];
-                    if (date.year == 0) return const SizedBox.shrink(); // ô trống
-
-                    final day = date.day;
-                    final isSelected = DateUtils.isSameDay(date, _selectedDate);
-                    final isToday = DateUtils.isSameDay(date, today);
-                    final events = widget.allEvents[day.toString()] ?? [];
-
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() => _selectedDate = date);
-                        widget.onDateSelected?.call(date);
-                      },
-                      onDoubleTap: () => widget.onAddEvent?.call(date),
-                      child: _DayCell(
-                        day: day,
-                        date: date,
-                        events: events,
-                        isSelected: isSelected,
-                        isToday: isToday,
-                        onAddEvent: widget.onAddEvent,
-                      ),
-                    );
-                  },
+                ),
+                child: Text(
+                  _weekDays[index],
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: isSunday ? AppColors.error : AppColors.text,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
                 ),
               ),
-            ],
+            );
+          }),
+        ),
+        const SizedBox(height: 4),
+        // Lưới ngày
+        Expanded(
+          child: GridView.builder(
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 7,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              childAspectRatio: 0.8,
+            ),
+            itemCount: _daysInView.length,
+            itemBuilder: (context, index) {
+              final date = _daysInView[index];
+              if (date.year == 0) return const SizedBox.shrink(); // ô trống
+
+              final day = date.day;
+              final isSelected = DateUtils.isSameDay(date, _selectedDate);
+              final isToday = DateUtils.isSameDay(date, today);
+              final events = widget.allEvents[day.toString()] ?? [];
+
+              return GestureDetector(
+                onTap: () {
+                  setState(() => _selectedDate = date);
+                  widget.onDateSelected?.call(date);
+                },
+                onDoubleTap: () => widget.onAddEvent?.call(date),
+                child: _DayCell(
+                  day: day,
+                  date: date,
+                  events: events,
+                  isSelected: isSelected,
+                  isToday: isToday,
+                  onAddEvent: widget.onAddEvent,
+                ),
+              );
+            },
           ),
         ),
-      ),
+      ],
     );
   }
 }
