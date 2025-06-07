@@ -44,6 +44,8 @@ dependencies:
   google_sign_in: ^6.1.0
   firebase_app_check: ^0.3.2+6
   fl_chart: ^1.0.0
+  shared_preferences: ^2.2.2
+  provider: ^6.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -47,7 +47,7 @@ class AddChallengeScreen extends StatelessWidget {
               icon: Icons.calendar_today,
               title: 'Thói quen thường xuyên',
               onTap: () {
-                // Lấy ngày đã chọn từ ChallengeScreen
+
                 DateTime selectedDate = ChallengeScreen.selectedDate;
                 String formattedDate = DateFormat(
                   'MMMM d, yyyy',

@@ -3,9 +3,13 @@ import 'package:intl/intl.dart';
 import 'week_view_calendar.dart';
 import 'list_calendar_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_app/utils/time.dart';
+import 'package:flutter_app/models/calendar.dart';
 import 'package:flutter_app/theme/app_colors.dart';
 import 'package:flutter_app/services/auth_service.dart';
 import 'package:flutter_app/views/shared/login_screen.dart';
+import 'package:flutter_app/provider/setting_provider.dart';
 import 'package:flutter_app/views/widgets/Home/week_day_calendar.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -22,25 +26,54 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<CalendarEvent> allEvents = [
     CalendarEvent(
+      id: '1',
+      userId: '',
       title: "Cuộc họp nhóm phát triển ứng dụng Flutter siêu dài...",
+      detail: '',
+      location: "Phòng họp A",
+      description: "Thảo luận dự án Flutter, phân chia công việc, cập nhật tiến độ...",
       startTime: DateTime(2025, 6, 1, 8, 0),
       endTime: DateTime(2025, 6, 1, 9, 0),
-      description: "Thảo luận dự án Flutter, phân chia công việc, cập nhật tiến độ...",
-      location: "Phòng họp A",
     ),
     CalendarEvent(
+      id: '2',
+      userId: '',
       title: "Tập Gym",
+      detail: '',
+      location: "California Fitness",
+      description: "Luyện tập thể lực tại phòng gym trung tâm",
       startTime: DateTime(2025, 6, 1, 10, 0),
       endTime: DateTime(2025, 6, 1, 12, 0),
-      description: "Luyện tập thể lực tại phòng gym trung tâm",
-      location: "California Fitness",
     ),
     CalendarEvent(
+      id: '3',
+      userId: '',
       title: "Đi siêu thị",
+      detail: '',
+      location: "Vinmart",
+      description: "Mua đồ dùng gia đình, thực phẩm, vật dụng cá nhân...",
       startTime: DateTime(2025, 6, 2, 20, 0),
       endTime: DateTime(2025, 6, 2, 21, 0),
-      description: "Mua đồ dùng gia đình, thực phẩm, vật dụng cá nhân...",
-      location: "Vinmart",
+    ),
+    CalendarEvent(
+      id: '4',
+      userId: '',
+      title: "Sinh nhật bạn A",
+      detail: '',
+      location: "Nhà hàng",
+      description: "Chúc mừng sinh nhật bạn A",
+      startTime: DateTime(2025, 6, 5, 0, 0),
+      endTime: DateTime(2025, 6, 5, 23, 59),
+    ),
+    CalendarEvent(
+      id: '5',
+      userId: '',
+      title: "Họp công ty",
+      detail: '',
+      location: "Văn phòng",
+      description: "Họp tổng kết tháng",
+      startTime: DateTime(2025, 6, 10, 14, 0),
+      endTime: DateTime(2025, 6, 10, 16, 0),
     ),
   ];
 
@@ -62,11 +95,11 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _showAddEventDialog() {
+  void _showAddEventDialog(DateTime date) {
     showDialog(
       context: context,
       builder: (context) => AddEventWidget(
-        selectedDate: selectedDate,
+        selectedDate: date,
         onAdd: (event) {
           setState(() => allEvents.add(event as CalendarEvent));
         },
@@ -84,6 +117,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final use24Hour = context.watch<TimeFormatProvider>().use24HourFormat;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -122,7 +157,7 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.add, color: AppColors.secondary),
             tooltip: "Thêm sự kiện",
-            onPressed: _showAddEventDialog,
+            onPressed: () => _showAddEventDialog(selectedDate),
           ),
           IconButton(icon: const Icon(Icons.menu, color: AppColors.secondary), onPressed: () {}),
         ],
@@ -146,7 +181,7 @@ class _HomeScreenState extends State<HomeScreen> {
       floatingActionButton: selectedTab == 1
           ? FloatingActionButton(
               backgroundColor: AppColors.primary,
-              onPressed: _showAddEventDialog,
+              onPressed: () => _showAddEventDialog(selectedDate),
               child: const Icon(Icons.add, color: Colors.white),
               tooltip: "Thêm sự kiện",
             )
@@ -184,7 +219,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMonthView() {
-    // Convert List<CalendarEvent> to Map<String, List<Map<String, String>>>
+    final use24Hour = context.watch<TimeFormatProvider>().use24HourFormat;
     Map<String, List<Map<String, String>>> eventsMap = {};
     for (var event in allEvents) {
       String dateKey = DateFormat('yyyy-MM-dd').format(event.startTime);
@@ -193,8 +228,8 @@ class _HomeScreenState extends State<HomeScreen> {
         'title': event.title,
         'description': event.description,
         'location': event.location,
-        'startTime': DateFormat('HH:mm').format(event.startTime),
-        'endTime': DateFormat('HH:mm').format(event.endTime),
+        'startTime': formatTime(event.startTime, use24HourFormat: use24Hour),
+        'endTime': formatTime(event.endTime, use24HourFormat: use24Hour),
       });
     }
 
@@ -202,10 +237,12 @@ class _HomeScreenState extends State<HomeScreen> {
       selectedDate: selectedDate,
       onDateSelected: (date) => setState(() => selectedDate = date),
       allEvents: eventsMap,
+      onAddEvent: (date) => _showAddEventDialog(date),
     );
   }
 
   Widget _buildListView() {
+    final use24Hour = context.watch<TimeFormatProvider>().use24HourFormat;
     // Lấy danh sách các ngày có sự kiện (dạng DateTime, không chỉ lấy day để tránh trùng ngày khác tháng/năm)
     final eventDays = allEvents
         .map((e) => DateTime(e.startTime.year, e.startTime.month, e.startTime.day))
@@ -260,7 +297,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(DateFormat('dd/MM/yyyy').format(event.startTime)),
-                          Text("${DateFormat('HH:mm').format(event.startTime)} - ${DateFormat('HH:mm').format(event.endTime)}"),
+                          Text(
+                            "${formatTime(event.startTime, use24HourFormat: use24Hour)} - "
+                            "${formatTime(event.endTime, use24HourFormat: use24Hour)}"
+                          ),
                           if (event.location.isNotEmpty)
                             Text(event.location, style: const TextStyle(fontSize: 12, color: AppColors.secondary)),
                         ],

@@ -1,10 +1,10 @@
-import 'dart:ui';
-
 class CalendarEvent {
+  final String id;
   final String title;
   final String detail;
   final String location;
   final String description;
+  final String userId;
   final DateTime startTime;
   final DateTime endTime;
   final bool allDay;
@@ -12,20 +12,24 @@ class CalendarEvent {
   final bool alarmReminder;
 
   CalendarEvent({
+    required this.id, 
     required this.title,
+    required this.userId,
     required this.detail,
     required this.location,
     required this.description,
     required this.startTime,
     required this.endTime,
-    required this.allDay,
-    required this.reminder,
-    required this.alarmReminder,
+    this.allDay = false,
+    this.reminder = false,
+    this.alarmReminder = false,
   });
-
-
-  @override
-  String toString() {
-    return 'Event: $title, Time: $startTime - $endTime, Description: $description';
+}
+Map<String, List<CalendarEvent>> getEventsByDay(List<CalendarEvent> events) {
+  final Map<String, List<CalendarEvent>> grouped = {};
+  for (var event in events) {
+    final dateKey = "${event.startTime.year}-${event.startTime.month.toString().padLeft(2, '0')}-${event.startTime.day.toString().padLeft(2, '0')}";
+    grouped[dateKey] = [...(grouped[dateKey] ?? []), event];
   }
+  return grouped;
 }

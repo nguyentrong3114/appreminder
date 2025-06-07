@@ -1,5 +1,5 @@
+import 'package:flutter_app/app.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_app/main.dart';
 import 'package:flutter_app/services/auth_service.dart';
 import 'package:flutter_app/views/shared/register_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';

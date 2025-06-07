@@ -1,54 +1,52 @@
 class EventModel {
-  final String id; // unique id, có thể dùng DateTime.now().millisecondsSinceEpoch.toString()
+  final String id;
+  final String userId;
   final String title;
   final String description;
   final String location;
-  final DateTime date; // ngày diễn ra sự kiện
-  final String weekDay; // T2, T3, ...
-  final String time; // ví dụ: "8:00 - 9:00" hoặc "Cả ngày"
+  final DateTime startTime;
+  final DateTime endTime;
   final bool allDay;
   final bool reminder;
   final bool alarmReminder;
 
   EventModel({
     required this.id,
+    required this.userId,
     required this.title,
     required this.description,
     required this.location,
-    required this.date,
-    required this.weekDay,
-    required this.time,
+    required this.startTime,
+    required this.endTime,
     this.allDay = false,
     this.reminder = false,
     this.alarmReminder = false,
   });
 
-  // Convert EventModel to Map (for Firebase/local storage)
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+      'userId': userId,
       'title': title,
       'description': description,
       'location': location,
-      'date': date.toIso8601String(),
-      'weekDay': weekDay,
-      'time': time,
+      'startTime': startTime.toIso8601String(),
+      'endTime': endTime.toIso8601String(),
       'allDay': allDay,
       'reminder': reminder,
       'alarmReminder': alarmReminder,
     };
   }
 
-  // Create EventModel from Map
   factory EventModel.fromMap(Map<String, dynamic> map) {
     return EventModel(
       id: map['id'] ?? '',
+      userId: map['userId'] ?? '',
       title: map['title'] ?? '',
       description: map['description'] ?? '',
       location: map['location'] ?? '',
-      date: DateTime.parse(map['date']),
-      weekDay: map['weekDay'] ?? '',
-      time: map['time'] ?? '',
+      startTime: DateTime.parse(map['startTime']),
+      endTime: DateTime.parse(map['endTime']),
       allDay: map['allDay'] ?? false,
       reminder: map['reminder'] ?? false,
       alarmReminder: map['alarmReminder'] ?? false,

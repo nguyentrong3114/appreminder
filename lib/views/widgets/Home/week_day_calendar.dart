@@ -1,5 +1,6 @@
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_app/models/calendar.dart';
 import 'package:flutter_app/theme/app_colors.dart';
 
 class WeekDayCalendar extends StatelessWidget {
@@ -38,20 +39,4 @@ class WeekDayCalendar extends StatelessWidget {
             },
           );
   }
-}
-
-class CalendarEvent {
-  final String title;
-  final DateTime startTime;
-  final DateTime endTime;
-  final String description;
-  final String location;
-
-  CalendarEvent({
-    required this.title,
-    required this.startTime,
-    required this.endTime,
-    required this.description,
-    required this.location,
-  });
 }
