@@ -7,6 +7,8 @@
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+<uses-permission android:name="android.permission.WAKE_LOCK" />
     <application
         android:label="flutter_app"
         android:name="${applicationName}"
@@ -14,6 +16,8 @@
         <meta-data
         android:name="io.flutter.embedding.android.EnableImpeller"
         android:value="false" />
+        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"

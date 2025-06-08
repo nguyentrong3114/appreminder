@@ -3,8 +3,10 @@ import 'package:intl/intl.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'dart:math';
 import '../../../models/habit.dart';
-// Import habit service (nếu bạn tạo file service)
 import '../../../services/habit_service.dart';
+import '../../../services/notification_service.dart';
+
+final NotificationService notificationService = NotificationService();
 
 class RegularHabitScreen extends StatefulWidget {
   final String? initialTitle;
@@ -85,6 +87,63 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
           },
         )
         .toList();
+  }
+
+  Future<void> _scheduleRegularHabitNotifications(
+    String habitId,
+    String title,
+  ) async {
+    if (!reminderEnabled || reminders.isEmpty) {
+      print('❌ Không có thông báo nào để lên lịch');
+      return;
+    }
+
+    // Hủy các thông báo cũ
+    await notificationService.cancelHabitNotifications(
+      habitId,
+      reminders.length * 100,
+    );
+
+    // Lên lịch mới theo repeat type
+    switch (repeatType) {
+      case RepeatType.daily:
+        await notificationService.scheduleRegularHabitDaily(
+          habitId: habitId,
+          title: title,
+          reminderTimes: reminders,
+          startDate: startDate,
+        );
+        break;
+      case RepeatType.weekly:
+        await notificationService.scheduleRegularHabitWeekly(
+          habitId: habitId,
+          title: title,
+          reminderTimes: reminders,
+          selectedWeekdays: selectedWeekdays,
+          startDate: startDate,
+        );
+        break;
+      case RepeatType.monthly:
+        await notificationService.scheduleRegularHabitMonthly(
+          habitId: habitId,
+          title: title,
+          reminderTimes: reminders,
+          selectedMonthlyDays: selectedMonthlyDays,
+          startDate: startDate,
+        );
+        break;
+      case RepeatType.yearly:
+        await notificationService.scheduleRegularHabitYearly(
+          habitId: habitId,
+          title: title,
+          reminderTimes: reminders,
+          startDate: startDate,
+        );
+        break;
+    }
+
+    print('✅ Đã lên lịch tất cả notifications cho habit: $title');
+    await notificationService.debugNotificationStatus();
   }
 
   // Cập nhật hàm lưu trong nút "Lưu"
@@ -171,7 +230,7 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
       } else {
         habitId = await _habitService.saveHabit(habit); // Create new
       }
-
+      await _scheduleRegularHabitNotifications(habitId, habit.title);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(

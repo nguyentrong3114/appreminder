@@ -1,4 +1,6 @@
-import 'app.dart'; 
+import 'package:flutter_app/services/notification_service.dart';
+
+import 'app.dart';
 import 'firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'services/setting_service.dart';
@@ -12,6 +14,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('vi_VN', null);
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await NotificationService().initialize();
 
   final prefs = await SharedPreferences.getInstance();
   final settingsService = SettingsService(prefs);

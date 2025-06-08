@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_app/views/widgets/challenge/notification_test_page.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'dart:math';
 import '../../../models/habit.dart';
 import '../../../services/habit_service.dart';
+import '../../../services/notification_service.dart';
 
 class OnetimeTask extends StatefulWidget {
   final DateTime? initialStartDate;
@@ -60,6 +63,7 @@ class _OnetimeTask extends State<OnetimeTask> {
   @override
   void initState() {
     super.initState();
+    // Thêm vào initState của OnetimeTask
 
     // ✅ NẾU ĐANG EDIT, LOAD DỮ LIỆU TỪ EXISTING HABIT
     if (widget.isEditing && widget.existingHabit != null) {
@@ -732,18 +736,6 @@ class _OnetimeTask extends State<OnetimeTask> {
       return;
     }
 
-    // Validation ngày bắt đầu (chỉ cho create mới)
-    if (!widget.isEditing &&
-        startDate.isBefore(DateTime.now().subtract(Duration(days: 1)))) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Ngày bắt đầu không được trong quá khứ'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
     setState(() {
       _isSaving = true;
     });
@@ -752,18 +744,15 @@ class _OnetimeTask extends State<OnetimeTask> {
       final now = DateTime.now();
 
       final habit = Habit(
-        id:
-            widget.isEditing
-                ? widget.existingHabit!.id
-                : '', // ✅ Giữ ID khi edit
+        id: widget.isEditing ? widget.existingHabit!.id : '',
         title: _titleController.text.trim(),
         iconCodePoint: _iconToString(selectedIcon),
         colorValue: _colorToString(selectedColor),
         startDate: startDate,
         endDate: null,
         hasEndDate: false,
-        type: HabitType.onetime, // Đánh dấu là onetime task
-        repeatType: RepeatType.daily, // ✨ Default value cho onetime
+        type: HabitType.onetime,
+        repeatType: RepeatType.daily,
         selectedWeekdays: [],
         selectedMonthlyDays: [],
         reminderEnabled: reminderEnabled,
@@ -774,14 +763,19 @@ class _OnetimeTask extends State<OnetimeTask> {
         updatedAt: now,
       );
 
-      // ✅ CHỌN METHOD PHÙ HỢP
       String habitId;
       if (widget.isEditing) {
-        await _habitService.updateHabit(habit); // Update existing
+        await _habitService.updateHabit(habit);
         habitId = habit.id;
+
+        // Hủy thông báo cũ khi edit
+        await _cancelOldNotifications(habitId);
       } else {
-        habitId = await _habitService.saveHabit(habit); // Create new
+        habitId = await _habitService.saveHabit(habit);
       }
+
+      // ✨ LEN LỊCH THÔNG BÁO MỚI
+      await _scheduleNotifications(habitId, _titleController.text.trim());
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -807,6 +801,57 @@ class _OnetimeTask extends State<OnetimeTask> {
         _isSaving = false;
       });
     }
+  }
+
+  // ✨ HÀM LEN LỊCH THÔNG BÁO
+  Future<void> _scheduleNotifications(String habitId, String title) async {
+    if (!reminderEnabled || reminders.isEmpty) {
+      print('Không có thông báo nào để lên lịch');
+      return;
+    }
+
+    final notificationService = NotificationService();
+
+    for (int i = 0; i < reminders.length; i++) {
+      final reminder = reminders[i];
+
+      // Tạo unique ID cho mỗi thông báo
+      final notificationId = _generateNotificationId(habitId, i);
+
+      try {
+        await notificationService.scheduleOnetimeTaskNotification(
+          id: notificationId,
+          title: title,
+          scheduledDate: startDate,
+          scheduledTime: reminder,
+        );
+
+        print('✅ Đã lên lịch thông báo $i: ${reminder.format(context)}');
+      } catch (e) {
+        print('❌ Lỗi khi lên lịch thông báo $i: $e');
+      }
+    }
+  }
+
+  // ✨ HÀM HỦY THÔNG BÁO CŨ KHI EDIT
+  Future<void> _cancelOldNotifications(String habitId) async {
+    if (widget.existingHabit == null) return;
+
+    final notificationService = NotificationService();
+    final oldReminders = widget.existingHabit!.reminderTimes;
+
+    for (int i = 0; i < oldReminders.length; i++) {
+      final notificationId = _generateNotificationId(habitId, i);
+      await notificationService.cancelNotification(notificationId);
+    }
+  }
+
+  // ✨ TẠO UNIQUE NOTIFICATION ID
+  int _generateNotificationId(String habitId, int reminderIndex) {
+    // Kết hợp habitId và reminderIndex để tạo unique ID
+    final combinedString = '$habitId$reminderIndex';
+    return combinedString.hashCode.abs() %
+        2147483647; // Đảm bảo trong phạm vi int32
   }
 
   void _deleteTag(Tag tag) {
@@ -965,8 +1010,19 @@ class _OnetimeTask extends State<OnetimeTask> {
           widget.isEditing ? 'SỬA NHIỆM VỤ' : 'NHIỆM VỤ MỚI',
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
+
         centerTitle: true,
         actions: [
+          IconButton(
+            icon: Icon(Icons.bug_report, color: Colors.orange),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => NotificationTestPage()),
+              );
+            },
+            tooltip: 'Test Notification',
+          ),
           IconButton(
             icon: Icon(Icons.check, color: selectedColor),
             onPressed: _saveOnetimeTask,
