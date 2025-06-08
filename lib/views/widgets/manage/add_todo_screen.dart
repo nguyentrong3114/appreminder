@@ -1,62 +1,60 @@
-import 'dart:math';
-import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:timezone/timezone.dart' as tz;
-import 'package:timezone/data/latest.dart' as tz;
+import 'package:flutter_app/models/todo.dart';
+import 'package:flutter_app/services/notification_service.dart';
 
-class TodoScreen extends StatefulWidget {
+class AddTodoScreen extends StatefulWidget {
+  final Todo? existingTodo;
   final DateTime? initialStartDate;
-  final DocumentSnapshot? todoDoc;
-  const TodoScreen({super.key, this.initialStartDate, this.todoDoc});
+  const AddTodoScreen({super.key, this.existingTodo, this.initialStartDate});
 
   @override
-  State<TodoScreen> createState() => TodoScreenState();
+  State<AddTodoScreen> createState() => _TodoScreenState();
 }
 
-class TodoScreenState extends State<TodoScreen> {
+class _TodoScreenState extends State<AddTodoScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _detailsController = TextEditingController();
-  bool _isAllDayEnabled = false;
-  bool _reminderEnabled = false;
   Color _activeColor = Colors.green;
   String selectedColor = "Xanh lá cây";
+  bool _reminderEnabled = false;
+  String? _reminderTime;
   bool hasUnsavedChanges = false;
 
   late DateTime _startDate;
   late DateTime _endDate;
   late TimeOfDay _startTime;
   late TimeOfDay _endTime;
-
-  String _reminderTime = "";
-
-  // Notification plugin
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
+  bool _isDone = false;
+  List<Map<String, dynamic>> _tags = [];
 
   @override
   void initState() {
     super.initState();
     _titleController.addListener(_onTextChanged);
     _detailsController.addListener(_onTextChanged);
-    _initNotifications();
-    _requestNotificationPermission();
 
-    if (widget.todoDoc != null) {
-      final data = widget.todoDoc!.data() as Map<String, dynamic>;
-      _titleController.text = data['title'] ?? '';
-      _detailsController.text = data['details'] ?? '';
-      _startDate = DateTime.parse(data['startDateTime']);
-      _endDate = DateTime.parse(data['endDateTime']);
-      _startTime = TimeOfDay(hour: _startDate.hour, minute: _startDate.minute);
-      _endTime = TimeOfDay(hour: _endDate.hour, minute: _endDate.minute);
-      selectedColor = data['color'] ?? "Xanh lá cây";
-      _reminderEnabled = data['reminderEnabled'] ?? false;
-      _reminderTime = data['reminderTime'] ?? "";
+    if (widget.existingTodo != null) {
+      final todo = widget.existingTodo!;
+      _titleController.text = todo.title;
+      _detailsController.text = todo.details ?? '';
+      _startDate = todo.startDateTime;
+      _endDate = todo.endDateTime;
+      _startTime = TimeOfDay(
+        hour: todo.startDateTime.hour,
+        minute: todo.startDateTime.minute,
+      );
+      _endTime = TimeOfDay(
+        hour: todo.endDateTime.hour,
+        minute: todo.endDateTime.minute,
+      );
+      selectedColor = todo.colorValue;
+      _reminderEnabled = todo.reminderEnabled;
+      _reminderTime = todo.reminderTime;
+      _isDone = todo.isDone;
+      _tags = todo.tags;
       _updateActiveColor();
     } else {
       _startDate = widget.initialStartDate ?? DateTime.now();
@@ -64,10 +62,6 @@ class TodoScreenState extends State<TodoScreen> {
       _endDate = _startDate;
       _endTime = _startTime.add(hour: 1);
     }
-  }
-
-  Future<void> _requestNotificationPermission() async {
-    await Permission.notification.request();
   }
 
   void _updateActiveColor() {
@@ -93,218 +87,13 @@ class TodoScreenState extends State<TodoScreen> {
       case "Xanh ngọc":
         _activeColor = Colors.teal;
         break;
-      case "Xanh dương":
+      case "Xanh dương đậm":
         _activeColor = Colors.indigo;
         break;
     }
   }
 
-  void _initNotifications() async {
-  try {
-    tz.initializeTimeZones();
-    tz.setLocalLocation(tz.getLocation('Asia/Ho_Chi_Minh'));
-    
-    const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
-
-    final DarwinInitializationSettings initializationSettingsIOS =
-        DarwinInitializationSettings(
-      requestSoundPermission: true,
-      requestBadgePermission: true,
-      requestAlertPermission: true,
-      // onDidReceiveLocalNotification: (id, title, body, payload) async {
-      //   // Handle notification received on iOS
-      //   print('Received notification: $title - $body');
-      // },
-    );
-
-    final InitializationSettings initializationSettings =
-        InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsIOS,
-    );
-
-    bool? initialized = await flutterLocalNotificationsPlugin.initialize(
-      initializationSettings,
-      onDidReceiveNotificationResponse: (response) async {
-        // Handle notification tap
-        print('Notification tapped: ${response.payload}');
-      },
-    );
-    
-    print('Notifications initialized: $initialized');
-    
-    // Tạo notification channel cho Android
-    if (Platform.isAndroid) {
-      await flutterLocalNotificationsPlugin
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-          ?.createNotificationChannel(
-        const AndroidNotificationChannel(
-          'todo_reminder_channel',
-          'Nhắc nhở nhiệm vụ',
-          description: 'Thông báo nhắc nhở nhiệm vụ sắp đến hạn',
-          importance: Importance.max,
-          // priority: Priority.high,
-          playSound: true,
-          enableVibration: true,
-        ),
-      );
-    }
-  } catch (e) {
-    print('Error initializing notifications: $e');
-  }
-}
-
-  Future<bool> _checkAndRequestNotificationPermission() async {
-    PermissionStatus status = await Permission.notification.status;
-
-    if (status.isGranted) {
-      return true;
-    }
-
-    if (status.isDenied || status.isPermanentlyDenied) {
-      bool shouldRequest = await _showPermissionDialog();
-      if (!shouldRequest) return false;
-
-      if (status.isPermanentlyDenied) {
-        await openAppSettings();
-        return false;
-      } else {
-        status = await Permission.notification.request();
-        return status.isGranted;
-      }
-    }
-
-    return false;
-  }
-
-  Future<bool> _showPermissionDialog() async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text('Cần quyền thông báo'),
-              content: const Text(
-                'Ứng dụng cần quyền thông báo để có thể nhắc nhở bạn về các nhiệm vụ. '
-                'Vui lòng cấp quyền trong cài đặt.',
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              actions: [
-                TextButton(
-                  child: const Text('HỦY'),
-                  onPressed: () => Navigator.of(context).pop(false),
-                ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _activeColor,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text('CÀI ĐẶT'),
-                  onPressed: () => Navigator.of(context).pop(true),
-                ),
-              ],
-            );
-          },
-        ) ??
-        false;
-  }
-
-  void _scheduleNotificationForOption(String option) async {
-    // Kiểm tra quyền thông báo trước
-    bool hasPermission = await _checkAndRequestNotificationPermission();
-    if (!hasPermission) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Cần cấp quyền thông báo để sử dụng tính năng nhắc nhở',
-          ),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    int minutesBefore = _getMinutesFromOption(option);
-
-    DateTime startDateTime = DateTime(
-      _startDate.year,
-      _startDate.month,
-      _startDate.day,
-      _startTime.hour,
-      _startTime.minute,
-    );
-
-    DateTime notificationTime = startDateTime.subtract(
-      Duration(minutes: minutesBefore),
-    );
-
-    // Debug: In ra thời gian thông báo
-    print('Notification time: $notificationTime');
-    print('Current time: ${DateTime.now()}');
-    print('Is after now: ${notificationTime.isAfter(DateTime.now())}');
-
-    if (notificationTime.isAfter(DateTime.now())) {
-      // Tạo ID duy nhất dựa trên thời gian và title
-      int notificationId =
-          '${_titleController.text}${startDateTime.millisecondsSinceEpoch}'
-              .hashCode;
-
-      await _scheduleNotification(
-        id: notificationId,
-        title: 'Nhắc nhở nhiệm vụ',
-        body:
-            _titleController.text.isNotEmpty
-                ? _titleController.text
-                : 'Bạn có một nhiệm vụ sắp bắt đầu',
-        scheduledTime: notificationTime,
-      );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Đã lên lịch nhắc nhở $option lúc ${DateFormat('HH:mm dd/MM/yyyy').format(notificationTime)}',
-          ),
-          backgroundColor: _activeColor,
-          duration: const Duration(seconds: 3),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Thời gian nhắc nhở phải sau thời điểm hiện tại'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-    }
-  }
-
-  Future<void> _saveNotificationId(int notificationId) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      try {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .collection('notifications')
-            .doc(notificationId.toString())
-            .set({
-              'notificationId': notificationId,
-              'todoTitle': _titleController.text,
-              'scheduledTime': DateTime.now().toIso8601String(),
-              'createdAt': DateTime.now().toIso8601String(),
-            });
-      } catch (e) {
-        print('Error saving notification ID: $e');
-      }
-    }
-  }
-
-  int _getMinutesFromOption(String option) {
+  int _getMinutesFromOption(String? option) {
     switch (option) {
       case "Tại thời điểm bắt đầu":
         return 0;
@@ -325,111 +114,57 @@ class TodoScreenState extends State<TodoScreen> {
     }
   }
 
-  Future<void> _scheduleNotification({
-  required int id,
-  required String title,
-  required String body,
-  required DateTime scheduledTime,
-}) async {
-  try {
-    // Cancel notification cũ nếu có
-    await flutterLocalNotificationsPlugin.cancel(id);
-    
-    // Tạo TZDateTime từ scheduledTime
-    final tz.TZDateTime scheduledTZTime = tz.TZDateTime.from(scheduledTime, tz.local);
-    
-    print('Scheduling notification:');
-    print('ID: $id');
-    print('Title: $title');
-    print('Body: $body');
-    print('Scheduled time: $scheduledTZTime');
-    
-    await flutterLocalNotificationsPlugin.zonedSchedule(
-      id,
-      title,
-      body,
-      scheduledTZTime,
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'todo_reminder_channel',
-          'Nhắc nhở nhiệm vụ',
-          channelDescription: 'Thông báo nhắc nhở nhiệm vụ sắp đến hạn',
-          importance: Importance.max,
-          priority: Priority.high,
-          showWhen: true,
-          // Thêm các thuộc tính này để đảm bảo thông báo hiển thị
-          playSound: true,
-          enableVibration: true,
-          fullScreenIntent: true,
-          category: AndroidNotificationCategory.reminder,
-        ),
-        iOS: DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-          interruptionLevel: InterruptionLevel.timeSensitive,
-        ),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+  Future<void> _scheduleTodoNotification(Todo todo) async {
+    if (!todo.reminderEnabled || todo.reminderTime == null) return;
+    int minutesBefore = _getMinutesFromOption(todo.reminderTime);
+    DateTime notificationTime = todo.startDateTime.subtract(
+      Duration(minutes: minutesBefore),
     );
-    
-    print('Notification scheduled successfully');
-  } catch (e) {
-    print('Error scheduling notification: $e');
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Lỗi khi lên lịch thông báo: $e'),
-          backgroundColor: Colors.red,
-        ),
+    if (notificationTime.isBefore(DateTime.now())) return;
+    int notificationId = todo.id.hashCode;
+    await NotificationService().scheduleOnetimeTaskNotification(
+      id: notificationId,
+      title:
+          todo.title.isNotEmpty
+              ? todo.title
+              : 'Bạn có một nhiệm vụ sắp bắt đầu',
+      scheduledDate: notificationTime,
+      scheduledTime: TimeOfDay(
+        hour: notificationTime.hour,
+        minute: notificationTime.minute,
+      ),
+    );
+  }
+
+  Future<void> _cancelOldNotification(Todo oldTodo) async {
+    int notificationId = oldTodo.id.hashCode;
+    await NotificationService().cancelNotification(notificationId);
+  }
+
+  Future<void> _saveTodo() async {
+    if (_titleController.text.isEmpty) {
+      await showDialog(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title: const Text('Lỗi'),
+              content: const Text('Vui lòng nhập tiêu đề'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
       );
+      return;
     }
-  }
-}
 
-  Future<void> _scheduleTestNotification() async {
-    try {
-      final testTime = DateTime.now().add(const Duration(seconds: 5));
-      final tzTestTime = tz.TZDateTime.from(testTime, tz.local);
-
-      await flutterLocalNotificationsPlugin.zonedSchedule(
-        999999, // ID test khác biệt
-        'Test Notification',
-        'Đây là thông báo test sau 5 giây',
-        tzTestTime,
-        const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'todo_reminder_channel',
-            'Nhắc nhở nhiệm vụ',
-            channelDescription: 'Thông báo nhắc nhở nhiệm vụ sắp đến hạn',
-            importance: Importance.max,
-            priority: Priority.high,
-            showWhen: true,
-          ),
-        ),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      );
-
-      print('Test notification scheduled for: $tzTestTime');
-    } catch (e) {
-      print('Error scheduling test notification: $e');
-    }
-  }
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _detailsController.dispose();
-    super.dispose();
-  }
-
-  Future<void> saveTodoToFirestore() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       throw Exception('Vui lòng đăng nhập để lưu công việc');
     }
-    String title = _titleController.text;
-    String details = _detailsController.text;
+
     DateTime startDateTime = DateTime(
       _startDate.year,
       _startDate.month,
@@ -445,40 +180,183 @@ class TodoScreenState extends State<TodoScreen> {
       _endTime.minute,
     );
 
-    if (widget.todoDoc != null) {
-      await widget.todoDoc!.reference.update({
-        'title': title,
-        'details': details,
-        'startDateTime': startDateTime.toIso8601String(),
-        'endDateTime': endDateTime.toIso8601String(),
-        'reminderEnabled': _reminderEnabled,
-        'reminderTime': _reminderEnabled ? _reminderTime : "",
-        'color': selectedColor,
-        'updatedAt': DateTime.now().toIso8601String(),
-      });
-    } else {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('todos')
-          .add({
-            'title': title,
-            'details': details,
-            'startDateTime': startDateTime.toIso8601String(),
-            'endDateTime': endDateTime.toIso8601String(),
-            'reminderEnabled': _reminderEnabled,
-            'reminderTime': _reminderEnabled ? _reminderTime : "",
-            'color': selectedColor,
-            'createdAt': DateTime.now().toIso8601String(),
-            'isDone': false,
-          });
+    final todo = Todo(
+      id: widget.existingTodo?.id ?? UniqueKey().toString(),
+      title: _titleController.text,
+      details: _detailsController.text,
+      colorValue: selectedColor,
+      startDateTime: startDateTime,
+      endDateTime: endDateTime,
+      reminderEnabled: _reminderEnabled,
+      reminderTime: _reminderEnabled ? _reminderTime : null,
+      isDone: _isDone,
+      tags: _tags,
+      createdAt: widget.existingTodo?.createdAt ?? DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+
+    // Nếu là chỉnh sửa, huỷ notification cũ trước khi lên lịch lại
+    if (widget.existingTodo != null) {
+      await _cancelOldNotification(widget.existingTodo!);
     }
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('todos')
+        .doc(todo.id)
+        .set(todo.toJson());
+
+    // Lên lịch notification mới nếu cần
+    if (todo.reminderEnabled && todo.reminderTime != null) {
+      await _scheduleTodoNotification(todo);
+    }
+
+    if (!mounted) return;
+    await showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Thành công'),
+            content: const Text('Đã lưu công việc thành công!'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+    );
+    if (!mounted) return;
+    Navigator.of(context).pop('edited');
   }
 
   void _onTextChanged() {
     if (!hasUnsavedChanges) {
       setState(() {
         hasUnsavedChanges = true;
+      });
+    }
+  }
+
+  void _showReminderOptions(BuildContext context) async {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.only(bottom: 20),
+                child: Text(
+                  "Nhắc nhở",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+              ...[
+                    "Tại thời điểm bắt đầu",
+                    "5 phút trước",
+                    "10 phút trước",
+                    "15 phút trước",
+                    "30 phút trước",
+                    "1 giờ trước",
+                    "1 ngày trước",
+                  ]
+                  .map(
+                    (option) => ListTile(
+                      title: Text(option),
+                      onTap: () {
+                        setState(() {
+                          _reminderTime = option;
+                          _reminderEnabled = true;
+                        });
+                        Navigator.pop(context);
+                      },
+                    ),
+                  )
+                  .toList(),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  String _formatTimeOfDay(TimeOfDay timeOfDay) {
+    final now = DateTime.now();
+    final dt = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      timeOfDay.hour,
+      timeOfDay.minute,
+    );
+    final format = DateFormat.jm();
+    return format.format(dt);
+  }
+
+  Future<void> _selectStartDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _startDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: _activeColor,
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && picked != _startDate) {
+      setState(() {
+        _startDate = picked;
+      });
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: _startTime,
+      );
+      if (pickedTime != null && pickedTime != _startTime) {
+        setState(() {
+          _startTime = pickedTime;
+        });
+      }
+    }
+  }
+
+  Future<void> _selectEndDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _endDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: _activeColor,
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && picked != _endDate) {
+      setState(() {
+        _endDate = picked;
       });
     }
   }
@@ -544,7 +422,7 @@ class TodoScreenState extends State<TodoScreen> {
           _buildIconButton(
             Icons.close_rounded,
             _activeColor,
-            () => _handleCloseButton(),
+            () => Navigator.of(context).pop(),
             tooltip: 'Đóng',
           ),
           const Expanded(
@@ -723,7 +601,7 @@ class TodoScreenState extends State<TodoScreen> {
             onSwitchChanged: (value) {
               setState(() {
                 _reminderEnabled = value;
-                if (!value) _reminderTime = "";
+                if (!value) _reminderTime = null;
               });
             },
           ),
@@ -736,17 +614,17 @@ class TodoScreenState extends State<TodoScreen> {
               child: Column(
                 children: [
                   const Divider(height: 24),
-                  if (_reminderTime.isNotEmpty)
+                  if (_reminderTime != null)
                     InkWell(
                       onTap: () => _showReminderOptions(context),
                       borderRadius: BorderRadius.circular(8),
                       child: _buildTimeSettingRow(
                         icon: Icons.access_time_rounded,
-                        text: _reminderTime,
+                        text: _reminderTime!,
                         showClose: true,
                         onClose: () {
                           setState(() {
-                            _reminderTime = "";
+                            _reminderTime = null;
                           });
                         },
                       ),
@@ -807,7 +685,6 @@ class TodoScreenState extends State<TodoScreen> {
       Colors.teal,
       Colors.indigo,
     ];
-
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       padding: const EdgeInsets.all(16),
@@ -999,310 +876,16 @@ class TodoScreenState extends State<TodoScreen> {
       ),
     );
   }
-
-  Future<void> _selectStartDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _startDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: _activeColor,
-              onPrimary: Colors.white,
-              onSurface: Colors.black,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null && picked != _startDate) {
-      setState(() {
-        _startDate = picked;
-      });
-    }
-
-    if (!_isAllDayEnabled) {
-      final TimeOfDay? pickedTime = await showTimePicker(
-        context: context,
-        initialTime: _startTime,
-        builder: (context, child) {
-          return Theme(
-            data: Theme.of(context).copyWith(
-              colorScheme: ColorScheme.light(
-                primary: _activeColor,
-                onPrimary: Colors.white,
-                onSurface: Colors.black,
-              ),
-            ),
-            child: child!,
-          );
-        },
-      );
-      if (pickedTime != null && pickedTime != _startTime) {
-        setState(() {
-          _startTime = pickedTime;
-        });
-      }
-    }
-  }
-
-  Future<void> _selectEndDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _endDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: _activeColor,
-              onPrimary: Colors.white,
-              onSurface: Colors.black,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null && picked != _endDate) {
-      setState(() {
-        _endDate = picked;
-      });
-    }
-
-    if (!_isAllDayEnabled) {
-      final TimeOfDay? pickedTime = await showTimePicker(
-        context: context,
-        initialTime: _endTime,
-        builder: (context, child) {
-          return Theme(
-            data: Theme.of(context).copyWith(
-              colorScheme: ColorScheme.light(
-                primary: _activeColor,
-                onPrimary: Colors.white,
-                onSurface: Colors.black,
-              ),
-            ),
-            child: child!,
-          );
-        },
-      );
-      if (pickedTime != null && pickedTime != _endTime) {
-        setState(() {
-          _endTime = pickedTime;
-        });
-      }
-    }
-  }
-
-  void _showReminderOptions(BuildContext context) async {
-    // Kiểm tra quyền trước khi hiển thị options
-    bool hasPermission = await _checkAndRequestNotificationPermission();
-
-    if (!hasPermission) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-            'Cần cấp quyền thông báo để sử dụng tính năng nhắc nhở',
-          ),
-          backgroundColor: Colors.red,
-          action: SnackBarAction(
-            label: 'CÀI ĐẶT',
-            textColor: Colors.white,
-            onPressed: () => openAppSettings(),
-          ),
-        ),
-      );
-      return;
-    }
-
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Padding(
-                padding: EdgeInsets.only(bottom: 20),
-                child: Text(
-                  "Nhắc nhở",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ),
-              ...[
-                    "Tại thời điểm bắt đầu",
-                    "5 phút trước",
-                    "10 phút trước",
-                    "15 phút trước",
-                    "30 phút trước",
-                    "1 giờ trước",
-                    "1 ngày trước",
-                  ]
-                  .map(
-                    (option) => ListTile(
-                      title: Text(option),
-                      onTap: () {
-                        setState(() {
-                          _reminderTime = option;
-                          _reminderEnabled = true;
-                        });
-                        Navigator.pop(context);
-                        _scheduleNotificationForOption(option);
-                      },
-                    ),
-                  )
-                  .toList(),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  String _formatTimeOfDay(TimeOfDay timeOfDay) {
-    final now = DateTime.now();
-    final dt = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      timeOfDay.hour,
-      timeOfDay.minute,
-    );
-    final format = DateFormat.jm();
-    return format.format(dt);
-  }
-
-  void _handleCloseButton() {
-    if (hasUnsavedChanges ||
-        _titleController.text.isNotEmpty ||
-        _detailsController.text.isNotEmpty) {
-      _showDiscardChangesDialog();
-    } else {
-      Navigator.of(context).pop();
-    }
-  }
-
-  void _showDiscardChangesDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Hủy thay đổi?'),
-          content: const Text(
-            'Bạn có thay đổi chưa lưu. Bạn có muốn hủy bỏ những thay đổi này không?',
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('TIẾP TỤC CHỈNH SỬA'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _activeColor,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text('HỦY BỎ'),
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _saveTodo() async {
-    if (_titleController.text.isEmpty) {
-      await showDialog(
-        context: context,
-        builder:
-            (context) => AlertDialog(
-              title: const Text('Lỗi'),
-              content: const Text('Vui lòng nhập tiêu đề'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('OK'),
-                ),
-              ],
-            ),
-      );
-      return;
-    }
-
-    await saveTodoToFirestore();
-
-    if (_reminderEnabled && _reminderTime.isNotEmpty) {
-      bool hasPermission = await _checkAndRequestNotificationPermission();
-      if (!hasPermission) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              'Cần cấp quyền thông báo để sử dụng tính năng nhắc nhở',
-            ),
-            backgroundColor: Colors.red,
-            action: SnackBarAction(
-              label: 'CÀI ĐẶT',
-              textColor: Colors.white,
-              onPressed: () => openAppSettings(),
-            ),
-          ),
-        );
-      } else {
-        _scheduleNotificationForOption(_reminderTime);
-      }
-    }
-
-    if (!mounted) return;
-    await showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Thành công'),
-            content: const Text('Đã lưu công việc thành công!'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-    );
-    if (!mounted) return;
-    Navigator.of(context).pop('edited');
-  }
 }
 
+// Extension để cộng giờ cho TimeOfDay
 extension TimeOfDayExtension on TimeOfDay {
   TimeOfDay add({int hour = 0, int minute = 0}) {
     int totalMinutes = (this.hour * 60 + this.minute) + (hour * 60 + minute);
-
-    // Đảm bảo không vượt quá 24 giờ
     totalMinutes = totalMinutes % (24 * 60);
     if (totalMinutes < 0) {
       totalMinutes += 24 * 60;
     }
-
     return TimeOfDay(hour: totalMinutes ~/ 60, minute: totalMinutes % 60);
   }
 }

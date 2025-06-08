@@ -56,7 +56,7 @@ class _MainScreenState extends State<MainScreen> {
 
   late final List<Widget> _screens = [
     const HomeScreen(),
-    Todo(key: todoKey),
+    TodoScreen(key: todoKey),
     ChallengeScreen(),
     const SettingsPage(),
     Container(),
@@ -105,7 +105,7 @@ class _MainScreenState extends State<MainScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => TodoScreen(initialStartDate: todoState.selectedDate),
+              builder: (context) => AddTodoScreen(initialStartDate: todoState.selectedDate),
             ),
           );
         } else if (todoState.selectedTab == 1) {

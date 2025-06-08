@@ -139,7 +139,7 @@ class NotificationService {
         tzDateTime,
         notificationDetails,
         // ✅ THAY ĐỔI NÀY - Dùng inexact giống như test
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       );
 
       print('✅ Đã lên lịch thông báo: $title');

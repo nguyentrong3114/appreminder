@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_app/models/todo.dart';
 import 'package:flutter_app/views/widgets/manage/add_todo_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_app/services/notification_service.dart';
 
 class TodoDetailScreen extends StatelessWidget {
-  final DocumentSnapshot todo;
+  final Todo todo;
 
   const TodoDetailScreen({super.key, required this.todo});
 
   @override
   Widget build(BuildContext context) {
-    final data = todo.data() as Map<String, dynamic>;
-
-    // Xử lý màu sắc - Firestore lưu tên màu dưới dạng string
-    Color taskColor = _getColorFromName(data['color'] ?? 'Xanh dương');
+    Color taskColor = _getColorFromName(todo.colorValue);
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -24,15 +24,6 @@ class TodoDetailScreen extends StatelessWidget {
           'Chi tiết công việc',
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -53,7 +44,7 @@ class TodoDetailScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      data['title'] ?? 'Không có tiêu đề',
+                      todo.title,
                       style: const TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
@@ -62,8 +53,7 @@ class TodoDetailScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    if (data['details'] != null &&
-                        data['details'].toString().isNotEmpty)
+                    if (todo.details != null && todo.details!.isNotEmpty)
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -71,7 +61,7 @@ class TodoDetailScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          data['details'],
+                          todo.details!,
                           style: const TextStyle(
                             fontSize: 16,
                             color: Colors.white,
@@ -96,14 +86,14 @@ class TodoDetailScreen extends StatelessWidget {
                     children: [
                       _buildTimeRow(
                         'Bắt đầu',
-                        data['startDateTime'] ?? 'Chưa đặt',
+                        _formatDateTime(todo.startDateTime),
                         Icons.play_arrow_outlined,
                         Colors.green,
                       ),
                       const SizedBox(height: 12),
                       _buildTimeRow(
                         'Kết thúc',
-                        data['endDateTime'] ?? 'Chưa đặt',
+                        _formatDateTime(todo.endDateTime),
                         Icons.stop_outlined,
                         Colors.red,
                       ),
@@ -119,7 +109,7 @@ class TodoDetailScreen extends StatelessWidget {
                     children: [
                       _buildSettingRow(
                         'Màu sắc',
-                        data['color'] ?? 'Xanh dương',
+                        todo.colorValue,
                         widget: Container(
                           width: 24,
                           height: 24,
@@ -136,21 +126,19 @@ class TodoDetailScreen extends StatelessWidget {
                       const SizedBox(height: 16),
                       _buildSettingRow(
                         'Nhắc nhở',
-                        data['reminderEnabled'] == true ? 'Đã bật' : 'Đã tắt',
-                        icon:
-                            data['reminderEnabled'] == true
-                                ? Icons.notifications_active_outlined
-                                : Icons.notifications_off_outlined,
-                        iconColor:
-                            data['reminderEnabled'] == true
-                                ? Colors.orange
-                                : Colors.grey,
+                        todo.reminderEnabled ? 'Đã bật' : 'Đã tắt',
+                        icon: todo.reminderEnabled
+                            ? Icons.notifications_active_outlined
+                            : Icons.notifications_off_outlined,
+                        iconColor: todo.reminderEnabled
+                            ? Colors.orange
+                            : Colors.grey,
                       ),
-                      if (data['reminderEnabled'] == true) ...[
+                      if (todo.reminderEnabled && todo.reminderTime != null) ...[
                         const SizedBox(height: 12),
                         _buildSettingRow(
                           'Thời gian nhắc',
-                          data['reminderTime'] ?? 'Chưa đặt',
+                          todo.reminderTime!,
                           icon: Icons.access_time_outlined,
                           iconColor: Colors.blue,
                         ),
@@ -169,10 +157,9 @@ class TodoDetailScreen extends StatelessWidget {
                             var result = await Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => TodoScreen(todoDoc: todo),
+                                builder: (_) => AddTodoScreen(existingTodo: todo),
                               ),
                             );
-                           
                             if (result == 'edited' && context.mounted) {
                               Navigator.pop(context, 'edited');
                             }
@@ -193,7 +180,7 @@ class TodoDetailScreen extends StatelessWidget {
                       const SizedBox(width: 16),
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: () => _showDeleteDialog(context),
+                          onPressed: () => _showDeleteDialog(context, todo.id),
                           icon: const Icon(Icons.delete_outline),
                           label: const Text('Xóa'),
                           style: OutlinedButton.styleFrom(
@@ -340,75 +327,88 @@ class TodoDetailScreen extends StatelessWidget {
   Color _getColorFromName(String colorName) {
     Map<String, Color> colorMap = {
       'Xanh lá cây': Colors.green,
-      'Xanh dương': Colors.blue,
+      'Xanh da trời': Colors.blue,
       'Tím': Colors.purple,
       'Hồng': Colors.pink,
       'Vàng': Colors.amber,
       'Cam': Colors.orange,
       'Xanh ngọc': Colors.teal,
-      'Chàm': Colors.indigo,
+      'Xanh dương đậm': Colors.indigo,
     };
     return colorMap[colorName] ?? Colors.blue;
   }
 
-  Future<void> _showDeleteDialog(BuildContext context) async {
+  String _formatDateTime(DateTime dt) {
+    return "${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} "
+        "${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
+  }
+
+  Future<void> _showDeleteDialog(BuildContext context, String todoId) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            title: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.warning_outlined,
-                    color: Colors.red,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Text(
-                  'Xác nhận xóa',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-            content: const Text(
-              'Bạn có chắc chắn muốn xóa công việc này không? Hành động này không thể hoàn tác.',
-              style: TextStyle(fontSize: 16, height: 1.5),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Hủy', style: TextStyle(fontSize: 16)),
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
               ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text(
-                  'Xóa',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
+              child: const Icon(
+                Icons.warning_outlined,
+                color: Colors.red,
+                size: 24,
               ),
-            ],
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Xác nhận xóa',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Bạn có chắc chắn muốn xóa công việc này không? Hành động này không thể hoàn tác.',
+          style: TextStyle(fontSize: 16, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hủy', style: TextStyle(fontSize: 16)),
           ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Xóa',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
     );
 
     if (confirm == true && context.mounted) {
-      await todo.reference.delete();
+      
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      final notificationId = todo.id.hashCode; 
+      await NotificationService().cancelNotification(notificationId);
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('todos')
+          .doc(todoId)
+          .delete();
       if (context.mounted) Navigator.pop(context, 'deleted');
     }
   }
