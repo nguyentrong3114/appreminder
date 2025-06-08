@@ -1,3 +1,5 @@
+import 'dart:math';
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -42,6 +44,7 @@ class TodoScreenState extends State<TodoScreen> {
     _titleController.addListener(_onTextChanged);
     _detailsController.addListener(_onTextChanged);
     _initNotifications();
+    _requestNotificationPermission();
 
     if (widget.todoDoc != null) {
       final data = widget.todoDoc!.data() as Map<String, dynamic>;
@@ -61,6 +64,10 @@ class TodoScreenState extends State<TodoScreen> {
       _endDate = _startDate;
       _endTime = _startTime.add(hour: 1);
     }
+  }
+
+  Future<void> _requestNotificationPermission() async {
+    await Permission.notification.request();
   }
 
   void _updateActiveColor() {
@@ -93,26 +100,60 @@ class TodoScreenState extends State<TodoScreen> {
   }
 
   void _initNotifications() async {
+  try {
     tz.initializeTimeZones();
-
+    tz.setLocalLocation(tz.getLocation('Asia/Ho_Chi_Minh'));
+    
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
     final DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
-          requestSoundPermission: true,
-          requestBadgePermission: true,
-          requestAlertPermission: true,
-        );
+      requestSoundPermission: true,
+      requestBadgePermission: true,
+      requestAlertPermission: true,
+      // onDidReceiveLocalNotification: (id, title, body, payload) async {
+      //   // Handle notification received on iOS
+      //   print('Received notification: $title - $body');
+      // },
+    );
 
     final InitializationSettings initializationSettings =
         InitializationSettings(
-          android: initializationSettingsAndroid,
-          iOS: initializationSettingsIOS,
-        );
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsIOS,
+    );
 
-    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+    bool? initialized = await flutterLocalNotificationsPlugin.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: (response) async {
+        // Handle notification tap
+        print('Notification tapped: ${response.payload}');
+      },
+    );
+    
+    print('Notifications initialized: $initialized');
+    
+    // Tạo notification channel cho Android
+    if (Platform.isAndroid) {
+      await flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          ?.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'todo_reminder_channel',
+          'Nhắc nhở nhiệm vụ',
+          description: 'Thông báo nhắc nhở nhiệm vụ sắp đến hạn',
+          importance: Importance.max,
+          // priority: Priority.high,
+          playSound: true,
+          enableVibration: true,
+        ),
+      );
+    }
+  } catch (e) {
+    print('Error initializing notifications: $e');
   }
+}
 
   Future<bool> _checkAndRequestNotificationPermission() async {
     PermissionStatus status = await Permission.notification.status;
@@ -173,7 +214,21 @@ class TodoScreenState extends State<TodoScreen> {
         false;
   }
 
-  void _scheduleNotificationForOption(String option) {
+  void _scheduleNotificationForOption(String option) async {
+    // Kiểm tra quyền thông báo trước
+    bool hasPermission = await _checkAndRequestNotificationPermission();
+    if (!hasPermission) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Cần cấp quyền thông báo để sử dụng tính năng nhắc nhở',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     int minutesBefore = _getMinutesFromOption(option);
 
     DateTime startDateTime = DateTime(
@@ -188,9 +243,19 @@ class TodoScreenState extends State<TodoScreen> {
       Duration(minutes: minutesBefore),
     );
 
+    // Debug: In ra thời gian thông báo
+    print('Notification time: $notificationTime');
+    print('Current time: ${DateTime.now()}');
+    print('Is after now: ${notificationTime.isAfter(DateTime.now())}');
+
     if (notificationTime.isAfter(DateTime.now())) {
-      _scheduleNotification(
-        id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      // Tạo ID duy nhất dựa trên thời gian và title
+      int notificationId =
+          '${_titleController.text}${startDateTime.millisecondsSinceEpoch}'
+              .hashCode;
+
+      await _scheduleNotification(
+        id: notificationId,
         title: 'Nhắc nhở nhiệm vụ',
         body:
             _titleController.text.isNotEmpty
@@ -201,8 +266,11 @@ class TodoScreenState extends State<TodoScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Đã lên lịch nhắc nhở $option'),
+          content: Text(
+            'Đã lên lịch nhắc nhở $option lúc ${DateFormat('HH:mm dd/MM/yyyy').format(notificationTime)}',
+          ),
           backgroundColor: _activeColor,
+          duration: const Duration(seconds: 3),
         ),
       );
     } else {
@@ -212,6 +280,27 @@ class TodoScreenState extends State<TodoScreen> {
           backgroundColor: Colors.orange,
         ),
       );
+    }
+  }
+
+  Future<void> _saveNotificationId(int notificationId) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      try {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('notifications')
+            .doc(notificationId.toString())
+            .set({
+              'notificationId': notificationId,
+              'todoTitle': _titleController.text,
+              'scheduledTime': DateTime.now().toIso8601String(),
+              'createdAt': DateTime.now().toIso8601String(),
+            });
+      } catch (e) {
+        print('Error saving notification ID: $e');
+      }
     }
   }
 
@@ -242,30 +331,90 @@ class TodoScreenState extends State<TodoScreen> {
   required String body,
   required DateTime scheduledTime,
 }) async {
-  await flutterLocalNotificationsPlugin.zonedSchedule(
-    id,
-    title,
-    body,
-    tz.TZDateTime.from(scheduledTime, tz.local),
-    const NotificationDetails(
-      android: AndroidNotificationDetails(
-        'todo_reminder_channel',
-        'Nhắc nhở nhiệm vụ',
-        channelDescription: 'Thông báo nhắc nhở nhiệm vụ sắp đến hạn',
-        importance: Importance.max,
-        priority: Priority.high,
-        showWhen: true,
+  try {
+    // Cancel notification cũ nếu có
+    await flutterLocalNotificationsPlugin.cancel(id);
+    
+    // Tạo TZDateTime từ scheduledTime
+    final tz.TZDateTime scheduledTZTime = tz.TZDateTime.from(scheduledTime, tz.local);
+    
+    print('Scheduling notification:');
+    print('ID: $id');
+    print('Title: $title');
+    print('Body: $body');
+    print('Scheduled time: $scheduledTZTime');
+    
+    await flutterLocalNotificationsPlugin.zonedSchedule(
+      id,
+      title,
+      body,
+      scheduledTZTime,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'todo_reminder_channel',
+          'Nhắc nhở nhiệm vụ',
+          channelDescription: 'Thông báo nhắc nhở nhiệm vụ sắp đến hạn',
+          importance: Importance.max,
+          priority: Priority.high,
+          showWhen: true,
+          // Thêm các thuộc tính này để đảm bảo thông báo hiển thị
+          playSound: true,
+          enableVibration: true,
+          fullScreenIntent: true,
+          category: AndroidNotificationCategory.reminder,
+        ),
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+          interruptionLevel: InterruptionLevel.timeSensitive,
+        ),
       ),
-      iOS: DarwinNotificationDetails(
-        presentAlert: true,
-        presentBadge: true,
-        presentSound: true,
-      ),
-    ),
-    androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-  );
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+    );
+    
+    print('Notification scheduled successfully');
+  } catch (e) {
+    print('Error scheduling notification: $e');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi khi lên lịch thông báo: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 }
 
+  Future<void> _scheduleTestNotification() async {
+    try {
+      final testTime = DateTime.now().add(const Duration(seconds: 5));
+      final tzTestTime = tz.TZDateTime.from(testTime, tz.local);
+
+      await flutterLocalNotificationsPlugin.zonedSchedule(
+        999999, // ID test khác biệt
+        'Test Notification',
+        'Đây là thông báo test sau 5 giây',
+        tzTestTime,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'todo_reminder_channel',
+            'Nhắc nhở nhiệm vụ',
+            channelDescription: 'Thông báo nhắc nhở nhiệm vụ sắp đến hạn',
+            importance: Importance.max,
+            priority: Priority.high,
+            showWhen: true,
+          ),
+        ),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      );
+
+      print('Test notification scheduled for: $tzTestTime');
+    } catch (e) {
+      print('Error scheduling test notification: $e');
+    }
+  }
 
   @override
   void dispose() {
@@ -1103,9 +1252,25 @@ class TodoScreenState extends State<TodoScreen> {
 
     await saveTodoToFirestore();
 
-    // Lên lịch notification nếu có nhắc nhở
     if (_reminderEnabled && _reminderTime.isNotEmpty) {
-      _scheduleNotificationForOption(_reminderTime);
+      bool hasPermission = await _checkAndRequestNotificationPermission();
+      if (!hasPermission) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Cần cấp quyền thông báo để sử dụng tính năng nhắc nhở',
+            ),
+            backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: 'CÀI ĐẶT',
+              textColor: Colors.white,
+              onPressed: () => openAppSettings(),
+            ),
+          ),
+        );
+      } else {
+        _scheduleNotificationForOption(_reminderTime);
+      }
     }
 
     if (!mounted) return;
@@ -1130,6 +1295,14 @@ class TodoScreenState extends State<TodoScreen> {
 
 extension TimeOfDayExtension on TimeOfDay {
   TimeOfDay add({int hour = 0, int minute = 0}) {
-    return replacing(hour: this.hour + hour, minute: this.minute + minute);
+    int totalMinutes = (this.hour * 60 + this.minute) + (hour * 60 + minute);
+
+    // Đảm bảo không vượt quá 24 giờ
+    totalMinutes = totalMinutes % (24 * 60);
+    if (totalMinutes < 0) {
+      totalMinutes += 24 * 60;
+    }
+
+    return TimeOfDay(hour: totalMinutes ~/ 60, minute: totalMinutes % 60);
   }
 }
