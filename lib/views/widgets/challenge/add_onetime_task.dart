@@ -13,6 +13,10 @@ class OnetimeTask extends StatefulWidget {
   final Color? initialColor;
   final bool? reminderEnabledByDefault;
 
+  // ✨ THÊM CÁC PARAMETER CHO EDITING
+  final Habit? existingHabit; // Habit cần edit
+  final bool isEditing; // Flag để biết đang edit hay tạo mới
+
   const OnetimeTask({
     Key? key,
     this.initialStartDate,
@@ -21,6 +25,8 @@ class OnetimeTask extends StatefulWidget {
     this.initialIcon,
     this.initialColor,
     this.reminderEnabledByDefault,
+    this.existingHabit, // ✨ THÊM
+    this.isEditing = false, // ✨ THÊM (default = false)
   }) : super(key: key);
 
   @override
@@ -46,6 +52,7 @@ class _OnetimeTask extends State<OnetimeTask> {
   late String formattedStartDate;
   List<TimeOfDay> reminders = [];
   List<Tag> tags = [];
+
   // Services
   final HabitService _habitService = HabitService();
   bool _isSaving = false;
@@ -54,6 +61,58 @@ class _OnetimeTask extends State<OnetimeTask> {
   void initState() {
     super.initState();
 
+    // ✅ NẾU ĐANG EDIT, LOAD DỮ LIỆU TỪ EXISTING HABIT
+    if (widget.isEditing && widget.existingHabit != null) {
+      _loadExistingHabitData();
+    } else {
+      _initializeNewHabit();
+    }
+  }
+
+  // ✅ PHƯƠNG THỨC LOAD DỮ LIỆU KHI EDIT
+  void _loadExistingHabitData() {
+    final habit = widget.existingHabit!;
+
+    // Load basic data
+    _titleController = TextEditingController(text: habit.title);
+    selectedColor = Color(int.parse(habit.colorValue));
+    selectedIcon = IconData(
+      int.parse(habit.iconCodePoint),
+      fontFamily: 'MaterialIcons',
+    );
+    calendarIcon = selectedIcon;
+
+    // Load date
+    startDate = habit.startDate;
+    formattedStartDate = DateFormat('MMMM d, yyyy', 'vi_VN').format(startDate);
+
+    // Load reminder settings
+    reminderEnabled = habit.reminderEnabled;
+    reminders =
+        habit.reminderTimes.map((timeString) {
+          List<String> parts = timeString.split(':');
+          return TimeOfDay(
+            hour: int.parse(parts[0]),
+            minute: int.parse(parts[1]),
+          );
+        }).toList();
+
+    // Load tags
+    streakEnabled = habit.streakEnabled;
+    tags =
+        habit.tags
+            .map(
+              (tagMap) => Tag(
+                id: tagMap['id'],
+                name: tagMap['name'],
+                color: Color(int.parse(tagMap['color'])),
+              ),
+            )
+            .toList();
+  }
+
+  // ✅ PHƯƠNG THỨC KHỞI TẠO KHI TẠO MỚI
+  void _initializeNewHabit() {
     // Random màu sắc từ danh sách màu có sẵn
     final List<Color> availableColors = [
       Colors.blue,
@@ -128,7 +187,7 @@ class _OnetimeTask extends State<OnetimeTask> {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: startDate,
-      firstDate: DateTime(2020),
+      firstDate: DateTime.now(), // Chỉ cho phép từ hôm nay trở đi
       lastDate: DateTime(2030),
     );
 
@@ -549,7 +608,6 @@ class _OnetimeTask extends State<OnetimeTask> {
                           itemCount: tags.length,
                           itemBuilder: (context, index) {
                             Tag tag = tags[index];
-
                             return Container(
                               margin: EdgeInsets.only(bottom: 8),
                               padding: EdgeInsets.all(12),
@@ -662,7 +720,7 @@ class _OnetimeTask extends State<OnetimeTask> {
     );
   }
 
-  // Save method cho Onetime Task
+  // ✅ CẬP NHẬT HÀM SAVE CHO CẢ CREATE VÀ EDIT
   Future<void> _saveOnetimeTask() async {
     if (_titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -674,8 +732,9 @@ class _OnetimeTask extends State<OnetimeTask> {
       return;
     }
 
-    // Validation ngày bắt đầu
-    if (startDate.isBefore(DateTime.now().subtract(Duration(days: 1)))) {
+    // Validation ngày bắt đầu (chỉ cho create mới)
+    if (!widget.isEditing &&
+        startDate.isBefore(DateTime.now().subtract(Duration(days: 1)))) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Ngày bắt đầu không được trong quá khứ'),
@@ -693,7 +752,10 @@ class _OnetimeTask extends State<OnetimeTask> {
       final now = DateTime.now();
 
       final habit = Habit(
-        id: '',
+        id:
+            widget.isEditing
+                ? widget.existingHabit!.id
+                : '', // ✅ Giữ ID khi edit
         title: _titleController.text.trim(),
         iconCodePoint: _iconToString(selectedIcon),
         colorValue: _colorToString(selectedColor),
@@ -701,22 +763,33 @@ class _OnetimeTask extends State<OnetimeTask> {
         endDate: null,
         hasEndDate: false,
         type: HabitType.onetime, // Đánh dấu là onetime task
-        repeatType: null, // Không lặp lại
+        repeatType: RepeatType.daily, // ✨ Default value cho onetime
         selectedWeekdays: [],
-        monthlyDay: 1,
+        selectedMonthlyDays: [],
         reminderEnabled: reminderEnabled,
         reminderTimes: _timeOfDayListToStringList(reminders),
         streakEnabled: streakEnabled,
         tags: _tagsToMap(tags),
-        createdAt: now,
+        createdAt: widget.isEditing ? widget.existingHabit!.createdAt : now,
         updatedAt: now,
       );
 
-      final habitId = await _habitService.saveHabit(habit);
+      // ✅ CHỌN METHOD PHÙ HỢP
+      String habitId;
+      if (widget.isEditing) {
+        await _habitService.updateHabit(habit); // Update existing
+        habitId = habit.id;
+      } else {
+        habitId = await _habitService.saveHabit(habit); // Create new
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Đã lưu nhiệm vụ thành công!'),
+          content: Text(
+            widget.isEditing
+                ? 'Đã cập nhật nhiệm vụ thành công!'
+                : 'Đã lưu nhiệm vụ thành công!',
+          ),
           backgroundColor: Colors.green,
         ),
       );
@@ -888,14 +961,15 @@ class _OnetimeTask extends State<OnetimeTask> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'NHIỆM VỤ MỚI',
+          // ✨ DYNAMIC TITLE DỰA VÀO TRẠNG THÁI EDIT
+          widget.isEditing ? 'SỬA NHIỆM VỤ' : 'NHIỆM VỤ MỚI',
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         actions: [
           IconButton(
             icon: Icon(Icons.check, color: selectedColor),
-            onPressed: () {},
+            onPressed: _saveOnetimeTask,
           ),
         ],
       ),
@@ -1059,9 +1133,10 @@ class _OnetimeTask extends State<OnetimeTask> {
                       title: 'Không lặp lại',
                       trailing: SizedBox.shrink(),
                     ),
+
                     Divider(height: 24),
 
-                    // Reminder section với thời gian như RegularHabitScreen
+                    // Reminder section với thời gian giống RegularHabitScreen
                     Column(
                       children: [
                         SettingItem(
@@ -1244,10 +1319,7 @@ class _OnetimeTask extends State<OnetimeTask> {
                   width: MediaQuery.of(context).size.width * 0.6,
                   height: 54,
                   child: ElevatedButton(
-                    onPressed:
-                        _isSaving
-                            ? null
-                            : _saveOnetimeTask, // Thay đổi từ () {} thành _saveOnetimeTask
+                    onPressed: _isSaving ? null : _saveOnetimeTask,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: selectedColor,
                       shape: RoundedRectangleBorder(
@@ -1255,7 +1327,7 @@ class _OnetimeTask extends State<OnetimeTask> {
                       ),
                     ),
                     child:
-                        _isSaving // Thêm loading indicator
+                        _isSaving
                             ? SizedBox(
                               width: 24,
                               height: 24,
