@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class Habit {
   final String id;
   final String title;
@@ -8,10 +6,10 @@ class Habit {
   final DateTime startDate;
   final DateTime? endDate;
   final bool hasEndDate;
-  final HabitType type; // Thêm field này
-  final RepeatType? repeatType; // Nullable cho onetime task
+  final HabitType type;
+  final RepeatType repeatType;
   final List<int> selectedWeekdays;
-  final int monthlyDay;
+  final List<int> selectedMonthlyDays; // ✨ THAY ĐỔI CHÍNH
   final bool reminderEnabled;
   final List<String> reminderTimes;
   final bool streakEnabled;
@@ -27,10 +25,10 @@ class Habit {
     required this.startDate,
     this.endDate,
     required this.hasEndDate,
-    required this.type, // Required
-    this.repeatType, // Nullable
+    required this.type,
+    required this.repeatType,
     required this.selectedWeekdays,
-    required this.monthlyDay,
+    required this.selectedMonthlyDays, // ✨ THAY ĐỔI CHÍNH
     required this.reminderEnabled,
     required this.reminderTimes,
     required this.streakEnabled,
@@ -39,63 +37,55 @@ class Habit {
     required this.updatedAt,
   });
 
-  factory Habit.fromMap(Map<String, dynamic> map, String id) {
-    return Habit(
-      id: id,
-      title: map['title'] ?? '',
-      iconCodePoint: map['iconCodePoint'] ?? '',
-      colorValue: map['colorValue'] ?? '',
-      startDate: (map['startDate'] as Timestamp).toDate(),
-      endDate:
-          map['endDate'] != null
-              ? (map['endDate'] as Timestamp).toDate()
-              : null,
-      hasEndDate: map['hasEndDate'] ?? false,
-      type: HabitType.values.firstWhere(
-        (e) => e.toString() == map['type'],
-        orElse: () => HabitType.regular,
-      ),
-      repeatType:
-          map['repeatType'] != null
-              ? RepeatType.values.firstWhere(
-                (e) => e.toString() == map['repeatType'],
-                orElse: () => RepeatType.daily,
-              )
-              : null,
-      selectedWeekdays: List<int>.from(map['selectedWeekdays'] ?? []),
-      monthlyDay: map['monthlyDay'] ?? 1,
-      reminderEnabled: map['reminderEnabled'] ?? false,
-      reminderTimes: List<String>.from(map['reminderTimes'] ?? []),
-      streakEnabled: map['streakEnabled'] ?? false,
-      tags: List<Map<String, dynamic>>.from(map['tags'] ?? []),
-      createdAt: (map['createdAt'] as Timestamp).toDate(),
-      updatedAt: (map['updatedAt'] as Timestamp).toDate(),
-    );
-  }
-
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'title': title,
       'iconCodePoint': iconCodePoint,
       'colorValue': colorValue,
-      'startDate': Timestamp.fromDate(startDate),
-      'endDate': endDate != null ? Timestamp.fromDate(endDate!) : null,
+      'startDate': startDate.toIso8601String(),
+      'endDate': endDate?.toIso8601String(),
       'hasEndDate': hasEndDate,
-      'type': type.toString(), // Lưu loại habit
-      'repeatType': repeatType?.toString(), // Nullable
+      'type': type.toString(),
+      'repeatType': repeatType.toString(),
       'selectedWeekdays': selectedWeekdays,
-      'monthlyDay': monthlyDay,
+      'selectedMonthlyDays': selectedMonthlyDays, // ✨ THAY ĐỔI CHÍNH
       'reminderEnabled': reminderEnabled,
       'reminderTimes': reminderTimes,
       'streakEnabled': streakEnabled,
       'tags': tags,
-      'createdAt': Timestamp.fromDate(createdAt),
-      'updatedAt': Timestamp.fromDate(updatedAt),
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
     };
+  }
+
+  factory Habit.fromJson(Map<String, dynamic> json) {
+    return Habit(
+      id: json['id'],
+      title: json['title'],
+      iconCodePoint: json['iconCodePoint'],
+      colorValue: json['colorValue'],
+      startDate: DateTime.parse(json['startDate']),
+      endDate: json['endDate'] != null ? DateTime.parse(json['endDate']) : null,
+      hasEndDate: json['hasEndDate'],
+      type: HabitType.values.firstWhere((e) => e.toString() == json['type']),
+      repeatType: RepeatType.values.firstWhere(
+        (e) => e.toString() == json['repeatType'],
+      ),
+      selectedWeekdays: List<int>.from(json['selectedWeekdays']),
+      selectedMonthlyDays: List<int>.from(
+        json['selectedMonthlyDays'] ?? [],
+      ), // ✨ THAY ĐỔI CHÍNH
+      reminderEnabled: json['reminderEnabled'],
+      reminderTimes: List<String>.from(json['reminderTimes']),
+      streakEnabled: json['streakEnabled'],
+      tags: List<Map<String, dynamic>>.from(json['tags']),
+      createdAt: DateTime.parse(json['createdAt']),
+      updatedAt: DateTime.parse(json['updatedAt']),
+    );
   }
 }
 
-// Thêm enum để phân biệt loại habit
-enum HabitType { regular, onetime }
+enum HabitType { regular, challenge, onetime }
 
 enum RepeatType { daily, weekly, monthly, yearly }

@@ -3,8 +3,10 @@ import 'package:intl/intl.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'dart:math';
 import '../../../models/habit.dart';
-// Import habit service (nếu bạn tạo file service)
 import '../../../services/habit_service.dart';
+import '../../../services/notification_service.dart';
+
+final NotificationService notificationService = NotificationService();
 
 class RegularHabitScreen extends StatefulWidget {
   final String? initialTitle;
@@ -13,6 +15,9 @@ class RegularHabitScreen extends StatefulWidget {
   final bool? reminderEnabledByDefault;
   final DateTime? initialStartDate;
   final String? formattedStartDate;
+  // ✅ THÊM CÁC PARAMETER CHO EDITING
+  final Habit? existingHabit; // Habit cần edit
+  final bool isEditing; // Flag để biết đang edit hay tạo mới
 
   const RegularHabitScreen({
     Key? key,
@@ -22,6 +27,8 @@ class RegularHabitScreen extends StatefulWidget {
     this.reminderEnabledByDefault,
     this.initialStartDate,
     this.formattedStartDate,
+    this.existingHabit, // ✅ THÊM
+    this.isEditing = false, // ✅ THÊM (default = false)
   }) : super(key: key);
 
   @override
@@ -82,6 +89,63 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
         .toList();
   }
 
+  Future<void> _scheduleRegularHabitNotifications(
+    String habitId,
+    String title,
+  ) async {
+    if (!reminderEnabled || reminders.isEmpty) {
+      print('❌ Không có thông báo nào để lên lịch');
+      return;
+    }
+
+    // Hủy các thông báo cũ
+    await notificationService.cancelHabitNotifications(
+      habitId,
+      reminders.length * 100,
+    );
+
+    // Lên lịch mới theo repeat type
+    switch (repeatType) {
+      case RepeatType.daily:
+        await notificationService.scheduleRegularHabitDaily(
+          habitId: habitId,
+          title: title,
+          reminderTimes: reminders,
+          startDate: startDate,
+        );
+        break;
+      case RepeatType.weekly:
+        await notificationService.scheduleRegularHabitWeekly(
+          habitId: habitId,
+          title: title,
+          reminderTimes: reminders,
+          selectedWeekdays: selectedWeekdays,
+          startDate: startDate,
+        );
+        break;
+      case RepeatType.monthly:
+        await notificationService.scheduleRegularHabitMonthly(
+          habitId: habitId,
+          title: title,
+          reminderTimes: reminders,
+          selectedMonthlyDays: selectedMonthlyDays,
+          startDate: startDate,
+        );
+        break;
+      case RepeatType.yearly:
+        await notificationService.scheduleRegularHabitYearly(
+          habitId: habitId,
+          title: title,
+          reminderTimes: reminders,
+          startDate: startDate,
+        );
+        break;
+    }
+
+    print('✅ Đã lên lịch tất cả notifications cho habit: $title');
+    await notificationService.debugNotificationStatus();
+  }
+
   // Cập nhật hàm lưu trong nút "Lưu"
   Future<void> _saveHabit() async {
     // Validation trước khi lưu
@@ -135,42 +199,51 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
     try {
       final now = DateTime.now();
 
-      // Tạo Habit object
       final habit = Habit(
-        id: '', // Firebase sẽ tự tạo ID
+        id:
+            widget.isEditing
+                ? widget.existingHabit!.id
+                : '', // ✅ Giữ ID khi edit
         title: _titleController.text.trim(),
         iconCodePoint: _iconToString(selectedIcon),
         colorValue: _colorToString(selectedColor),
         startDate: startDate,
         endDate: hasEndDate ? endDate : null,
         hasEndDate: hasEndDate,
-        type: HabitType.regular, // Đánh dấu là regular habit
-        repeatType: repeatType, // Có repeatType
+        type: HabitType.regular,
+        repeatType: repeatType,
         selectedWeekdays: selectedWeekdays,
-        monthlyDay: monthlyDay,
+        selectedMonthlyDays: selectedMonthlyDays,
         reminderEnabled: reminderEnabled,
         reminderTimes: _timeOfDayListToStringList(reminders),
         streakEnabled: streakEnabled,
         tags: _tagsToMap(tags),
-        createdAt: now,
+        createdAt: widget.isEditing ? widget.existingHabit!.createdAt : now,
         updatedAt: now,
       );
 
-      // Lưu vào Firebase
-      final habitId = await _habitService.saveHabit(habit);
-
-      // Hiển thị thông báo thành công
+      // ✅ CHỌN METHOD PHÙ HỢP
+      String habitId;
+      if (widget.isEditing) {
+        await _habitService.updateHabit(habit); // Update existing
+        habitId = habit.id;
+      } else {
+        habitId = await _habitService.saveHabit(habit); // Create new
+      }
+      await _scheduleRegularHabitNotifications(habitId, habit.title);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Đã lưu thử thách thành công!'),
+          content: Text(
+            widget.isEditing
+                ? 'Đã cập nhật thử thách thành công!'
+                : 'Đã lưu thử thách thành công!',
+          ),
           backgroundColor: Colors.green,
         ),
       );
 
-      // Quay về màn hình trước
       Navigator.pop(context, habitId);
     } catch (e) {
-      // Hiển thị lỗi
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Lỗi khi lưu thử thách: $e'),
@@ -188,7 +261,7 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
   DateTime? endDate;
   bool hasEndDate = false;
   List<int> selectedWeekdays = [];
-  int monthlyDay = 1;
+  List<int> selectedMonthlyDays = [];
 
   // Getter cho text hiển thị với thông tin chi tiết
   String get repeatTypeText {
@@ -208,6 +281,65 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
   void initState() {
     super.initState();
 
+    // ✅ NẾU ĐANG EDIT, LOAD DỮ LIỆU TỪ EXISTING HABIT
+    if (widget.isEditing && widget.existingHabit != null) {
+      _loadExistingHabitData();
+    } else {
+      _initializeNewHabit();
+    }
+  }
+
+  // ✅ PHƯƠNG THỨC LOAD DỮ LIỆU KHI EDIT
+  void _loadExistingHabitData() {
+    final habit = widget.existingHabit!;
+
+    // Load basic data
+    _titleController = TextEditingController(text: habit.title);
+    selectedColor = Color(int.parse(habit.colorValue));
+    selectedIcon = IconData(
+      int.parse(habit.iconCodePoint),
+      fontFamily: 'MaterialIcons',
+    );
+    calendarIcon = selectedIcon;
+
+    // Load dates
+    startDate = habit.startDate;
+    endDate = habit.endDate;
+    hasEndDate = habit.hasEndDate;
+    formattedStartDate = DateFormat('MMMM d, yyyy', 'vi_VN').format(startDate);
+
+    // Load repeat settings
+    repeatType = habit.repeatType;
+    selectedWeekdays = List<int>.from(habit.selectedWeekdays);
+    selectedMonthlyDays = List<int>.from(habit.selectedMonthlyDays);
+
+    // Load reminder settings
+    reminderEnabled = habit.reminderEnabled;
+    reminders =
+        habit.reminderTimes.map((timeString) {
+          List<String> parts = timeString.split(':');
+          return TimeOfDay(
+            hour: int.parse(parts[0]),
+            minute: int.parse(parts[1]),
+          );
+        }).toList();
+
+    // Load tags
+    streakEnabled = habit.streakEnabled;
+    tags =
+        habit.tags
+            .map(
+              (tagMap) => Tag(
+                id: tagMap['id'],
+                name: tagMap['name'],
+                color: Color(int.parse(tagMap['color'])),
+              ),
+            )
+            .toList();
+  }
+
+  // ✅ PHƯƠNG THỨC KHỞI TẠO KHI TẠO MỚI
+  void _initializeNewHabit() {
     final List<Color> availableColors = [
       Colors.blue,
       Colors.red,
@@ -224,7 +356,6 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
     ];
 
     final random = Random();
-
     selectedColor =
         widget.initialColor ??
         availableColors[random.nextInt(availableColors.length)];
@@ -234,23 +365,16 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
     _titleController = TextEditingController(text: widget.initialTitle ?? '');
     reminderEnabled = widget.reminderEnabledByDefault ?? false;
 
-    // Đảm bảo startDate không được trong quá khứ
     DateTime now = DateTime.now();
     DateTime providedStartDate = widget.initialStartDate ?? now;
     startDate = providedStartDate.isBefore(now) ? now : providedStartDate;
 
-    // Khởi tạo selectedWeekdays với ngày hiện tại
     selectedWeekdays = [startDate.weekday];
-    monthlyDay = startDate.day;
+    selectedMonthlyDays = [startDate.day];
 
-    if (widget.formattedStartDate != null && !startDate.isBefore(now)) {
-      formattedStartDate = widget.formattedStartDate!;
-    } else {
-      formattedStartDate = DateFormat(
-        'MMMM d, yyyy',
-        'vi_VN',
-      ).format(startDate);
-    }
+    formattedStartDate =
+        widget.formattedStartDate ??
+        DateFormat('MMMM d, yyyy', 'vi_VN').format(startDate);
   }
 
   @override
@@ -595,6 +719,19 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
                                   );
                                   return;
                                 }
+                                // Thêm validation cho monthly
+                                if (repeatType == RepeatType.monthly &&
+                                    selectedMonthlyDays.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Vui lòng chọn ít nhất một ngày trong tháng',
+                                      ),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                  return;
+                                }
 
                                 setState(() {});
                                 Navigator.of(context).pop();
@@ -882,7 +1019,7 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Lặp lại vào ngày:',
+          'Lặp lại vào các ngày:',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
@@ -891,31 +1028,124 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
         ),
         SizedBox(height: 12),
 
+        // Grid để chọn múltiple ngày
         Container(
           padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
-            border: Border.all(color: selectedColor.withOpacity(0.3)),
+            color: Colors.grey[50],
             borderRadius: BorderRadius.circular(12),
-            color: selectedColor.withOpacity(0.05),
+            border: Border.all(color: Colors.grey[200]!),
           ),
-          child: DropdownButton<int>(
-            value: monthlyDay,
-            isExpanded: true,
-            underline: SizedBox(),
-            items: List.generate(31, (index) {
-              int day = index + 1;
-              return DropdownMenuItem(value: day, child: Text('Ngày $day'));
-            }),
-            onChanged: (value) {
-              setDialogState(() {
-                monthlyDay = value!;
-              });
-            },
+          child: Column(
+            children: [
+              // Hiển thị grid 31 ngày
+              GridView.builder(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 7,
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                  childAspectRatio: 1,
+                ),
+                itemCount: 31,
+                itemBuilder: (context, index) {
+                  int day = index + 1;
+                  bool isSelected = selectedMonthlyDays.contains(day);
+
+                  return InkWell(
+                    onTap: () {
+                      setDialogState(() {
+                        if (isSelected) {
+                          selectedMonthlyDays.remove(day);
+                        } else {
+                          selectedMonthlyDays.add(day);
+                        }
+                        selectedMonthlyDays.sort(); // Sắp xếp theo thứ tự
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isSelected ? selectedColor : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isSelected ? selectedColor : Colors.grey[300]!,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '$day',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: isSelected ? Colors.white : Colors.grey[600],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+
+              SizedBox(height: 12),
+
+              // Hiển thị các ngày đã chọn
+              if (selectedMonthlyDays.isNotEmpty)
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: selectedColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: selectedColor.withOpacity(0.3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Đã chọn:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: selectedColor,
+                          fontSize: 12,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Wrap(
+                        spacing: 4,
+                        runSpacing: 4,
+                        children:
+                            selectedMonthlyDays.map((day) {
+                              return Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: selectedColor,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  'Ngày $day',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           ),
         ),
 
         SizedBox(height: 16),
 
+        // Checkbox cho end date (giữ nguyên)
         Container(
           padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -948,6 +1178,7 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
           ),
         ),
 
+        // End date picker (giữ nguyên phần này)
         if (hasEndDate) ...[
           SizedBox(height: 16),
           Text(
@@ -1147,7 +1378,7 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
 
         // Cập nhật lại selectedWeekdays và monthlyDay dựa trên ngày mới
         selectedWeekdays = [startDate.weekday];
-        monthlyDay = startDate.day;
+        selectedMonthlyDays = [startDate.day];
 
         // Nếu endDate đã được chọn và nhỏ hơn startDate mới, reset endDate
         if (endDate != null && endDate!.isBefore(startDate)) {
@@ -1817,14 +2048,16 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'THỬ THÁCH MỚI',
+          widget.isEditing
+              ? 'SỬA THỬ THÁCH'
+              : 'THỬ THÁCH MỚI', // ✅ Dynamic title
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         actions: [
           IconButton(
             icon: Icon(Icons.check, color: selectedColor),
-            onPressed: () {},
+            onPressed: _saveHabit,
           ),
         ],
       ),
@@ -2340,7 +2573,16 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
         return 'Lặp vào ${selectedDays.join(', ')}';
 
       case RepeatType.monthly:
-        return 'Lặp vào ngày $monthlyDay hằng tháng';
+        if (selectedMonthlyDays.isEmpty) return '';
+
+        if (selectedMonthlyDays.length == 1) {
+          return 'Lặp vào ngày ${selectedMonthlyDays.first} hằng tháng';
+        } else {
+          String daysList = selectedMonthlyDays
+              .map((day) => 'ngày $day')
+              .join(', ');
+          return 'Lặp vào $daysList hằng tháng';
+        }
 
       case RepeatType.yearly:
         return 'Lặp vào ngày ${startDate.day} tháng ${startDate.month} hằng năm';

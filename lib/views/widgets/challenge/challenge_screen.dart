@@ -115,7 +115,8 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
       case RepeatType.weekly:
         return habit.selectedWeekdays.contains(date.weekday);
       case RepeatType.monthly:
-        return habit.monthlyDay == date.day;
+        // ✨ THAY ĐỔI: Sử dụng selectedMonthlyDays thay vì monthlyDay
+        return habit.selectedMonthlyDays.contains(date.day);
       case RepeatType.yearly:
         return habit.startDate.month == date.month &&
             habit.startDate.day == date.day;
