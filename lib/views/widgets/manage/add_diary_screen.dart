@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_app/provider/setting_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 
 class AddDiaryScreen extends StatefulWidget {
   final Map<String, dynamic>? initData;
@@ -386,6 +388,7 @@ class DiaryScreenState extends State<AddDiaryScreen> {
   }
 
   Widget _buildTimeSettings() {
+    final dateFormat = context.watch<SettingProvider>().dateFormat;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       padding: const EdgeInsets.all(16),
@@ -412,7 +415,7 @@ class DiaryScreenState extends State<AddDiaryScreen> {
             borderRadius: BorderRadius.circular(8),
             child: _buildTimeSettingRow(
               icon: Icons.calendar_month_rounded,
-              text: DateFormat('dd/MM/yyyy').format(_selectedDate),
+              text: DateFormat(dateFormat).format(_selectedDate),
             ),
           ),
           const SizedBox(height: 12),
@@ -421,7 +424,7 @@ class DiaryScreenState extends State<AddDiaryScreen> {
             borderRadius: BorderRadius.circular(8),
             child: _buildTimeSettingRow(
               icon: Icons.access_time_rounded,
-              text: _formatTimeOfDay(_selectedTime),
+              text: _formatTimeOfDay(context,_selectedTime),
             ),
           ),
           const Divider(height: 24),
@@ -480,18 +483,14 @@ class DiaryScreenState extends State<AddDiaryScreen> {
     }
   }
 
-  String _formatTimeOfDay(TimeOfDay timeOfDay) {
-    final now = DateTime.now();
-    final dt = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      timeOfDay.hour,
-      timeOfDay.minute,
-    );
-    final format = DateFormat.jm();
-    return format.format(dt);
-  }
+  String _formatTimeOfDay(BuildContext context, TimeOfDay time) {
+  final is24Hour = context.watch<SettingProvider>().use24HourFormat;
+  final now = DateTime.now();
+  final dt = DateTime(now.year, now.month, now.day, time.hour, time.minute);
+  return is24Hour
+      ? DateFormat('HH:mm').format(dt)
+      : DateFormat('hh:mm a').format(dt);
+}
 
   Widget _buildSettingRow({required IconData icon, required String text}) {
     return Row(
