@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_app/provider/setting_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'dart:math';
 import '../../../models/habit.dart';
 import '../../../services/habit_service.dart';
 import '../../../services/notification_service.dart';
+import 'package:provider/provider.dart';
 
 final NotificationService notificationService = NotificationService();
 
@@ -363,7 +365,10 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
 
     formattedStartDate =
         widget.formattedStartDate ??
-        DateFormat('MMMM d, yyyy', 'vi_VN').format(startDate);
+        DateFormat(
+          context.read<SettingProvider>().dateFormat,
+          'vi_VN',
+        ).format(startDate);
   }
 
   @override
@@ -832,7 +837,9 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
                   SizedBox(width: 12),
                   Text(
                     endDate != null
-                        ? DateFormat('dd/MM/yyyy').format(endDate!)
+                        ? DateFormat(
+                          context.watch<SettingProvider>().dateFormat,
+                        ).format(endDate!)
                         : 'Chọn ngày kết thúc',
                     style: TextStyle(
                       fontSize: 16,
@@ -984,7 +991,9 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
                   SizedBox(width: 12),
                   Text(
                     endDate != null
-                        ? DateFormat('dd/MM/yyyy').format(endDate!)
+                        ? DateFormat(
+                          context.watch<SettingProvider>().dateFormat,
+                        ).format(endDate!)
                         : 'Chọn ngày kết thúc',
                     style: TextStyle(
                       fontSize: 16,
@@ -1353,17 +1362,16 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
       context: context,
       initialDate:
           startDate.isBefore(DateTime.now()) ? DateTime.now() : startDate,
-      firstDate: DateTime.now(), // Chỉ cho phép chọn từ ngày hiện tại trở đi
+      firstDate: DateTime.now(),
       lastDate: DateTime(2030),
     );
 
     if (pickedDate != null && pickedDate != startDate) {
       setState(() {
         startDate = pickedDate;
-        formattedStartDate = DateFormat(
-          'MMMM d, yyyy',
-          'vi_VN',
-        ).format(startDate);
+        // Sử dụng định dạng động từ SettingProvider
+        final dateFormat = context.read<SettingProvider>().dateFormat;
+        formattedStartDate = DateFormat(dateFormat, 'vi_VN').format(startDate);
 
         // Cập nhật lại selectedWeekdays và monthlyDay dựa trên ngày mới
         selectedWeekdays = [startDate.weekday];
@@ -2027,6 +2035,7 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final dateFormat = context.watch<SettingProvider>().dateFormat;
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -2188,7 +2197,7 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
                         trailing: Row(
                           children: [
                             Text(
-                              formattedStartDate,
+                              DateFormat(dateFormat, 'vi_VN').format(startDate),
                               style: TextStyle(color: Colors.grey),
                             ),
                             SizedBox(width: 8),
@@ -2574,7 +2583,8 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
         }
 
       case RepeatType.yearly:
-        return 'Lặp vào ngày ${startDate.day} tháng ${startDate.month} hằng năm';
+        final dateFormat = context.read<SettingProvider>().dateFormat;
+        return 'Lặp vào ${DateFormat(dateFormat, 'vi_VN').format(DateTime(startDate.year, startDate.month, startDate.day))} hằng năm';
     }
   }
 }

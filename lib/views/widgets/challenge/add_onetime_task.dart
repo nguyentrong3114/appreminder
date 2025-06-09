@@ -5,6 +5,8 @@ import 'dart:math';
 import '../../../models/habit.dart';
 import '../../../services/habit_service.dart';
 import '../../../services/notification_service.dart';
+import 'package:provider/provider.dart';
+import '../../../provider/setting_provider.dart';
 
 class OnetimeTask extends StatefulWidget {
   final DateTime? initialStartDate;
@@ -84,9 +86,10 @@ class _OnetimeTask extends State<OnetimeTask> {
     );
     calendarIcon = selectedIcon;
 
-    // Load date
+    // Load date với định dạng động
     startDate = habit.startDate;
-    formattedStartDate = DateFormat('MMMM d, yyyy', 'vi_VN').format(startDate);
+    final dateFormat = context.read<SettingProvider>().dateFormat;
+    formattedStartDate = DateFormat(dateFormat, 'vi_VN').format(startDate);
 
     // Load reminder settings
     reminderEnabled = habit.reminderEnabled;
@@ -148,10 +151,8 @@ class _OnetimeTask extends State<OnetimeTask> {
     if (widget.formattedStartDate != null) {
       formattedStartDate = widget.formattedStartDate!;
     } else {
-      formattedStartDate = DateFormat(
-        'MMMM d, yyyy',
-        'vi_VN',
-      ).format(startDate);
+      final dateFormat = context.read<SettingProvider>().dateFormat;
+      formattedStartDate = DateFormat(dateFormat, 'vi_VN').format(startDate);
     }
   }
 
@@ -196,10 +197,8 @@ class _OnetimeTask extends State<OnetimeTask> {
     if (pickedDate != null && pickedDate != startDate) {
       setState(() {
         startDate = pickedDate;
-        formattedStartDate = DateFormat(
-          'MMMM d, yyyy',
-          'vi_VN',
-        ).format(startDate);
+        final dateFormat = context.read<SettingProvider>().dateFormat;
+        formattedStartDate = DateFormat(dateFormat, 'vi_VN').format(startDate);
       });
     }
   }
@@ -982,6 +981,7 @@ class _OnetimeTask extends State<OnetimeTask> {
 
   @override
   Widget build(BuildContext context) {
+    final dateFormat = context.watch<SettingProvider>().dateFormat;
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -1143,7 +1143,7 @@ class _OnetimeTask extends State<OnetimeTask> {
                         trailing: Row(
                           children: [
                             Text(
-                              formattedStartDate,
+                              DateFormat(dateFormat, 'vi_VN').format(startDate),
                               style: TextStyle(color: Colors.grey),
                             ),
                             SizedBox(width: 8),
