@@ -5,29 +5,25 @@ class SettingsItem extends StatelessWidget {
   final Color iconColor;
   final String title;
   final Widget? trailing;
+  final VoidCallback? onTap;
 
   const SettingsItem({
-    super.key,
+    Key? key,
     required this.icon,
     required this.iconColor,
     required this.title,
     this.trailing,
-  });
+    this.onTap,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          color: iconColor.withOpacity(0.1),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, color: iconColor),
-      ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-      trailing: trailing ?? const Icon(Icons.chevron_right, color: Colors.grey),
+      leading: Icon(icon, color: iconColor),
+      title: Text(title),
+      trailing: trailing,
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 0),
     );
   }
 }

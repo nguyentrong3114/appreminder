@@ -117,7 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final use24Hour = context.watch<TimeFormatProvider>().use24HourFormat;
+    final use24Hour = context.watch<SettingProvider>().use24HourFormat;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -219,7 +219,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMonthView() {
-    final use24Hour = context.watch<TimeFormatProvider>().use24HourFormat;
+    final use24Hour = context.watch<SettingProvider>().use24HourFormat;
     Map<String, List<Map<String, String>>> eventsMap = {};
     for (var event in allEvents) {
       String dateKey = DateFormat('yyyy-MM-dd').format(event.startTime);
@@ -242,7 +242,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildListView() {
-    final use24Hour = context.watch<TimeFormatProvider>().use24HourFormat;
+    final use24Hour = context.watch<SettingProvider>().use24HourFormat;
     // Lấy danh sách các ngày có sự kiện (dạng DateTime, không chỉ lấy day để tránh trùng ngày khác tháng/năm)
     final eventDays = allEvents
         .map((e) => DateTime(e.startTime.year, e.startTime.month, e.startTime.day))

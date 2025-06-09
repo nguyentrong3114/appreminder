@@ -1,5 +1,6 @@
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'views/shared/login_screen.dart';
 import 'views/widgets/manage/todo.dart';
 import 'views/widgets/setting/setting.dart';
@@ -11,16 +12,20 @@ import 'views/widgets/home/add_something_today.dart';
 import 'views/widgets/challenge/challenge_screen.dart';
 import 'views/widgets/challenge/add_onetime_task.dart';
 import 'views/widgets/challenge/add_challenge_screen.dart';
+import 'package:flutter_app/provider/setting_provider.dart';
 import 'views/widgets/challenge/add_regular_habit_screen.dart';
-
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
+    final fontFamily = context.watch<SettingProvider>().fontFamily;
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        fontFamily: fontFamily ?? 'Roboto',
+      ),
       home: LoginScreen(),
       routes: {
         '/main': (context) => const MainScreen(),
