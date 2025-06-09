@@ -33,14 +33,16 @@ class DiaryScreenState extends State<AddDiaryScreen> {
     if (d != null) {
       _contentController.text = d['content'] ?? '';
       // Xác định index mood:
-     final moodImages = [
-      "assets/images/1star.png",
-      "assets/images/2star.png", 
-      "assets/images/3star.png",
-      "assets/images/4star.png",
-      "assets/images/5star.png"
-    ];
-      _selectedMoodIndex = moodImages.indexOf(d['mood'] ?? "assets/images/1star.png");
+      final moodImages = [
+        "assets/images/1star.png",
+        "assets/images/2star.png",
+        "assets/images/3star.png",
+        "assets/images/4star.png",
+        "assets/images/5star.png",
+      ];
+      _selectedMoodIndex = moodImages.indexOf(
+        d['mood'] ?? "assets/images/1star.png",
+      );
       if (_selectedMoodIndex == -1) _selectedMoodIndex = 0;
       selectedColor = d['color'] ?? "Xanh lá cây";
       _activeColor = _colorFromName(selectedColor);
@@ -424,7 +426,7 @@ class DiaryScreenState extends State<AddDiaryScreen> {
             borderRadius: BorderRadius.circular(8),
             child: _buildTimeSettingRow(
               icon: Icons.access_time_rounded,
-              text: _formatTimeOfDay(context,_selectedTime),
+              text: _formatTimeOfDay(context, _selectedTime),
             ),
           ),
           const Divider(height: 24),
@@ -437,8 +439,8 @@ class DiaryScreenState extends State<AddDiaryScreen> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
+      firstDate: DateTime(DateTime.now().year, 1, 1),
+      lastDate: DateTime(DateTime.now().year + 1, 12, 31),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -460,19 +462,25 @@ class DiaryScreenState extends State<AddDiaryScreen> {
   }
 
   Future<void> _selectTime(BuildContext context) async {
+    final is24Hour = context.read<SettingProvider>().use24HourFormat;
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: _selectedTime,
       builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: _activeColor,
-              onPrimary: Colors.white,
-              onSurface: Colors.black,
+        return MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(alwaysUse24HourFormat: is24Hour),
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: ColorScheme.light(
+                primary: _activeColor,
+                onPrimary: Colors.white,
+                onSurface: Colors.black,
+              ),
             ),
+            child: child!,
           ),
-          child: child!,
         );
       },
     );
@@ -484,13 +492,13 @@ class DiaryScreenState extends State<AddDiaryScreen> {
   }
 
   String _formatTimeOfDay(BuildContext context, TimeOfDay time) {
-  final is24Hour = context.watch<SettingProvider>().use24HourFormat;
-  final now = DateTime.now();
-  final dt = DateTime(now.year, now.month, now.day, time.hour, time.minute);
-  return is24Hour
-      ? DateFormat('HH:mm').format(dt)
-      : DateFormat('hh:mm a').format(dt);
-}
+    final is24Hour = context.watch<SettingProvider>().use24HourFormat;
+    final now = DateTime.now();
+    final dt = DateTime(now.year, now.month, now.day, time.hour, time.minute);
+    return is24Hour
+        ? DateFormat('HH:mm').format(dt)
+        : DateFormat('hh:mm a').format(dt);
+  }
 
   Widget _buildSettingRow({required IconData icon, required String text}) {
     return Row(
@@ -748,12 +756,12 @@ class DiaryScreenState extends State<AddDiaryScreen> {
     }
 
     final moodImages = [
-    "assets/images/1star.png",
-    "assets/images/2star.png", 
-    "assets/images/3star.png",
-    "assets/images/4star.png",
-    "assets/images/5star.png"
-  ];
+      "assets/images/1star.png",
+      "assets/images/2star.png",
+      "assets/images/3star.png",
+      "assets/images/4star.png",
+      "assets/images/5star.png",
+    ];
     final mood = moodImages[_selectedMoodIndex];
     Map<String, dynamic> diaryData = {
       "content": _contentController.text,
