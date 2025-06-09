@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_app/views/widgets/challenge/notification_test_page.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'dart:math';
@@ -776,18 +774,6 @@ class _OnetimeTask extends State<OnetimeTask> {
 
       // ✨ LEN LỊCH THÔNG BÁO MỚI
       await _scheduleNotifications(habitId, _titleController.text.trim());
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            widget.isEditing
-                ? 'Đã cập nhật nhiệm vụ thành công!'
-                : 'Đã lưu nhiệm vụ thành công!',
-          ),
-          backgroundColor: Colors.green,
-        ),
-      );
-
       Navigator.pop(context, habitId);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1013,16 +999,6 @@ class _OnetimeTask extends State<OnetimeTask> {
 
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: Icon(Icons.bug_report, color: Colors.orange),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => NotificationTestPage()),
-              );
-            },
-            tooltip: 'Test Notification',
-          ),
           IconButton(
             icon: Icon(Icons.check, color: selectedColor),
             onPressed: _saveOnetimeTask,

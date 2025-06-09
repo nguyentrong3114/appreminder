@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'add_regular_habit_screen.dart';
 import 'package:intl/intl.dart';
 import 'add_challenge_screen.dart';
 import '../../../models/habit.dart';
@@ -10,7 +9,10 @@ import 'statistics_screen.dart';
 
 class ChallengeScreen extends StatefulWidget {
   static DateTime selectedDate = DateTime.now();
+
+  const ChallengeScreen({super.key});
   @override
+  // ignore: library_private_types_in_public_api
   _ChallengeScreenState createState() => _ChallengeScreenState();
 }
 
@@ -72,7 +74,6 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
     try {
       _habitService.getAllHabits().listen((habits) {
         List<Habit> filteredHabits = [];
-        Map<String, bool> completionStatus = {};
 
         for (Habit habit in habits) {
           if (_shouldShowHabitOnDate(habit, selectedDate)) {
@@ -120,8 +121,178 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
       case RepeatType.yearly:
         return habit.startDate.month == date.month &&
             habit.startDate.day == date.day;
-      default:
-        return true;
+    }
+  }
+
+  void _showHelpDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(32),
+          ),
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.9,
+            height: MediaQuery.of(context).size.height * 0.7,
+            padding: EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Center(
+                      child: Text(
+                        'Hướng dẫn sử dụng',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    Positioned(
+                      right: 0,
+                      child: IconButton(
+                        icon: Icon(Icons.close, color: Colors.grey[600]),
+                        onPressed: () => Navigator.of(context).pop(),
+                        padding: EdgeInsets.zero,
+                        constraints: BoxConstraints(),
+                      ),
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 16),
+
+                // Image Carousel
+                Expanded(
+                  child: ImageCarouselWidget(), // Thay thế VideoPlayerWidget()
+                ),
+
+                SizedBox(height: 16),
+
+                // OK Button
+                Container(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF4FCA9C),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: Text(
+                      'OK',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showDeleteHabitDialog(Habit habit) async {
+    bool? confirmDelete = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          title: Text(
+            'Bạn có chắc chắn muốn xóa thử thách này không?',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          ),
+          content: Container(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: Text(
+                      'Xóa thử thách',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.grey[200],
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: Text(
+                      'Hủy bỏ',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (confirmDelete == true) {
+      await _deleteHabit(habit);
+    }
+  }
+
+  Future<void> _deleteHabit(Habit habit) async {
+    try {
+      await _habitService.deleteHabit(habit.id);
+
+      // Tải lại danh sách habits sau khi xóa
+      _loadHabitsForSelectedDate();
+    } catch (e) {
+      print('❌ Lỗi khi xóa habit: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Có lỗi xảy ra khi xóa thử thách'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 2),
+        ),
+      );
     }
   }
 
@@ -426,7 +597,9 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
         actions: [
           IconButton(
             icon: Icon(Icons.help_outline, color: Colors.black),
-            onPressed: () {},
+            onPressed: () {
+              _showHelpDialog(); // Thay thế dòng này
+            },
           ),
           IconButton(
             icon: Icon(Icons.add, color: Colors.black),
@@ -563,24 +736,10 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
                           SizedBox(height: 10),
                           GestureDetector(
                             onTap: () {
-                              DateTime selectedDate =
-                                  selectedIndex >= 0 &&
-                                          selectedIndex < visibleDates.length
-                                      ? visibleDates[selectedIndex]
-                                      : today;
-                              String formattedDate = DateFormat(
-                                'MMMM d, yyyy',
-                                'vi_VN',
-                              ).format(selectedDate);
-
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder:
-                                      (context) => RegularHabitScreen(
-                                        initialStartDate: selectedDate,
-                                        formattedStartDate: formattedDate,
-                                      ),
+                                  builder: (context) => AddChallengeScreen(),
                                 ),
                               );
                             },
@@ -604,101 +763,127 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
                         bool isCompleted =
                             habitCompletionStatus[habit.id] ?? false;
 
-                        return Container(
-                          margin: EdgeInsets.only(bottom: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black12,
-                                blurRadius: 8,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
+                        return Dismissible(
+                          key: Key(habit.id),
+                          direction:
+                              DismissDirection
+                                  .endToStart, // Chỉ kéo từ phải sang trái
+                          background: Container(
+                            margin: EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            alignment: Alignment.centerRight,
+                            padding: EdgeInsets.only(right: 20),
+                            child: Icon(
+                              Icons.delete,
+                              color: Colors.white,
+                              size: 30,
+                            ),
                           ),
-                          child: Row(
-                            children: [
-                              // ✅ Dấu gạch đứng tách ra 1 chút từ mép
-                              Container(
-                                margin: EdgeInsets.only(left: 12),
-                                width: 6,
-                                height: 45,
-                                decoration: BoxDecoration(
-                                  color: Color(int.parse(habit.colorValue)),
-                                  borderRadius: BorderRadius.circular(4),
+                          confirmDismiss: (direction) async {
+                            // Hiện dialog xác nhận, không tự động xóa
+                            _showDeleteHabitDialog(habit);
+                            return false; // Không tự động dismiss
+                          },
+                          child: Container(
+                            margin: EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 8,
+                                  offset: Offset(0, 2),
                                 ),
-                              ),
-                              SizedBox(width: 8),
-
-                              // ✅ Expanded để ListTile chiếm hết không gian còn lại
-                              Expanded(
-                                child: ListTile(
-                                  contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                // Dấu gạch đứng
+                                Container(
+                                  margin: EdgeInsets.only(left: 12),
+                                  width: 6,
+                                  height: 45,
+                                  decoration: BoxDecoration(
+                                    color: Color(int.parse(habit.colorValue)),
+                                    borderRadius: BorderRadius.circular(4),
                                   ),
-                                  leading: Container(
-                                    width: 40,
-                                    height: 40,
-                                    decoration: BoxDecoration(
-                                      color: Color(int.parse(habit.colorValue)),
-                                      shape: BoxShape.circle,
+                                ),
+                                SizedBox(width: 8),
+                                // ListTile
+                                Expanded(
+                                  child: ListTile(
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
                                     ),
-                                    child: Icon(
-                                      IconData(
-                                        int.parse(habit.iconCodePoint),
-                                        fontFamily: 'MaterialIcons',
-                                      ),
-                                      color: Colors.white,
-                                      size: 24,
-                                    ),
-                                  ),
-                                  title: Text(
-                                    habit.title,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  onTap:
-                                      () => _navigateToStatistics(
-                                        habit,
-                                      ), // ✅ Thêm dòng này
-                                  trailing: GestureDetector(
-                                    onTap:
-                                        () => _handleHabitCompletion(habit.id),
-                                    child: Container(
-                                      width: 28,
-                                      height: 28,
+                                    leading: Container(
+                                      width: 40,
+                                      height: 40,
                                       decoration: BoxDecoration(
-                                        color:
-                                            isCompleted
-                                                ? Color(
-                                                  int.parse(habit.colorValue),
-                                                )
-                                                : Colors.transparent,
-                                        border: Border.all(
-                                          color: Color(
-                                            int.parse(habit.colorValue),
-                                          ),
-                                          width: 2,
+                                        color: Color(
+                                          int.parse(habit.colorValue),
                                         ),
-                                        borderRadius: BorderRadius.circular(14),
+                                        shape: BoxShape.circle,
                                       ),
-                                      child:
-                                          isCompleted
-                                              ? Icon(
-                                                Icons.check,
-                                                color: Colors.white,
-                                                size: 20,
-                                              )
-                                              : null,
+                                      child: Icon(
+                                        IconData(
+                                          int.parse(habit.iconCodePoint),
+                                          fontFamily: 'MaterialIcons',
+                                        ),
+                                        color: Colors.white,
+                                        size: 24,
+                                      ),
+                                    ),
+                                    title: Text(
+                                      habit.title,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    onTap: () => _navigateToStatistics(habit),
+                                    trailing: GestureDetector(
+                                      onTap:
+                                          () =>
+                                              _handleHabitCompletion(habit.id),
+                                      child: Container(
+                                        width: 28,
+                                        height: 28,
+                                        decoration: BoxDecoration(
+                                          color:
+                                              isCompleted
+                                                  ? Color(
+                                                    int.parse(habit.colorValue),
+                                                  )
+                                                  : Colors.transparent,
+                                          border: Border.all(
+                                            color: Color(
+                                              int.parse(habit.colorValue),
+                                            ),
+                                            width: 2,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            14,
+                                          ),
+                                        ),
+                                        child:
+                                            isCompleted
+                                                ? Icon(
+                                                  Icons.check,
+                                                  color: Colors.white,
+                                                  size: 20,
+                                                )
+                                                : null,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         );
                       },
@@ -728,5 +913,251 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
       default:
         return '';
     }
+  }
+}
+
+class ImageCarouselWidget extends StatefulWidget {
+  @override
+  _ImageCarouselWidgetState createState() => _ImageCarouselWidgetState();
+}
+
+class _ImageCarouselWidgetState extends State<ImageCarouselWidget> {
+  final PageController _pageController = PageController();
+  int _currentIndex = 0;
+
+  final List<String> _images = [
+    'assets/images/demo_challenge/1.png',
+    'assets/images/demo_challenge/2.png',
+    'assets/images/demo_challenge/3.png',
+    'assets/images/demo_challenge/4.png',
+    'assets/images/demo_challenge/5.png',
+    'assets/images/demo_challenge/6.png',
+    'assets/images/demo_challenge/7.png',
+    'assets/images/demo_challenge/8.png',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _startAutoPlay();
+  }
+
+  void _startAutoPlay() {
+    Future.delayed(Duration(seconds: 3), () {
+      if (mounted) {
+        int nextPage = (_currentIndex + 1) % _images.length;
+        _pageController.animateToPage(
+          nextPage,
+          duration: Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+        _startAutoPlay();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      child: Column(
+        children: [
+          // PageView carousel
+          Expanded(
+            child: PageView.builder(
+              controller: _pageController,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentIndex = index;
+                });
+              },
+              itemCount: _images.length,
+              itemBuilder: (context, index) {
+                return Container(
+                  margin: EdgeInsets.symmetric(horizontal: 8.0),
+                  padding: EdgeInsets.all(8.0), // Thêm padding
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.grey[50], // Background nhẹ
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 8,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      width: double.infinity,
+                      height: double.infinity,
+                      child: Image.asset(
+                        _images[index],
+                        fit: BoxFit.contain, // Hiển thị toàn bộ hình, không cắt
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Color(0xFF4FCA9C).withOpacity(0.3),
+                                  Color(0xFF4FCA9C).withOpacity(0.6),
+                                ],
+                              ),
+                            ),
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.image,
+                                    size: 48,
+                                    color: Colors.white,
+                                  ),
+                                  SizedBox(height: 12),
+                                  Text(
+                                    'Hình ${index + 1}',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          SizedBox(height: 16),
+
+          // Indicator dots
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children:
+                _images.asMap().entries.map((entry) {
+                  return GestureDetector(
+                    onTap: () {
+                      _pageController.animateToPage(
+                        entry.key,
+                        duration: Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    },
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      margin: EdgeInsets.symmetric(horizontal: 4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color:
+                            _currentIndex == entry.key
+                                ? Color(0xFF4FCA9C)
+                                : Colors.grey.withOpacity(0.4),
+                      ),
+                    ),
+                  );
+                }).toList(),
+          ),
+
+          SizedBox(height: 16),
+
+          // Navigation controls
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Previous button
+                GestureDetector(
+                  onTap: () {
+                    if (_currentIndex > 0) {
+                      _pageController.previousPage(
+                        duration: Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    }
+                  },
+                  child: Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Color(0xFF4FCA9C).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(25),
+                      border: Border.all(
+                        color: Color(0xFF4FCA9C).withOpacity(0.3),
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.arrow_back_ios,
+                      color: Color(0xFF4FCA9C),
+                      size: 20,
+                    ),
+                  ),
+                ),
+
+                // Page info
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${_currentIndex + 1} / ${_images.length}',
+                    style: TextStyle(
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+
+                // Next button
+                GestureDetector(
+                  onTap: () {
+                    if (_currentIndex < _images.length - 1) {
+                      _pageController.nextPage(
+                        duration: Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    }
+                  },
+                  child: Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Color(0xFF4FCA9C).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(25),
+                      border: Border.all(
+                        color: Color(0xFF4FCA9C).withOpacity(0.3),
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.arrow_forward_ios,
+                      color: Color(0xFF4FCA9C),
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 }

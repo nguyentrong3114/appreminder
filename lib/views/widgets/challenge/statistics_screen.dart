@@ -132,60 +132,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     }
   }
 
-  /// ✅ Debug tất cả completions
-  Future<void> _debugAllCompletions() async {
-    if (_auth.currentUser == null) return;
-
-    String userId = _auth.currentUser!.uid;
-
-    print('🔍 === DEBUG: CHECKING ALL COMPLETIONS ===');
-    print('User ID: $userId');
-    print('Habit ID: ${currentHabit.id}');
-
-    try {
-      QuerySnapshot allCompletions =
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(userId)
-              .collection('habit_completions')
-              .where('habitId', isEqualTo: currentHabit.id)
-              .get();
-
-      print('🔍 Total completions found: ${allCompletions.docs.length}');
-
-      DateTime today = DateTime.now();
-      String todayKey = DateFormat('yyyy-MM-dd').format(today);
-
-      for (int i = 0; i < allCompletions.docs.length; i++) {
-        var doc = allCompletions.docs[i];
-        var data = doc.data() as Map<String, dynamic>;
-
-        print('--- Completion ${i + 1} ---');
-        print('Doc ID: ${doc.id}');
-
-        var dateField = data['date'];
-        print('Date field type: ${dateField.runtimeType}');
-
-        if (dateField is Timestamp) {
-          DateTime date = dateField.toDate();
-          String dateKey = DateFormat('yyyy-MM-dd').format(date);
-          String fullDateTime = DateFormat('yyyy-MM-dd HH:mm:ss').format(date);
-
-          print('Parsed date: $fullDateTime');
-          print('Date key: $dateKey');
-          print('Is today ($todayKey): ${dateKey == todayKey}');
-          print('Completed: ${data['completed']}');
-          print('Rating: ${data['rating']}');
-        }
-        print('');
-      }
-
-      print('🔍 === END DEBUG ===');
-    } catch (e) {
-      print('❌ Error in debug: $e');
-    }
-  }
-
   /// ✅ Kiểm tra xem ngày có thuộc thử thách không (sử dụng currentHabit)
   bool _isHabitActiveOnDate(DateTime date) {
     // Kiểm tra nếu ngày trước ngày bắt đầu
@@ -225,9 +171,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         // Kiểm tra ngày và tháng trong năm
         return date.day == currentHabit.startDate.day &&
             date.month == currentHabit.startDate.month;
-
-      default:
-        return true;
     }
   }
 
@@ -246,8 +189,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         return 'Hàng tháng';
       case RepeatType.yearly:
         return 'Hàng năm';
-      default:
-        return 'Hàng ngày';
     }
   }
 
@@ -331,7 +272,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       padding: EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: Text(
-                      'Xóa tất cả thử thách',
+                      'Xóa thử thách',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 16,

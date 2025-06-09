@@ -49,6 +49,7 @@ dependencies:
   flutter_local_notifications: ^19.1.0
   permission_handler: ^11.3.0
   timezone: ^0.10.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -67,6 +68,7 @@ dev_dependencies:
 flutter:
   assets:
     - assets/images/
+    - assets/images/demo_challenge/
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

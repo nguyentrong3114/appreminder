@@ -231,17 +231,6 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
         habitId = await _habitService.saveHabit(habit); // Create new
       }
       await _scheduleRegularHabitNotifications(habitId, habit.title);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            widget.isEditing
-                ? 'Đã cập nhật thử thách thành công!'
-                : 'Đã lưu thử thách thành công!',
-          ),
-          backgroundColor: Colors.green,
-        ),
-      );
-
       Navigator.pop(context, habitId);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
