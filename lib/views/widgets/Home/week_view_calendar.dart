@@ -9,7 +9,7 @@ class WeekView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final use24Hour = context.watch<TimeFormatProvider>().use24HourFormat;
+    final use24Hour = context.watch<SettingProvider>().use24HourFormat;
 
     // Dummy week data (dùng Map để có thể chứa DateTime)
     final List<Map<String, dynamic>> days = [

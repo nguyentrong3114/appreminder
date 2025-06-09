@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_app/provider/setting_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_app/models/todo.dart';
 import 'package:flutter_app/services/notification_service.dart';
+import 'package:provider/provider.dart';
 
 class AddTodoScreen extends StatefulWidget {
   final Todo? existingTodo;
@@ -287,25 +289,21 @@ class _TodoScreenState extends State<AddTodoScreen> {
     );
   }
 
-  String _formatTimeOfDay(TimeOfDay timeOfDay) {
+  String _formatTimeOfDay(BuildContext context, TimeOfDay time) {
+    final is24Hour = context.watch<SettingProvider>().use24HourFormat;
     final now = DateTime.now();
-    final dt = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      timeOfDay.hour,
-      timeOfDay.minute,
-    );
-    final format = DateFormat.jm();
-    return format.format(dt);
+    final dt = DateTime(now.year, now.month, now.day, time.hour, time.minute);
+    return is24Hour
+        ? DateFormat('HH:mm').format(dt)
+        : DateFormat('hh:mm a').format(dt);
   }
 
   Future<void> _selectStartDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _startDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
+      firstDate: DateTime(DateTime.now().year, 1, 1),
+      lastDate: DateTime(DateTime.now().year + 1, 12, 31),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -323,9 +321,18 @@ class _TodoScreenState extends State<AddTodoScreen> {
       setState(() {
         _startDate = picked;
       });
+      final is24Hour = context.read<SettingProvider>().use24HourFormat;
       final TimeOfDay? pickedTime = await showTimePicker(
         context: context,
         initialTime: _startTime,
+        builder: (context, child) {
+          return MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(alwaysUse24HourFormat: is24Hour),
+            child: child!,
+          );
+        },
       );
       if (pickedTime != null && pickedTime != _startTime) {
         setState(() {
@@ -512,6 +519,7 @@ class _TodoScreenState extends State<AddTodoScreen> {
   }
 
   Widget _buildDateTimeSection() {
+    final dateFormat = context.watch<SettingProvider>().dateFormat;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       padding: const EdgeInsets.all(16),
@@ -555,8 +563,10 @@ class _TodoScreenState extends State<AddTodoScreen> {
             borderRadius: BorderRadius.circular(8),
             child: _buildTimeSettingRow(
               icon: Icons.arrow_forward_rounded,
-              text: DateFormat('dd/MM/yyyy').format(_startDate),
-              trailing: _formatTimeOfDay(_startTime),
+              text: DateFormat(
+                dateFormat,
+              ).format(_startDate), // Sử dụng định dạng động
+              trailing: _formatTimeOfDay(context, _startTime),
               showArrow: true,
             ),
           ),
@@ -566,8 +576,8 @@ class _TodoScreenState extends State<AddTodoScreen> {
             borderRadius: BorderRadius.circular(8),
             child: _buildTimeSettingRow(
               icon: Icons.arrow_back_rounded,
-              text: DateFormat('dd/MM/yyyy').format(_endDate),
-              trailing: _formatTimeOfDay(_endTime),
+              text: DateFormat(dateFormat).format(_startDate),
+              trailing: _formatTimeOfDay(context, _startTime),
               showArrow: true,
             ),
           ),

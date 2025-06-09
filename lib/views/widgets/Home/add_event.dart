@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter_app/models/Calendar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_app/services/alarm_service.dart';
+import 'package:flutter_app/services/calendar_service.dart';
+import 'package:flutter_app/provider/setting_provider.dart';
 
 class AddEventWidget extends StatefulWidget {
   final DateTime selectedDate;
@@ -26,6 +30,7 @@ class _AddEventWidgetState extends State<AddEventWidget> {
   bool allDay = false;
   bool reminder = false;
   bool alarmReminder = false;
+  int repeatIntervalHours = 1; // mặc định 1 giờ
 
   @override
   Widget build(BuildContext context) {
@@ -196,6 +201,26 @@ class _AddEventWidgetState extends State<AddEventWidget> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 contentPadding: EdgeInsets.zero,
               ),
+              if (allDay)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: Row(
+                    children: [
+                      const Text('Báo thức mỗi:'),
+                      const SizedBox(width: 8),
+                      DropdownButton<int>(
+                        value: repeatIntervalHours,
+                        items: [1, 2, 4, 6, 8, 12].map((h) => DropdownMenuItem(
+                          value: h,
+                          child: Text('$h giờ'),
+                        )).toList(),
+                        onChanged: (v) {
+                          if (v != null) setState(() => repeatIntervalHours = v);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
         ),
@@ -217,23 +242,21 @@ class _AddEventWidgetState extends State<AddEventWidget> {
             ),
             icon: const Icon(Icons.save),
             label: const Text('Lưu sự kiện'),
-            onPressed: () {
+            onPressed: () async {
               if (_formKey.currentState!.validate()) {
                 final now = DateTime.now();
                 final DateTime start = allDay
-                    ? DateTime(widget.selectedDate.year, widget.selectedDate.month,
-                        widget.selectedDate.day, 0, 0)
-                    : DateTime(widget.selectedDate.year, widget.selectedDate.month,
-                        widget.selectedDate.day, _startTime?.hour ?? now.hour, _startTime?.minute ?? now.minute);
+                    ? DateTime(widget.selectedDate.year, widget.selectedDate.month, widget.selectedDate.day, 0, 0)
+                    : DateTime(widget.selectedDate.year, widget.selectedDate.month, widget.selectedDate.day, _startTime?.hour ?? now.hour, _startTime?.minute ?? now.minute);
 
                 final DateTime end = allDay
-                    ? DateTime(widget.selectedDate.year, widget.selectedDate.month,
-                        widget.selectedDate.day, 23, 59)
-                    : DateTime(widget.selectedDate.year, widget.selectedDate.month,
-                        widget.selectedDate.day, _endTime?.hour ?? now.hour, _endTime?.minute ?? now.minute);
+                    ? DateTime(widget.selectedDate.year, widget.selectedDate.month, widget.selectedDate.day, 23, 59)
+                    : DateTime(widget.selectedDate.year, widget.selectedDate.month, widget.selectedDate.day, _endTime?.hour ?? now.hour, _endTime?.minute ?? now.minute);
+
+                final eventId = DateTime.now().millisecondsSinceEpoch.toString();
 
                 final event = CalendarEvent(
-                  id: DateTime.now().millisecondsSinceEpoch.toString(),
+                  id: eventId,
                   title: _titleController.text.trim(),
                   userId: FirebaseAuth.instance.currentUser?.uid ?? '',
                   detail: _detailController.text.trim(),
@@ -246,11 +269,97 @@ class _AddEventWidgetState extends State<AddEventWidget> {
                   description: '',
                 );
 
+                // Lưu sự kiện vào Firestore
+                await CalendarService().addEvent(event);
+
+                // Lấy âm thanh từ SettingProvider
+                final alarmSound = context.read<SettingProvider>().alarmSound;
+                final notiSound = context.read<SettingProvider>().notificationSound;
+
+                final int alarmId = (int.tryParse(eventId) ?? DateTime.now().millisecondsSinceEpoch) % 2147483647;
+
+                // 1. Đặt notification trước giờ bắt đầu 10 phút (nếu reminder)
+                if (reminder) {
+                  final DateTime notiTime = start.subtract(const Duration(minutes: 10));
+                  if (notiTime.isAfter(DateTime.now())) {
+                    await AlarmService.showNotification(
+                      id: alarmId + 100000, // id khác với alarm
+                      title: 'Sắp đến sự kiện',
+                      body: event.title,
+                      sound: notiSound,
+                      scheduledTime: notiTime,
+                    );
+                  }
+                }
+
+                // 2. Đúng giờ bắt đầu: notification
+                if (reminder) {
+                  if (start.isAfter(DateTime.now())) {
+                    await AlarmService.showNotification(
+                      id: alarmId + 200000,
+                      title: 'Đến giờ sự kiện',
+                      body: event.title,
+                      sound: notiSound,
+                      scheduledTime: start,
+                    );
+                  }
+                }
+
+                // 3. Đúng giờ bắt đầu: báo thức (nếu tick alarmReminder)
+                if (alarmReminder && start.isAfter(DateTime.now())) {
+                  await AlarmService.scheduleAlarm(
+                    id: alarmId,
+                    title: event.title,
+                    body: event.detail.isNotEmpty ? event.detail : 'Đã đến giờ sự kiện!',
+                    scheduledTime: start,
+                    sound: alarmSound,
+                  );
+                }
+
+                // Thêm lặp lại báo thức trong ngày (nếu là sự kiện cả ngày và có tick báo thức)
+                if (allDay && alarmReminder) {
+                  DateTime current = DateTime(start.year, start.month, start.day, 0, 0);
+                  final DateTime endOfDay = DateTime(start.year, start.month, start.day, 23, 59);
+
+                  int repeatIndex = 0;
+                  while (current.isBefore(endOfDay)) {
+                    if (current.isAfter(DateTime.now())) {
+                      final int repeatAlarmId = alarmId + 1000 * repeatIndex;
+                      await AlarmService.scheduleAlarm(
+                        id: repeatAlarmId,
+                        title: event.title,
+                        body: event.detail.isNotEmpty ? event.detail : 'Đã đến giờ sự kiện!',
+                        scheduledTime: current,
+                        sound: alarmSound,
+                      );
+                      await AlarmService.showNotification(
+                        id: repeatAlarmId + 500000,
+                        title: 'Nhắc nhở sự kiện',
+                        body: event.title,
+                        sound: notiSound,
+                        scheduledTime: current,
+                      );
+                    }
+                    current = current.add(Duration(hours: repeatIntervalHours));
+                    repeatIndex++;
+                  }
+                }
+
                 widget.onAdd(event);
                 Navigator.pop(context);
 
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Đã thêm sự kiện!')),
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Thành công'),
+                    content: const Text('Đã thêm sự kiện!'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('OK'),
+                      ),
+                    ],
+                  ),
                 );
               }
             },

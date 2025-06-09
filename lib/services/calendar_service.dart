@@ -3,21 +3,32 @@ import '../models/Calendar.dart' as calendar_model;
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CalendarService {
-  final _eventCollection = FirebaseFirestore.instance.collection('events');
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  // Lấy user hiện tại
+  String? get _currentUserId => _auth.currentUser?.uid;
+
+  CollectionReference<Map<String, dynamic>> get eventCollection =>
+      _firestore
+          .collection('users')
+          .doc(_currentUserId)
+          .collection('events');
 
   // Thêm sự kiện mới
   Future<void> addEvent(calendar_model.CalendarEvent event) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) throw Exception("Người dùng chưa đăng nhập");
+    final userId = _currentUserId;
+    if (userId == null) throw Exception("Người dùng chưa đăng nhập");
 
-    // Nếu event.id là userId thì tạo id mới
-    String eventId = event.id == user.uid || event.id.isEmpty
-      ? _eventCollection.doc().id
-      : event.id;
+    // Nếu event.id là userId hoặc rỗng thì tạo id mới
+    String eventId =
+        event.id == userId || event.id.isEmpty
+            ? eventCollection.doc().id
+            : event.id;
 
-    await _eventCollection.doc(eventId).set({
+    await eventCollection.doc(eventId).set({
       'id': eventId,
-      'userId': user.uid,
+      'userId': userId,
       'title': event.title,
       'detail': event.detail,
       'location': event.location,
@@ -31,8 +42,11 @@ class CalendarService {
   }
 
   // Cập nhật sự kiện theo id
-  Future<void> updateEvent(String id, calendar_model.CalendarEvent updatedEvent) async {
-    await _eventCollection.doc(id).update({
+  Future<void> updateEvent(
+    String id,
+    calendar_model.CalendarEvent updatedEvent,
+  ) async {
+    await eventCollection.doc(id).update({
       'title': updatedEvent.title,
       'detail': updatedEvent.detail,
       'location': updatedEvent.location,
@@ -47,12 +61,12 @@ class CalendarService {
 
   // Xoá sự kiện theo id
   Future<void> deleteEvent(String id) async {
-    await _eventCollection.doc(id).delete();
+    await eventCollection.doc(id).delete();
   }
 
   // Lấy tất cả sự kiện (cho admin hoặc test)
   Future<List<calendar_model.CalendarEvent>> fetchAllEvents() async {
-    final snapshot = await _eventCollection.get();
+    final snapshot = await eventCollection.get();
     return snapshot.docs.map((doc) {
       final data = doc.data();
       return calendar_model.CalendarEvent(
@@ -73,13 +87,14 @@ class CalendarService {
 
   // Lấy sự kiện chỉ của user hiện tại
   Future<List<calendar_model.CalendarEvent>> fetchUserEvents() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return [];
+    final userId = _currentUserId;
+    if (userId == null) return [];
 
-    final snapshot = await _eventCollection
-        .where('userId', isEqualTo: user.uid)
-        .orderBy('startTime')
-        .get();
+    final snapshot =
+        await eventCollection
+            .where('userId', isEqualTo: userId)
+            .orderBy('startTime')
+            .get();
 
     return snapshot.docs.map((doc) {
       final data = doc.data();
@@ -114,7 +129,8 @@ class CalendarService {
   }
 
   // Trả về Map<"yyyy-MM-dd", List<CalendarEvent>>
-  Future<Map<String, List<calendar_model.CalendarEvent>>> getEventsByDayMap() async {
+  Future<Map<String, List<calendar_model.CalendarEvent>>>
+      getEventsByDayMap() async {
     final allEvents = await fetchUserEvents();
     return calendar_model.getEventsByDay(allEvents);
   }
