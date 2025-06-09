@@ -47,4 +47,33 @@ class AlarmService {
   static Future<void> cancelAlarm(int id) async {
     await _notifications.cancel(id);
   }
+
+  static Future<void> showNotification({
+    required int id,
+    required String title,
+    required String body,
+    required DateTime scheduledTime,
+    String? sound,
+  }) async {
+    await _notifications.zonedSchedule(
+      id,
+      title,
+      body,
+      tz.TZDateTime.from(scheduledTime, tz.local),
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          'noti_channel',
+          'Thông báo',
+          channelDescription: 'Kênh thông báo',
+          sound: sound != null ? RawResourceAndroidNotificationSound(sound) : null,
+          importance: Importance.max,
+          priority: Priority.high,
+          playSound: true,
+        ),
+      ),
+      matchDateTimeComponents: DateTimeComponents.time,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+    );
+  }
+
 }
