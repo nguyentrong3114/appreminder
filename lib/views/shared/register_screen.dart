@@ -178,7 +178,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           try {
                             final user = await _authService.signUpWithEmail(email, password);
                             if (user != null) {
-                              await user.sendEmailVerification(); // Gửi email xác thực
+                              await user.sendEmailVerification();
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text('Đăng ký thành công! Vui lòng kiểm tra email để kích hoạt tài khoản.')),
                               );
@@ -199,25 +199,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               message = 'Email không hợp lệ.';
                             } else if (e.code == 'weak-password') {
                               message = 'Mật khẩu quá yếu. Vui lòng chọn mật khẩu mạnh hơn.';
-                            } else if (e.message != null && e.message!.isNotEmpty) {
-                              message = e.message!;
                             }
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(message),
-                                backgroundColor: Colors.redAccent,
-                                behavior: SnackBarBehavior.floating,
-                                margin: const EdgeInsets.all(16),
-                              ),
+                              SnackBar(content: Text(message)),
                             );
                           } catch (e) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Có lỗi xảy ra, vui lòng thử lại sau'),
-                                backgroundColor: Colors.redAccent,
-                                behavior: SnackBarBehavior.floating,
-                                margin: EdgeInsets.all(16),
-                              ),
+                              const SnackBar(content: Text('Có lỗi xảy ra, vui lòng thử lại sau')),
                             );
                           }
                         },

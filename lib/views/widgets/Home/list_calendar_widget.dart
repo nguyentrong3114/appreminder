@@ -1,7 +1,10 @@
 import 'quick_view_event.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_app/utils/time.dart';
 import 'package:flutter_app/theme/app_colors.dart';
+import 'package:flutter_app/provider/setting_provider.dart';
 
 class ListCalendar extends StatefulWidget {
   final Map<String, List<Map<String, String>>> allEvents;
@@ -22,14 +25,17 @@ class ListCalendar extends StatefulWidget {
 }
 
 class _ListCalendarState extends State<ListCalendar> {
-  static const List<String> _weekDays = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
   late DateTime _selectedDate;
   late List<DateTime> _daysInView;
+  late int _startWeekOn;
+  late List<String> _weekDays;
 
   @override
   void initState() {
     super.initState();
     _selectedDate = widget.selectedDate;
+    _startWeekOn = context.read<SettingProvider>().startWeekOn;
+    _weekDays = List<String>.from(_rotateWeekDays(_startWeekOn));
     _daysInView = _generateDaysForMonth(_selectedDate);
   }
 
@@ -40,30 +46,59 @@ class _ListCalendarState extends State<ListCalendar> {
       _selectedDate = widget.selectedDate;
       _daysInView = _generateDaysForMonth(_selectedDate);
     }
+    // Nếu setting startWeekOn thay đổi, cập nhật lại
+    final newStartWeekOn = context.read<SettingProvider>().startWeekOn;
+    if (newStartWeekOn != _startWeekOn) {
+      setState(() {
+        _startWeekOn = newStartWeekOn;
+        _weekDays = List<String>.from(_rotateWeekDays(_startWeekOn));
+        _daysInView = _generateDaysForMonth(_selectedDate);
+      });
+    }
   }
 
   bool _isSameMonth(DateTime a, DateTime b) => a.year == b.year && a.month == b.month;
 
+  List<String> _rotateWeekDays(int startWeekOn) {
+    // startWeekOn: 0=Monday, 6=Sunday
+    final days = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+    // Nếu startWeekOn == 6 (Chủ nhật), đưa 'CN' lên đầu
+    if (startWeekOn == 6) {
+      return ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+    }
+    if (startWeekOn == 0) {
+      return days;
+    }
+    // Các trường hợp khác: xoay mảng bắt đầu từ vị trí startWeekOn
+    return List.generate(7, (i) => days[(i + startWeekOn) % 7]);
+  }
+
   List<DateTime> _generateDaysForMonth(DateTime date) {
     final firstDay = DateTime(date.year, date.month, 1);
     final totalDays = DateUtils.getDaysInMonth(date.year, date.month);
-    final leadingEmpty = firstDay.weekday == 7 ? 0 : firstDay.weekday - 1;
+    int weekStartParam = _startWeekOn == 6 ? 7 : _startWeekOn + 1;
+    final weekStart = getWeekStartDate(firstDay, weekStartParam);
+    final leadingEmpty = firstDay.difference(weekStart).inDays;
+    final totalCells = ((leadingEmpty + totalDays) / 7).ceil() * 7;
     return List<DateTime>.generate(
-      leadingEmpty + totalDays,
-      (i) => i < leadingEmpty ? DateTime(0) : DateTime(date.year, date.month, i - leadingEmpty + 1),
+      totalCells,
+      (i) => i < leadingEmpty
+          ? weekStart.add(Duration(days: i))
+          : (i - leadingEmpty) < totalDays
+              ? DateTime(date.year, date.month, i - leadingEmpty + 1)
+              : DateTime(0), 
       growable: false,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final today = DateTime.now();
     return Column(
       children: [
         // Header thứ/ngày
         Row(
           children: List.generate(7, (index) {
-            final isSunday = index == 6;
+            final isSunday = _weekDays[index] == 'CN';
             return Expanded(
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 10),
@@ -155,6 +190,19 @@ class _DayCellState extends State<_DayCell> {
   Widget build(BuildContext context) {
     final hasEvents = widget.events.isNotEmpty;
 
+    Color getEventColor(DateTime start, DateTime end) {
+      final now = DateTime.now();
+      if (end.isBefore(now)) {
+        return Colors.red; // Đã qua
+      } else if (start.isAfter(now) && start.isBefore(now.add(const Duration(hours: 2)))) {
+        return Colors.amber; // Sắp tới (trong 2h)
+      } else if (start.isAfter(now)) {
+        return Colors.green; // Tương lai xa
+      } else {
+        return Colors.amber; // Đang diễn ra
+      }
+    }
+
     return GestureDetector(
       onTap: () {
         if (hasEvents) {
@@ -211,15 +259,31 @@ class _DayCellState extends State<_DayCell> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ...widget.events.take(2).map((e) => Padding(
-                        padding: const EdgeInsets.only(bottom: 2),
-                        child: Text(
-                          e['title'] ?? '',
-                          style: const TextStyle(fontSize: 11, color: Colors.blueGrey),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                      )),
+                  ...widget.events.take(2).map((e) {
+                        DateTime? start;
+                        DateTime? end;
+                        try {
+                          start = DateFormat('HH:mm').parse(e['startTime'] ?? '', true);
+                          end = DateFormat('HH:mm').parse(e['endTime'] ?? '', true);
+                          start = DateTime(widget.date.year, widget.date.month, widget.date.day, start.hour, start.minute);
+                          end = DateTime(widget.date.year, widget.date.month, widget.date.day, end.hour, end.minute);
+                        } catch (_) {
+                          start = null;
+                          end = null;
+                        }
+                        final color = (start != null && end != null)
+                            ? getEventColor(start, end)
+                            : Colors.blueGrey;
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 2),
+                          child: Text(
+                            e['title'] ?? '',
+                            style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.bold),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        );
+                      }),
                   if (widget.events.length > 2)
                     const Text('...', style: TextStyle(fontSize: 11, color: Colors.blueGrey)),
                 ],

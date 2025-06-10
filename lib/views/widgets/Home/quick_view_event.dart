@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_app/utils/time.dart';
 
 class QuickViewEventScreen extends StatelessWidget {
   final List<Map<String, String>> events;
@@ -54,8 +55,17 @@ class QuickViewEventScreen extends StatelessWidget {
                   separatorBuilder: (_, __) => const Divider(),
                   itemBuilder: (context, idx) {
                     final e = events[idx];
+                    DateTime? start;
+                    DateTime? end;
+                    try {
+                      start = DateTime.parse(e['startDateTime'] ?? e['startTime'] ?? '');
+                      end = DateTime.parse(e['endDateTime'] ?? e['endTime'] ?? '');
+                    } catch (_) {}
+                    final color = (start != null && end != null)
+                        ? getEventStatusColor(start, end)
+                        : Colors.blueGrey;
                     return ListTile(
-                      title: Text(e['title'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      title: Text(e['title'] ?? '', style: TextStyle(fontWeight: FontWeight.bold, color: color)),
                       subtitle: Text(e['description'] ?? ''),
                       trailing: Text('${e['startTime'] ?? ''} - ${e['endTime'] ?? ''}'),
                     );

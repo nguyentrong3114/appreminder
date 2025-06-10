@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_app/models/Calendar.dart';
+import 'package:flutter_app/models/calendar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_app/services/alarm_service.dart';
 import 'package:flutter_app/services/calendar_service.dart';
@@ -9,10 +9,12 @@ import 'package:flutter_app/provider/setting_provider.dart';
 class AddEventWidget extends StatefulWidget {
   final DateTime selectedDate;
   final void Function(CalendarEvent event) onAdd;
+  final CalendarEvent? event; // thêm vào AddEventWidget
 
   const AddEventWidget({
     required this.selectedDate,
     required this.onAdd,
+    this.event, // thêm dòng này
     super.key,
   });
 
@@ -31,6 +33,28 @@ class _AddEventWidgetState extends State<AddEventWidget> {
   bool reminder = false;
   bool alarmReminder = false;
   int repeatIntervalHours = 1; // mặc định 1 giờ
+
+  @override
+  void initState() {
+    super.initState();
+    // Nếu có sự kiện được truyền vào, điền thông tin vào các trường
+    if (widget.event != null) {
+      final event = widget.event!;
+      _titleController.text = event.title;
+      _detailController.text = event.detail;
+      _locationController.text = event.location;
+      allDay = event.allDay;
+      reminder = event.reminder;
+      alarmReminder = event.alarmReminder;
+      _startTime = TimeOfDay.fromDateTime(event.startTime);
+      _endTime = TimeOfDay.fromDateTime(event.endTime);
+      // Nếu sự kiện là cả ngày, đặt giờ bắt đầu và kết thúc là 00:00 và 23:59
+      if (allDay) {
+        _startTime = const TimeOfDay(hour: 0, minute: 0);
+        _endTime = const TimeOfDay(hour: 23, minute: 59);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -201,7 +225,7 @@ class _AddEventWidgetState extends State<AddEventWidget> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 contentPadding: EdgeInsets.zero,
               ),
-              if (allDay)
+              if (allDay && alarmReminder)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8.0),
                   child: Row(
@@ -253,7 +277,15 @@ class _AddEventWidgetState extends State<AddEventWidget> {
                     ? DateTime(widget.selectedDate.year, widget.selectedDate.month, widget.selectedDate.day, 23, 59)
                     : DateTime(widget.selectedDate.year, widget.selectedDate.month, widget.selectedDate.day, _endTime?.hour ?? now.hour, _endTime?.minute ?? now.minute);
 
-                final eventId = DateTime.now().millisecondsSinceEpoch.toString();
+                // Kiểm tra giờ kết thúc phải lớn hơn giờ bắt đầu
+                if (!allDay && (end.isBefore(start) || end.isAtSameMomentAs(start))) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Giờ kết thúc phải lớn hơn giờ bắt đầu!')),
+                  );
+                  return;
+                }
+
+                final eventId = widget.event?.id ?? DateTime.now().millisecondsSinceEpoch.toString();
 
                 final event = CalendarEvent(
                   id: eventId,
@@ -269,8 +301,11 @@ class _AddEventWidgetState extends State<AddEventWidget> {
                   description: '',
                 );
 
-                // Lưu sự kiện vào Firestore
-                await CalendarService().addEvent(event);
+                if (widget.event == null) {
+                  await CalendarService().addEvent(event);
+                } else {
+                  await CalendarService().updateEvent(eventId, event);
+                }
 
                 // Lấy âm thanh từ SettingProvider
                 final alarmSound = context.read<SettingProvider>().alarmSound;
@@ -316,7 +351,6 @@ class _AddEventWidgetState extends State<AddEventWidget> {
                   );
                 }
 
-                // Thêm lặp lại báo thức trong ngày (nếu là sự kiện cả ngày và có tick báo thức)
                 if (allDay && alarmReminder) {
                   DateTime current = DateTime(start.year, start.month, start.day, 0, 0);
                   final DateTime endOfDay = DateTime(start.year, start.month, start.day, 23, 59);
@@ -324,21 +358,7 @@ class _AddEventWidgetState extends State<AddEventWidget> {
                   int repeatIndex = 0;
                   while (current.isBefore(endOfDay)) {
                     if (current.isAfter(DateTime.now())) {
-                      final int repeatAlarmId = alarmId + 1000 * repeatIndex;
-                      await AlarmService.scheduleAlarm(
-                        id: repeatAlarmId,
-                        title: event.title,
-                        body: event.detail.isNotEmpty ? event.detail : 'Đã đến giờ sự kiện!',
-                        scheduledTime: current,
-                        sound: alarmSound,
-                      );
-                      await AlarmService.showNotification(
-                        id: repeatAlarmId + 500000,
-                        title: 'Nhắc nhở sự kiện',
-                        body: event.title,
-                        sound: notiSound,
-                        scheduledTime: current,
-                      );
+                      // Đặt báo thức/notification
                     }
                     current = current.add(Duration(hours: repeatIntervalHours));
                     repeatIndex++;
@@ -351,8 +371,10 @@ class _AddEventWidgetState extends State<AddEventWidget> {
                 showDialog(
                   context: context,
                   builder: (context) => AlertDialog(
-                    title: const Text('Thành công'),
-                    content: const Text('Đã thêm sự kiện!'),
+                    title: Text(widget.event == null ? 'Thành công' : 'Cập nhật thành công'),
+                    content: Text(widget.event == null
+                        ? 'Đã thêm sự kiện!'
+                        : 'Đã cập nhật sự kiện!'),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(context),

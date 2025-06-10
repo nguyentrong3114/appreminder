@@ -1,5 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import '../models/Calendar.dart' as calendar_model;
+import '../models/calendar.dart' as calendar_model;
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CalendarService {
@@ -87,14 +87,10 @@ class CalendarService {
 
   // Lấy sự kiện chỉ của user hiện tại
   Future<List<calendar_model.CalendarEvent>> fetchUserEvents() async {
-    final userId = _currentUserId;
-    if (userId == null) return [];
-
-    final snapshot =
-        await eventCollection
-            .where('userId', isEqualTo: userId)
-            .orderBy('startTime')
-            .get();
+    // KHÔNG cần where('userId', isEqualTo: userId) nữa!
+    final snapshot = await eventCollection
+        .orderBy('startTime')
+        .get();
 
     return snapshot.docs.map((doc) {
       final data = doc.data();

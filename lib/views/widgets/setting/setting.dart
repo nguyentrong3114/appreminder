@@ -109,13 +109,9 @@ class SettingsPage extends StatelessWidget {
                   iconColor: Colors.purple,
                   title: 'Start Week On',
                   trailing: Text(
-                    context.watch<SettingProvider>().startWeekOn == 0
+                    context.watch<SettingProvider>().startWeekOn == 6
                         ? 'Chủ nhật'
-                        : context.watch<SettingProvider>().startWeekOn == 1
-                            ? 'Thứ 2'
-                            : context.watch<SettingProvider>().startWeekOn == 6
-                                ? 'Thứ 7'
-                                : 'Thứ ${context.watch<SettingProvider>().startWeekOn + 1}',
+                        : 'Thứ ${context.watch<SettingProvider>().startWeekOn + 2}',
                     style: const TextStyle(color: Colors.grey),
                   ),
                   onTap: () async {
@@ -133,7 +129,7 @@ class SettingsPage extends StatelessWidget {
                                 7,
                                 (i) => DropdownMenuItem(
                                   value: i,
-                                  child: Text(i == 0 ? 'Chủ nhật' : 'Thứ ${i + 1}'),
+                                  child: Text(i == 6 ? 'Chủ nhật' : 'Thứ ${i + 2}'),
                                 ),
                               ),
                               onChanged: (v) {

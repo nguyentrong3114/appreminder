@@ -8,9 +8,11 @@ import 'package:flutter_app/utils/time.dart';
 import 'package:flutter_app/models/calendar.dart';
 import 'package:flutter_app/theme/app_colors.dart';
 import 'package:flutter_app/services/auth_service.dart';
+import 'package:flutter_app/services/calendar_service.dart';
 import 'package:flutter_app/views/shared/login_screen.dart';
 import 'package:flutter_app/provider/setting_provider.dart';
 import 'package:flutter_app/views/widgets/Home/week_day_calendar.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,61 +26,23 @@ class _HomeScreenState extends State<HomeScreen> {
   int selectedTab = 0;
   int selectedDayIndex = 0;
 
-  List<CalendarEvent> allEvents = [
-    CalendarEvent(
-      id: '1',
-      userId: '',
-      title: "Cuộc họp nhóm phát triển ứng dụng Flutter siêu dài...",
-      detail: '',
-      location: "Phòng họp A",
-      description: "Thảo luận dự án Flutter, phân chia công việc, cập nhật tiến độ...",
-      startTime: DateTime(2025, 6, 1, 8, 0),
-      endTime: DateTime(2025, 6, 1, 9, 0),
-    ),
-    CalendarEvent(
-      id: '2',
-      userId: '',
-      title: "Tập Gym",
-      detail: '',
-      location: "California Fitness",
-      description: "Luyện tập thể lực tại phòng gym trung tâm",
-      startTime: DateTime(2025, 6, 1, 10, 0),
-      endTime: DateTime(2025, 6, 1, 12, 0),
-    ),
-    CalendarEvent(
-      id: '3',
-      userId: '',
-      title: "Đi siêu thị",
-      detail: '',
-      location: "Vinmart",
-      description: "Mua đồ dùng gia đình, thực phẩm, vật dụng cá nhân...",
-      startTime: DateTime(2025, 6, 2, 20, 0),
-      endTime: DateTime(2025, 6, 2, 21, 0),
-    ),
-    CalendarEvent(
-      id: '4',
-      userId: '',
-      title: "Sinh nhật bạn A",
-      detail: '',
-      location: "Nhà hàng",
-      description: "Chúc mừng sinh nhật bạn A",
-      startTime: DateTime(2025, 6, 5, 0, 0),
-      endTime: DateTime(2025, 6, 5, 23, 59),
-    ),
-    CalendarEvent(
-      id: '5',
-      userId: '',
-      title: "Họp công ty",
-      detail: '',
-      location: "Văn phòng",
-      description: "Họp tổng kết tháng",
-      startTime: DateTime(2025, 6, 10, 14, 0),
-      endTime: DateTime(2025, 6, 10, 16, 0),
-    ),
-  ];
+  List<CalendarEvent> allEvents = [];
 
   final AuthService _authService = AuthService();
   final List<String> tabTitles = ["Tháng", "Danh Sách", "Tuần", "Ngày"];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEvents();
+  }
+
+  Future<void> _loadEvents() async {
+    final events = await CalendarService().fetchUserEvents();
+    setState(() {
+      allEvents = events.cast<CalendarEvent>();
+    });
+  }
 
   Future<void> _logout(BuildContext context) async {
     await _authService.signOut();
@@ -100,8 +64,8 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (context) => AddEventWidget(
         selectedDate: date,
-        onAdd: (event) {
-          setState(() => allEvents.add(event as CalendarEvent));
+        onAdd: (event) async {
+          await _loadEvents();
         },
       ),
     );
@@ -292,17 +256,52 @@ class _HomeScreenState extends State<HomeScreen> {
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
                       ),
-                      trailing: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(DateFormat('dd/MM/yyyy').format(event.startTime)),
-                          Text(
-                            "${formatTime(event.startTime, use24HourFormat: use24Hour)} - "
-                            "${formatTime(event.endTime, use24HourFormat: use24Hour)}"
+                          IconButton(
+                            icon: const Icon(Icons.edit, color: Colors.blue),
+                            tooltip: "Sửa",
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AddEventWidget(
+                                  selectedDate: event.startTime,
+                                  event: event,
+                                  onAdd: (updatedEvent) async {
+                                    await _loadEvents();
+                                  },
+                                ),
+                              );
+                            },
                           ),
-                          if (event.location.isNotEmpty)
-                            Text(event.location, style: const TextStyle(fontSize: 12, color: AppColors.secondary)),
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            tooltip: "Xóa",
+                            onPressed: () async {
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Xác nhận xóa'),
+                                  content: const Text('Bạn có chắc muốn xóa sự kiện này không?'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context, false),
+                                      child: const Text('Hủy'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context, true),
+                                      child: const Text('Xóa', style: TextStyle(color: Colors.red)),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (confirm == true) {
+                                await CalendarService().deleteEvent(event.id);
+                                await _loadEvents();
+                              }
+                            },
+                          ),
                         ],
                       ),
                     );
@@ -353,14 +352,38 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildWeekView() {
-    return const WeekView();
+    final startWeekOn = context.watch<SettingProvider>().startWeekOn;
+    final now = DateTime.now();
+    return WeekListView(
+      allEvents: allEvents,
+      startWeekOn: startWeekOn,
+      selectedYear: DateTime(now.year),
+    );
   }
 
   Widget _buildDayView() {
-    final events = eventsOfDay(selectedDate);
+    final today = DateTime.now();
+    final eventsOfToday = allEvents.where((e) {
+      if (e.allDay) {
+        return e.startTime.year == today.year &&
+            e.startTime.month == today.month &&
+            e.startTime.day == today.day;
+      }
+      final start = e.startTime;
+      final end = e.endTime;
+      final dayStart = DateTime(today.year, today.month, today.day, 0, 0, 0);
+      final dayEnd = DateTime(today.year, today.month, today.day, 23, 59, 59, 999);
+      return (start.isBefore(dayEnd) && end.isAfter(dayStart)) ||
+          (start.isAtSameMomentAs(dayStart) || start.isAtSameMomentAs(dayEnd)) ||
+          (end.isAtSameMomentAs(dayStart) || end.isAtSameMomentAs(dayEnd));
+    }).toList();
+
+    final startWeekOn = context.watch<SettingProvider>().startWeekOn;
+    final weekStart = getWeekStartDate(selectedDate, startWeekOn);
+
     return WeekDayCalendar(
-      selectedDate: selectedDate,
-      events: events,
+      selectedDate: weekStart,
+      events: eventsOfToday,
     );
   }
 
