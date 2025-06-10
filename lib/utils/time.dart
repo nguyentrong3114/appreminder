@@ -19,12 +19,16 @@ DateTime getWeekStartDate(DateTime date, int startWeekOn) {
 Color getEventStatusColor(DateTime start, DateTime end) {
   final now = DateTime.now();
   if (end.isBefore(now)) {
-    return Colors.red; // Past
-  } else if (start.isAfter(now) && start.isBefore(now.add(const Duration(hours: 24)))) {
-    return Colors.amber; // Near/upcoming (within 24h)
+    return Colors.red; 
   } else if (start.isAfter(now)) {
-    return Colors.green; // Future
+    final diff = start.difference(now).inHours;
+    if (diff <= 3) {
+      return Colors.amber; 
+    } else {
+      return Colors.green;
+    }
   } else {
-    return Colors.amber; // Ongoing event (started but not ended)
+
+    return Colors.amber;
   }
 }

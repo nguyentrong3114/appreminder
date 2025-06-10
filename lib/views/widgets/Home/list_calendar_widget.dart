@@ -193,18 +193,19 @@ class _DayCellState extends State<_DayCell> {
     Color getEventColor(DateTime start, DateTime end) {
       final now = DateTime.now();
       if (end.isBefore(now)) {
-        return Colors.red; // Đã qua
+        return Colors.red; 
       } else if (start.isAfter(now) && start.isBefore(now.add(const Duration(hours: 2)))) {
-        return Colors.amber; // Sắp tới (trong 2h)
+        return Colors.amber; 
       } else if (start.isAfter(now)) {
-        return Colors.green; // Tương lai xa
+        return Colors.green; 
       } else {
-        return Colors.amber; // Đang diễn ra
+        return Colors.amber; 
       }
     }
 
     return GestureDetector(
       onTap: () {
+        widget.onTap?.call(); // Luôn cập nhật selected day
         if (hasEvents) {
           showModalBottomSheet(
             context: context,
@@ -213,12 +214,11 @@ class _DayCellState extends State<_DayCell> {
             builder: (_) => QuickViewEventScreen(
               events: widget.events,
               date: widget.date,
-              onAddEvent: widget.onAddEvent, // truyền callback add event
+              onAddEvent: widget.onAddEvent,
             ),
           );
-        } else {
-          widget.onTap?.call();
         }
+        // Nếu không có sự kiện, chỉ cập nhật selected day và hiện dấu cộng (đã xử lý ở dưới)
       },
       child: Container(
         margin: const EdgeInsets.all(2),

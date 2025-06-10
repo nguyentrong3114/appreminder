@@ -1,7 +1,8 @@
-import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter_app/utils/time.dart';
 import 'package:flutter_app/models/calendar.dart';
+import 'package:flutter_app/provider/setting_provider.dart';
 
 class WeekDayCalendar extends StatelessWidget {
   final DateTime selectedDate;
@@ -15,8 +16,6 @@ class WeekDayCalendar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
-
     final filteredEvents = events.where((event) => isEventInDay(event.startTime, event.endTime, selectedDate)).toList();
 
     if (filteredEvents.isEmpty) {
@@ -41,8 +40,8 @@ class WeekDayCalendar extends StatelessWidget {
             trailing: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(DateFormat('HH:mm').format(event.startTime)),
-                Text(DateFormat('HH:mm').format(event.endTime)),
+                Text(formatTime(event.startTime, use24HourFormat: context.watch<SettingProvider>().use24HourFormat)),
+                Text(formatTime(event.endTime, use24HourFormat: context.watch<SettingProvider>().use24HourFormat)),
               ],
             ),
           ),
@@ -54,7 +53,7 @@ class WeekDayCalendar extends StatelessWidget {
   bool isEventInDay(DateTime eventStart, DateTime eventEnd, DateTime day) {
     final dayStart = DateTime(day.year, day.month, day.day, 0, 0, 0);
     final dayEnd = DateTime(day.year, day.month, day.day, 23, 59, 59, 999);
-    // Bao gồm cả trường hợp eventStart hoặc eventEnd đúng bằng đầu/cuối ngày
     return !(eventEnd.isBefore(dayStart) || eventStart.isAfter(dayEnd));
   }
+
 }

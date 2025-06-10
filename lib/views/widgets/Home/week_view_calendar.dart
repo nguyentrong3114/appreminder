@@ -10,6 +10,7 @@ import 'package:flutter_app/views/widgets/Home/week_of_year.dart';
 List<Map<String, DateTime>> getWeeksOfYear(DateTime year, int startWeekOn) {
   final weeks = <Map<String, DateTime>>[];
   DateTime date = DateTime(year.year, 1, 1);
+  // Tìm ngày đầu tuần đầu tiên của năm
   date = getWeekStartDate(date, startWeekOn);
   while (date.year <= year.year) {
     final weekStart = date;

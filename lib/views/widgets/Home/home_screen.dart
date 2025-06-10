@@ -360,32 +360,30 @@ class _HomeScreenState extends State<HomeScreen> {
       selectedYear: DateTime(now.year),
     );
   }
+Widget _buildDayView() {
+  // Luôn lấy ngày đang chọn, không phải today
+  final day = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
 
-  Widget _buildDayView() {
-    final today = DateTime.now();
-    final eventsOfToday = allEvents.where((e) {
-      if (e.allDay) {
-        return e.startTime.year == today.year &&
-            e.startTime.month == today.month &&
-            e.startTime.day == today.day;
-      }
-      final start = e.startTime;
-      final end = e.endTime;
-      final dayStart = DateTime(today.year, today.month, today.day, 0, 0, 0);
-      final dayEnd = DateTime(today.year, today.month, today.day, 23, 59, 59, 999);
-      return (start.isBefore(dayEnd) && end.isAfter(dayStart)) ||
-          (start.isAtSameMomentAs(dayStart) || start.isAtSameMomentAs(dayEnd)) ||
-          (end.isAtSameMomentAs(dayStart) || end.isAtSameMomentAs(dayEnd));
-    }).toList();
+  final eventsOfDay = allEvents.where((e) {
+    if (e.allDay) {
+      return e.startTime.year == day.year &&
+          e.startTime.month == day.month &&
+          e.startTime.day == day.day;
+    }
+    final start = e.startTime;
+    final end = e.endTime;
+    final dayStart = DateTime(day.year, day.month, day.day, 0, 0, 0);
+    final dayEnd = DateTime(day.year, day.month, day.day, 23, 59, 59, 999);
+    return (start.isBefore(dayEnd) && end.isAfter(dayStart)) ||
+        (start.isAtSameMomentAs(dayStart) || start.isAtSameMomentAs(dayEnd)) ||
+        (end.isAtSameMomentAs(dayStart) || end.isAtSameMomentAs(dayEnd));
+  }).toList();
 
-    final startWeekOn = context.watch<SettingProvider>().startWeekOn;
-    final weekStart = getWeekStartDate(selectedDate, startWeekOn);
-
-    return WeekDayCalendar(
-      selectedDate: weekStart,
-      events: eventsOfToday,
-    );
-  }
+  return WeekDayCalendar(
+    selectedDate: day,
+    events: eventsOfDay,
+  );
+}
 
   String _shorten(String text, {int max = 28}) {
     if (text.length <= max) return text;
