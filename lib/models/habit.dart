@@ -9,7 +9,7 @@ class Habit {
   final HabitType type;
   final RepeatType repeatType;
   final List<int> selectedWeekdays;
-  final List<int> selectedMonthlyDays; // ✨ THAY ĐỔI CHÍNH
+  final List<int> selectedMonthlyDays;
   final bool reminderEnabled;
   final List<String> reminderTimes;
   final bool streakEnabled;

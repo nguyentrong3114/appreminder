@@ -316,7 +316,7 @@ class HabitService {
     }
   }
 
-  // ✨ THÊM PHƯƠNG THỨC UPDATE HABIT
+  //PHƯƠNG THỨC UPDATE HABIT
   Future<void> updateHabit(Habit habit) async {
     try {
       if (_currentUserId == null) {

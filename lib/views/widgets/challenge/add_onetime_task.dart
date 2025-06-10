@@ -16,7 +16,7 @@ class OnetimeTask extends StatefulWidget {
   final Color? initialColor;
   final bool? reminderEnabledByDefault;
 
-  // ✨ THÊM CÁC PARAMETER CHO EDITING
+  // THÊM CÁC PARAMETER CHO EDITING
   final Habit? existingHabit; // Habit cần edit
   final bool isEditing; // Flag để biết đang edit hay tạo mới
 
@@ -28,8 +28,8 @@ class OnetimeTask extends StatefulWidget {
     this.initialIcon,
     this.initialColor,
     this.reminderEnabledByDefault,
-    this.existingHabit, // ✨ THÊM
-    this.isEditing = false, // ✨ THÊM (default = false)
+    this.existingHabit,
+    this.isEditing = false,
   }) : super(key: key);
 
   @override
@@ -65,7 +65,7 @@ class _OnetimeTask extends State<OnetimeTask> {
     super.initState();
     // Thêm vào initState của OnetimeTask
 
-    // ✅ NẾU ĐANG EDIT, LOAD DỮ LIỆU TỪ EXISTING HABIT
+    //NẾU ĐANG EDIT, LOAD DỮ LIỆU TỪ EXISTING HABIT
     if (widget.isEditing && widget.existingHabit != null) {
       _loadExistingHabitData();
     } else {
@@ -73,7 +73,7 @@ class _OnetimeTask extends State<OnetimeTask> {
     }
   }
 
-  // ✅ PHƯƠNG THỨC LOAD DỮ LIỆU KHI EDIT
+  //PHƯƠNG THỨC LOAD DỮ LIỆU KHI EDIT
   void _loadExistingHabitData() {
     final habit = widget.existingHabit!;
 
@@ -116,7 +116,7 @@ class _OnetimeTask extends State<OnetimeTask> {
             .toList();
   }
 
-  // ✅ PHƯƠNG THỨC KHỞI TẠO KHI TẠO MỚI
+  // PHƯƠNG THỨC KHỞI TẠO KHI TẠO MỚI
   void _initializeNewHabit() {
     // Random màu sắc từ danh sách màu có sẵn
     final List<Color> availableColors = [
@@ -721,7 +721,7 @@ class _OnetimeTask extends State<OnetimeTask> {
     );
   }
 
-  // ✅ CẬP NHẬT HÀM SAVE CHO CẢ CREATE VÀ EDIT
+  // CẬP NHẬT HÀM SAVE CHO CẢ CREATE VÀ EDIT
   Future<void> _saveOnetimeTask() async {
     if (_titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -771,7 +771,7 @@ class _OnetimeTask extends State<OnetimeTask> {
         habitId = await _habitService.saveHabit(habit);
       }
 
-      // ✨ LEN LỊCH THÔNG BÁO MỚI
+      // LEN LỊCH THÔNG BÁO MỚI
       await _scheduleNotifications(habitId, _titleController.text.trim());
       Navigator.pop(context, habitId);
     } catch (e) {
@@ -788,7 +788,7 @@ class _OnetimeTask extends State<OnetimeTask> {
     }
   }
 
-  // ✨ HÀM LEN LỊCH THÔNG BÁO
+  // HÀM LEN LỊCH THÔNG BÁO
   Future<void> _scheduleNotifications(String habitId, String title) async {
     if (!reminderEnabled || reminders.isEmpty) {
       print('Không có thông báo nào để lên lịch');
@@ -811,14 +811,14 @@ class _OnetimeTask extends State<OnetimeTask> {
           scheduledTime: reminder,
         );
 
-        print('✅ Đã lên lịch thông báo $i: ${reminder.format(context)}');
+        print('Đã lên lịch thông báo $i: ${reminder.format(context)}');
       } catch (e) {
-        print('❌ Lỗi khi lên lịch thông báo $i: $e');
+        print('Lỗi khi lên lịch thông báo $i: $e');
       }
     }
   }
 
-  // ✨ HÀM HỦY THÔNG BÁO CŨ KHI EDIT
+  // HÀM HỦY THÔNG BÁO CŨ KHI EDIT
   Future<void> _cancelOldNotifications(String habitId) async {
     if (widget.existingHabit == null) return;
 
@@ -831,7 +831,7 @@ class _OnetimeTask extends State<OnetimeTask> {
     }
   }
 
-  // ✨ TẠO UNIQUE NOTIFICATION ID
+  // TẠO UNIQUE NOTIFICATION ID
   int _generateNotificationId(String habitId, int reminderIndex) {
     // Kết hợp habitId và reminderIndex để tạo unique ID
     final combinedString = '$habitId$reminderIndex';

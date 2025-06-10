@@ -62,7 +62,7 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
 
   Future<void> _loadHabitsForSelectedDate() async {
     if (_auth.currentUser == null) {
-      print('❌ User chưa đăng nhập');
+      print('User chưa đăng nhập');
       return;
     }
 
@@ -91,7 +91,7 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
         });
       });
     } catch (e) {
-      print('❌ Lỗi khi tải habits: $e');
+      print('Lỗi khi tải habits: $e');
     }
   }
 
@@ -116,7 +116,6 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
       case RepeatType.weekly:
         return habit.selectedWeekdays.contains(date.weekday);
       case RepeatType.monthly:
-        // ✨ THAY ĐỔI: Sử dụng selectedMonthlyDays thay vì monthlyDay
         return habit.selectedMonthlyDays.contains(date.day);
       case RepeatType.yearly:
         return habit.startDate.month == date.month &&
@@ -170,9 +169,7 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
                 SizedBox(height: 16),
 
                 // Image Carousel
-                Expanded(
-                  child: ImageCarouselWidget(), // Thay thế VideoPlayerWidget()
-                ),
+                Expanded(child: ImageCarouselWidget()),
 
                 SizedBox(height: 16),
 
@@ -285,7 +282,7 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
       // Tải lại danh sách habits sau khi xóa
       _loadHabitsForSelectedDate();
     } catch (e) {
-      print('❌ Lỗi khi xóa habit: $e');
+      print('Lỗi khi xóa habit: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Có lỗi xảy ra khi xóa thử thách'),
@@ -314,7 +311,7 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
       return doc.exists &&
           (doc.data() as Map<String, dynamic>)['completed'] == true;
     } catch (e) {
-      print('❌ Lỗi check completion: $e');
+      print('Lỗi check completion: $e');
       return false;
     }
   }
@@ -331,7 +328,7 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
     }
   }
 
-  // ✅ Widget tạo ngôi sao có viền
+  // Widget tạo ngôi sao có viền
   Widget _buildStarWithBorder({
     required bool isFilled,
     required VoidCallback onTap,
@@ -341,18 +338,33 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
       child: Container(
         padding: EdgeInsets.all(6),
         child: Stack(
+          alignment: Alignment.center,
           children: [
-            // Viền đen cho ngôi sao: dùng Stack với Icon star_border màu đen lớn hơn
             Icon(
-              Icons.star_border,
-              size: 37, // Giảm kích thước viền ngoài để viền mỏng hơn
-              color: Colors.black38, // Đen nhạt hơn
+              isFilled ? Icons.star_rounded : Icons.star_border_rounded,
+              size: 38,
+              color:
+                  isFilled
+                      ? Colors.amber.withOpacity(0.0)
+                      : Colors.black.withOpacity(0.35),
             ),
-            // Ngôi sao bên trong
-            Icon(
-              isFilled ? Icons.star : Icons.star_border,
-              size: 36, // Chỉ chênh lệch 1 để viền rất mỏng
-              color: isFilled ? Colors.amber : Colors.transparent,
+            ShaderMask(
+              shaderCallback: (Rect bounds) {
+                return LinearGradient(
+                  colors:
+                      isFilled
+                          ? [Colors.amber.shade400, Colors.amber.shade700]
+                          : [Colors.grey.shade300, Colors.grey.shade400],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ).createShader(bounds);
+              },
+              blendMode: BlendMode.srcATop,
+              child: Icon(
+                isFilled ? Icons.star_rounded : Icons.star_border_rounded,
+                size: 36,
+                color: isFilled ? Colors.amber : Colors.transparent,
+              ),
             ),
           ],
         ),
@@ -360,7 +372,7 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
     );
   }
 
-  // ✅ Dialog với ngôi sao có viền đen đúng cách
+  // Dialog với ngôi sao có viền đen đúng cách
   void _showRatingDialog(String habitId) {
     int selectedRating = 0; // Bắt đầu với 0 sao
     String? message;
@@ -401,15 +413,11 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
                       SizedBox(height: 24),
                     ],
 
-                    // ✅ Nếu đã chọn sao, hiện ảnh tương ứng (nhỏ hơn)
+                    // Nếu đã chọn sao, hiện ảnh tương ứng (nhỏ hơn)
                     if (selectedRating > 0) ...[
                       Container(
                         padding: EdgeInsets.all(16),
-                        child: Image.asset(
-                          imagePath!,
-                          height: 70, // ✅ Giảm từ 100 xuống 70
-                          width: 70, // ✅ Giảm từ 100 xuống 70
-                        ),
+                        child: Image.asset(imagePath!, height: 70, width: 70),
                       ),
                       Text(
                         message!,
@@ -423,7 +431,6 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
                       SizedBox(height: 16),
                     ],
 
-                    // ✅ 5 ngôi sao với viền đen đúng cách
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: List.generate(5, (index) {
@@ -437,23 +444,23 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
                               selectedRating = rating;
                               switch (rating) {
                                 case 1:
-                                  message = 'Bad';
+                                  message = 'Tệ';
                                   imagePath = 'assets/images/1star.png';
                                   break;
                                 case 2:
-                                  message = 'Not so good';
+                                  message = 'Không tồi';
                                   imagePath = 'assets/images/2star.png';
                                   break;
                                 case 3:
-                                  message = 'Normal';
+                                  message = 'Bình thường';
                                   imagePath = 'assets/images/3star.png';
                                   break;
                                 case 4:
-                                  message = 'Good';
+                                  message = 'Khá tốt';
                                   imagePath = 'assets/images/4star.png';
                                   break;
                                 case 5:
-                                  message = 'Very good';
+                                  message = 'Tuyệt vời';
                                   imagePath = 'assets/images/5star.png';
                                   break;
                               }
@@ -465,7 +472,7 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
 
                     SizedBox(height: 24),
 
-                    // ✅ Nút Sau và Lưu
+                    // Nút Sau và Lưu
                     Row(
                       children: [
                         Expanded(
@@ -558,7 +565,7 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
         habitCompletionStatus[habitId] = newStatus;
       });
     } catch (e) {
-      print('❌ Lỗi khi cập nhật trạng thái: $e');
+      print('Lỗi khi cập nhật trạng thái: $e');
     }
   }
 
@@ -598,7 +605,7 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
           IconButton(
             icon: Icon(Icons.help_outline, color: Colors.black),
             onPressed: () {
-              _showHelpDialog(); // Thay thế dòng này
+              _showHelpDialog();
             },
           ),
           IconButton(
@@ -802,7 +809,6 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
                             ),
                             child: Row(
                               children: [
-                                // Dấu gạch đứng
                                 Container(
                                   margin: EdgeInsets.only(left: 12),
                                   width: 6,
@@ -927,13 +933,13 @@ class _ImageCarouselWidgetState extends State<ImageCarouselWidget> {
 
   final List<String> _images = [
     'assets/images/demo_challenge/1.png',
-    'assets/images/demo_challenge/2.png',
-    'assets/images/demo_challenge/3.png',
-    'assets/images/demo_challenge/4.png',
-    'assets/images/demo_challenge/5.png',
-    'assets/images/demo_challenge/6.png',
-    'assets/images/demo_challenge/7.png',
-    'assets/images/demo_challenge/8.png',
+    'assets/images/demo_challenge/2.PNG',
+    'assets/images/demo_challenge/3.PNG',
+    'assets/images/demo_challenge/4.PNG',
+    'assets/images/demo_challenge/5.PNG',
+    'assets/images/demo_challenge/6.PNG',
+    'assets/images/demo_challenge/7.PNG',
+    'assets/images/demo_challenge/8.PNG',
   ];
 
   @override
@@ -979,7 +985,7 @@ class _ImageCarouselWidgetState extends State<ImageCarouselWidget> {
                   padding: EdgeInsets.all(8.0), // Thêm padding
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    color: Colors.grey[50], // Background nhẹ
+                    color: Colors.grey[50],
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.1),
@@ -995,7 +1001,7 @@ class _ImageCarouselWidgetState extends State<ImageCarouselWidget> {
                       height: double.infinity,
                       child: Image.asset(
                         _images[index],
-                        fit: BoxFit.contain, // Hiển thị toàn bộ hình, không cắt
+                        fit: BoxFit.contain,
                         errorBuilder: (context, error, stackTrace) {
                           return Container(
                             decoration: BoxDecoration(

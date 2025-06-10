@@ -17,7 +17,6 @@ class RegularHabitScreen extends StatefulWidget {
   final bool? reminderEnabledByDefault;
   final DateTime? initialStartDate;
   final String? formattedStartDate;
-  // ✅ THÊM CÁC PARAMETER CHO EDITING
   final Habit? existingHabit; // Habit cần edit
   final bool isEditing; // Flag để biết đang edit hay tạo mới
 
@@ -29,8 +28,8 @@ class RegularHabitScreen extends StatefulWidget {
     this.reminderEnabledByDefault,
     this.initialStartDate,
     this.formattedStartDate,
-    this.existingHabit, // ✅ THÊM
-    this.isEditing = false, // ✅ THÊM (default = false)
+    this.existingHabit,
+    this.isEditing = false,
   }) : super(key: key);
 
   @override
@@ -44,9 +43,6 @@ class Tag {
 
   Tag({required this.id, required this.name, required this.color});
 }
-
-// enum RepeatType { daily, weekly, monthly, yearly } // Removed, use from models/habit.dart
-// Make sure to only use RepeatType from models/habit.dart
 
 class _RegularHabitScreenState extends State<RegularHabitScreen> {
   late bool reminderEnabled;
@@ -96,7 +92,7 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
     String title,
   ) async {
     if (!reminderEnabled || reminders.isEmpty) {
-      print('❌ Không có thông báo nào để lên lịch');
+      print('Không có thông báo nào để lên lịch');
       return;
     }
 
@@ -144,7 +140,7 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
         break;
     }
 
-    print('✅ Đã lên lịch tất cả notifications cho habit: $title');
+    print('Đã lên lịch tất cả notifications cho habit: $title');
     await notificationService.debugNotificationStatus();
   }
 
@@ -202,10 +198,7 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
       final now = DateTime.now();
 
       final habit = Habit(
-        id:
-            widget.isEditing
-                ? widget.existingHabit!.id
-                : '', // ✅ Giữ ID khi edit
+        id: widget.isEditing ? widget.existingHabit!.id : '', // Giữ ID khi edit
         title: _titleController.text.trim(),
         iconCodePoint: _iconToString(selectedIcon),
         colorValue: _colorToString(selectedColor),
@@ -224,7 +217,7 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
         updatedAt: now,
       );
 
-      // ✅ CHỌN METHOD PHÙ HỢP
+      // CHỌN METHOD PHÙ HỢP
       String habitId;
       if (widget.isEditing) {
         await _habitService.updateHabit(habit); // Update existing
@@ -272,7 +265,7 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
   void initState() {
     super.initState();
 
-    // ✅ NẾU ĐANG EDIT, LOAD DỮ LIỆU TỪ EXISTING HABIT
+    // NẾU ĐANG EDIT, LOAD DỮ LIỆU TỪ EXISTING HABIT
     if (widget.isEditing && widget.existingHabit != null) {
       _loadExistingHabitData();
     } else {
@@ -280,7 +273,7 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
     }
   }
 
-  // ✅ PHƯƠNG THỨC LOAD DỮ LIỆU KHI EDIT
+  // PHƯƠNG THỨC LOAD DỮ LIỆU KHI EDIT
   void _loadExistingHabitData() {
     final habit = widget.existingHabit!;
 
@@ -329,7 +322,7 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
             .toList();
   }
 
-  // ✅ PHƯƠNG THỨC KHỞI TẠO KHI TẠO MỚI
+  // PHƯƠNG THỨC KHỞI TẠO KHI TẠO MỚI
   void _initializeNewHabit() {
     final List<Color> availableColors = [
       Colors.blue,
@@ -1143,7 +1136,6 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
 
         SizedBox(height: 16),
 
-        // Checkbox cho end date (giữ nguyên)
         Container(
           padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -1176,7 +1168,6 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
           ),
         ),
 
-        // End date picker (giữ nguyên phần này)
         if (hasEndDate) ...[
           SizedBox(height: 16),
           Text(
@@ -2046,9 +2037,7 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          widget.isEditing
-              ? 'SỬA THỬ THÁCH'
-              : 'THỬ THÁCH MỚI', // ✅ Dynamic title
+          widget.isEditing ? 'SỬA THỬ THÁCH' : 'THỬ THÁCH MỚI', //Dynamic title
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
