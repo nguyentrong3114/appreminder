@@ -36,62 +36,79 @@ class NotificationService {
       iOS: iosSettings,
     );
 
+    // Tạo notification channel với sound mặc định là false
+    await _notificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.createNotificationChannel(
+          const AndroidNotificationChannel(
+            'onetime_task_channel',
+            'Onetime Task Reminders',
+            description: 'Notifications for onetime task reminders',
+            importance: Importance.max,
+            playSound: true,
+            enableVibration: true,
+            sound: null, // Disable default sound
+          ),
+        );
+
     await _notificationsPlugin.initialize(initSettings);
-    await _requestPermissions();
   }
 
-  Future<void> _requestPermissions() async {
-    // Kiểm tra quyền notification
-    final notificationStatus = await Permission.notification.status;
-    print('📱 Trạng thái quyền thông báo: $notificationStatus');
+  Future<void> _createCustomChannel(String soundName) async {
+    final androidPlugin =
+        _notificationsPlugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
 
-    if (notificationStatus.isDenied) {
-      final result = await Permission.notification.request();
-      print('📱 Kết quả xin quyền: $result');
-    }
+    if (androidPlugin != null) {
+      // Xóa channel cũ nếu tồn tại
+      await androidPlugin.deleteNotificationChannel('onetime_task_channel');
 
-    // ✅ THÊM: Kiểm tra Android version và quyền exactAlarm
-    if (Platform.isAndroid) {
-      try {
-        final exactAlarmStatus = await Permission.scheduleExactAlarm.status;
-        print('⏰ Trạng thái exact alarm: $exactAlarmStatus');
-
-        if (exactAlarmStatus.isDenied) {
-          final result = await Permission.scheduleExactAlarm.request();
-          print('⏰ Kết quả xin exact alarm: $result');
-        }
-      } catch (e) {
-        print('⚠️ Không thể kiểm tra exact alarm permission: $e');
-      }
+      // Tạo channel mới với âm thanh tùy chỉnh
+      await androidPlugin.createNotificationChannel(
+        AndroidNotificationChannel(
+          'onetime_task_channel',
+          'Onetime Task Reminders',
+          description: 'Notifications for onetime task reminders',
+          importance: Importance.max,
+          enableVibration: true,
+          playSound: true,
+          sound:
+              soundName != null
+                  ? RawResourceAndroidNotificationSound(soundName)
+                  : null,
+        ),
+      );
     }
   }
 
   Future<void> debugNotificationStatus() async {
     // Kiểm tra thông báo đang chờ
     final pending = await getPendingNotifications();
-    print('📋 Số thông báo đang chờ: ${pending.length}');
+    print('Số thông báo đang chờ: ${pending.length}');
 
     for (var notification in pending) {
-      print('🔔 ID: ${notification.id}, Title: ${notification.title}');
+      print('ID: ${notification.id}, Title: ${notification.title}');
     }
 
     // Kiểm tra quyền
     final notificationPermission = await Permission.notification.status;
     final exactAlarmPermission = await Permission.scheduleExactAlarm.status;
 
-    print('📱 Quyền thông báo: $notificationPermission');
-    print('⏰ Quyền exact alarm: $exactAlarmPermission');
+    print('Quyền thông báo: $notificationPermission');
+    print('Quyền exact alarm: $exactAlarmPermission');
   }
 
-  // ✅ THÊM METHOD NÀY VÀO
-  // ✅ THÊM PARAMETERS VÀO METHOD NÀY
   Future<void> scheduleOnetimeTaskNotification({
     required int id,
     required String title,
     required DateTime scheduledDate,
     required TimeOfDay scheduledTime,
-    String? soundName, // ✨ THÊM PARAMETER NÀY
-    String? alarmSound, // ✨ THÊM PARAMETER NÀY
+    String? soundName,
+    String? alarmSound,
   }) async {
     final scheduledDateTime = DateTime(
       scheduledDate.year,
@@ -100,6 +117,33 @@ class NotificationService {
       scheduledTime.hour,
       scheduledTime.minute,
     );
+    // Tạo channel mới với âm thanh tùy chỉnh trước khi lên lịch
+    final androidPlugin =
+        _notificationsPlugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
+
+    if (androidPlugin != null) {
+      // Xóa channel cũ
+      await androidPlugin.deleteNotificationChannel('onetime_task_channel');
+
+      // Tạo channel mới
+      await androidPlugin.createNotificationChannel(
+        AndroidNotificationChannel(
+          'onetime_task_channel',
+          'Onetime Task Reminders',
+          description: 'Notifications for onetime task reminders',
+          importance: Importance.max,
+          enableVibration: true,
+          playSound: true,
+          sound:
+              soundName != null
+                  ? RawResourceAndroidNotificationSound(soundName)
+                  : null,
+        ),
+      );
+    }
 
     // Kiểm tra thời gian không được trong quá khứ
     if (scheduledDateTime.isBefore(DateTime.now())) {
@@ -110,6 +154,9 @@ class NotificationService {
     }
 
     final tzDateTime = tz.TZDateTime.from(scheduledDateTime, tz.local);
+    print(
+      'Configuring notification with sound: $soundName',
+    ); // Add this line here
 
     // SỬ DỤNG ÂM THANH CUSTOM
     final AndroidNotificationDetails androidDetails =
@@ -133,8 +180,6 @@ class NotificationService {
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
-      // ✨ iOS SOUND (nếu cần)
-      // sound: soundName,
     );
 
     final NotificationDetails notificationDetails = NotificationDetails(
@@ -145,66 +190,20 @@ class NotificationService {
     try {
       await _notificationsPlugin.zonedSchedule(
         id,
-        '⏰ Nhắc nhở nhiệm vụ',
+        'Nhắc nhở nhiệm vụ',
         title,
         tzDateTime,
         notificationDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       );
 
-      print('✅ Đã lên lịch thông báo: $title với âm thanh: $soundName');
-      print('📅 Thời gian: ${tzDateTime.toString()}');
-      print('🆔 ID: $id');
+      print('Đã lên lịch thông báo: $title với âm thanh: $soundName');
+      print('Thời gian: ${tzDateTime.toString()}');
+      print('ID: $id');
     } catch (e) {
-      print('❌ Lỗi khi lên lịch thông báo: $e');
+      print('Lỗi khi lên lịch thông báo: $e');
     }
   }
-
-  Future<void> testNotificationNow() async {
-    print('🔴 BẮT ĐẦU test notification...');
-
-    const AndroidNotificationDetails androidDetails =
-        AndroidNotificationDetails(
-          'test_channel',
-          'Test Notifications',
-          channelDescription: 'Test notification channel',
-          importance: Importance.max,
-          priority: Priority.high,
-          enableVibration: true,
-          playSound: true,
-          showWhen: true,
-          when: null,
-        );
-
-    const NotificationDetails notificationDetails = NotificationDetails(
-      android: androidDetails,
-      iOS: DarwinNotificationDetails(
-        presentAlert: true,
-        presentBadge: true,
-        presentSound: true,
-      ),
-    );
-
-    try {
-      print('🔴 Đang gửi test notification...');
-
-      await _notificationsPlugin.show(
-        999,
-        '🔔 Test Notification',
-        'Nếu bạn thấy thông báo này, notification đang hoạt động! Thời gian: ${DateTime.now().toString()}',
-        notificationDetails,
-      );
-
-      print('✅ Test notification ĐÃ GỬI thành công!');
-
-      // Kiểm tra ngay sau khi gửi
-      final pending = await getPendingNotifications();
-      print('📋 Số thông báo pending sau khi gửi: ${pending.length}');
-    } catch (e) {
-      print('❌ LỖI khi gửi test notification: $e');
-    }
-  }
-  // ✅ THÊM CÁC METHOD NÀY VÀO NotificationService CLASS
 
   Future<void> cancelHabitNotifications(
     String habitId,
@@ -215,7 +214,7 @@ class NotificationService {
       final id = (habitId + i.toString()).hashCode.abs();
       await cancelNotification(id);
     }
-    print('✅ Đã hủy notifications cho habit: $habitId');
+    print('Đã hủy notifications cho habit: $habitId');
   }
 
   Future<void> scheduleRegularHabitDaily({
@@ -265,7 +264,7 @@ class NotificationService {
       try {
         await _notificationsPlugin.zonedSchedule(
           (habitId + i.toString()).hashCode.abs(),
-          '🔄 Nhắc nhở thói quen',
+          'Nhắc nhở thói quen',
           title,
           tz.TZDateTime.from(finalScheduledTime, tz.local),
           notificationDetails,
@@ -274,7 +273,7 @@ class NotificationService {
         );
 
         print(
-          '✅ Đã lên lịch daily reminder: $title lúc ${time.hour}:${time.minute.toString().padLeft(2, '0')}',
+          'Đã lên lịch daily reminder: $title lúc ${time.hour}:${time.minute.toString().padLeft(2, '0')}',
         );
       } catch (e) {
         print('❌ Lỗi lên lịch daily reminder: $e');
@@ -334,7 +333,7 @@ class NotificationService {
         try {
           await _notificationsPlugin.zonedSchedule(
             id,
-            '🔄 Nhắc nhở thói quen',
+            'Nhắc nhở thói quen',
             title,
             tz.TZDateTime.from(
               DateTime(
@@ -351,9 +350,9 @@ class NotificationService {
             matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
           );
 
-          print('✅ Đã lên lịch weekly reminder: $title');
+          print('Đã lên lịch weekly reminder: $title');
         } catch (e) {
-          print('❌ Lỗi lên lịch weekly reminder: $e');
+          print('Lỗi lên lịch weekly reminder: $e');
         }
       }
     }
@@ -408,7 +407,7 @@ class NotificationService {
         try {
           await _notificationsPlugin.zonedSchedule(
             id,
-            '🔄 Nhắc nhở thói quen',
+            'Nhắc nhở thói quen',
             title,
             tz.TZDateTime.from(scheduledDate, tz.local),
             NotificationDetails(android: androidDetails),
@@ -416,9 +415,9 @@ class NotificationService {
             matchDateTimeComponents: DateTimeComponents.dayOfMonthAndTime,
           );
 
-          print('✅ Đã lên lịch monthly reminder: $title ngày $day');
+          print('Đã lên lịch monthly reminder: $title ngày $day');
         } catch (e) {
-          print('❌ Lỗi lên lịch monthly reminder: $e');
+          print('Lỗi lên lịch monthly reminder: $e');
         }
       }
     }
@@ -467,7 +466,7 @@ class NotificationService {
       try {
         await _notificationsPlugin.zonedSchedule(
           id,
-          '🔄 Nhắc nhở thói quen',
+          'Nhắc nhở thói quen',
           title,
           tz.TZDateTime.from(scheduledDate, tz.local),
           NotificationDetails(android: androidDetails),
@@ -475,9 +474,9 @@ class NotificationService {
           matchDateTimeComponents: DateTimeComponents.dateAndTime,
         );
 
-        print('✅ Đã lên lịch yearly reminder: $title');
+        print('Đã lên lịch yearly reminder: $title');
       } catch (e) {
-        print('❌ Lỗi lên lịch yearly reminder: $e');
+        print('Lỗi lên lịch yearly reminder: $e');
       }
     }
   }
@@ -490,94 +489,9 @@ class NotificationService {
     return startDate.add(Duration(days: daysToAdd));
   }
 
-  // Test với ID và channel khác
-  Future<void> alternativeTest() async {
-    print('🟡 Testing với method khác...');
-
-    const AndroidNotificationDetails androidDetails =
-        AndroidNotificationDetails(
-          'alternative_test',
-          'Alternative Test',
-          channelDescription: 'Alternative test channel',
-          importance: Importance.max,
-          priority: Priority.high,
-          autoCancel: false,
-          ongoing: false,
-          enableVibration: true,
-          playSound: true,
-        );
-
-    const NotificationDetails notificationDetails = NotificationDetails(
-      android: androidDetails,
-      iOS: DarwinNotificationDetails(),
-    );
-
-    try {
-      await _notificationsPlugin.show(
-        888,
-        '🟡 Alternative Test',
-        'Test với method khác - ${DateTime.now().millisecondsSinceEpoch}',
-        notificationDetails,
-      );
-      print('✅ Alternative test sent!');
-    } catch (e) {
-      print('❌ Alternative test failed: $e');
-    }
-  }
-
   // Hủy thông báo theo ID
   Future<void> cancelNotification(int id) async {
     await _notificationsPlugin.cancel(id);
-  }
-
-  // Thêm vào NotificationService class
-  Future<void> testScheduledNotification() async {
-    final now = DateTime.now();
-    final scheduledTime = now.add(Duration(seconds: 10));
-
-    print('📅 Thời gian hiện tại: ${now.toString()}');
-    print('📅 Thời gian lên lịch: ${scheduledTime.toString()}');
-
-    const AndroidNotificationDetails androidDetails =
-        AndroidNotificationDetails(
-          'test_scheduled',
-          'Test Scheduled',
-          channelDescription: 'Test scheduled notifications',
-          importance: Importance.max,
-          priority: Priority.high,
-          enableVibration: true,
-          playSound: true,
-        );
-
-    const NotificationDetails notificationDetails = NotificationDetails(
-      android: androidDetails,
-      iOS: DarwinNotificationDetails(
-        presentAlert: true,
-        presentBadge: true,
-        presentSound: true,
-      ),
-    );
-
-    try {
-      // ✅ Sử dụng _notificationsPlugin TRONG class NotificationService
-      await _notificationsPlugin.zonedSchedule(
-        12345,
-        '⏰ Test Scheduled',
-        'Thông báo test sau 10 giây - ${now.toString().substring(11, 19)}',
-        tz.TZDateTime.from(scheduledTime, tz.local),
-        notificationDetails,
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      );
-
-      print('✅ Test scheduled notification thành công!');
-    } catch (e) {
-      print('❌ Lỗi test scheduled: $e');
-    }
-  }
-
-  // Hủy tất cả thông báo
-  Future<void> cancelAllNotifications() async {
-    await _notificationsPlugin.cancelAll();
   }
 
   // Lấy danh sách thông báo đã lên lịch

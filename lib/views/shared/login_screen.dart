@@ -28,7 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
               height: 200,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFF00B4DB), Color(0xFF0083B0)],
+                  colors: [Color(0xFF4FCA9C), Color(0xFF3FB885)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -68,11 +68,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   const Center(
                     child: Text(
-                      "LOGIN",
+                      "ĐĂNG NHẬP",
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Colors.blueAccent,
+                        color: Color(0xFF4FCA9C),
                       ),
                     ),
                   ),
@@ -89,7 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  const Text("Password"),
+                  const Text("Mật khẩu"),
                   TextField(
                     controller: passwordController,
                     obscureText: _obscurePassword,
@@ -123,7 +123,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         );
                       },
                       child: const Text(
-                        "Forgot your password?",
+                        "Quên mật khẩu?",
                         style: TextStyle(fontSize: 12),
                       ),
                     ),
@@ -138,7 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       height: 50,
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF00B4DB), Color(0xFF0083B0)],
+                          colors: [Color(0xFF4FCA9C), Color(0xFF3FB885)],
                         ),
                         borderRadius: BorderRadius.circular(25),
                       ),
@@ -151,39 +151,54 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           if (email.isEmpty || password.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Vui lòng nhập đầy đủ thông tin')),
+                              const SnackBar(
+                                content: Text('Vui lòng nhập đầy đủ thông tin'),
+                              ),
                             );
                             return;
                           }
                           if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(email)) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Email không hợp lệ')),
+                              const SnackBar(
+                                content: Text('Email không hợp lệ'),
+                              ),
                             );
                             return;
                           }
 
                           try {
-                            final user = await _authService.signInWithEmail(email, password);
+                            final user = await _authService.signInWithEmail(
+                              email,
+                              password,
+                            );
                             if (user != null) {
                               // Đăng nhập thành công
                               Navigator.pushReplacement(
                                 context,
-                                MaterialPageRoute(builder: (context) => MainScreen()),
+                                MaterialPageRoute(
+                                  builder: (context) => MainScreen(),
+                                ),
                               );
                             } else {
                               // Sai tài khoản hoặc mật khẩu
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Sai tài khoản hoặc mật khẩu')),
+                                const SnackBar(
+                                  content: Text('Sai tài khoản hoặc mật khẩu'),
+                                ),
                               );
                             }
                           } catch (e) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Có lỗi xảy ra, vui lòng thử lại')),
+                              const SnackBar(
+                                content: Text(
+                                  'Có lỗi xảy ra, vui lòng thử lại',
+                                ),
+                              ),
                             );
                           }
                         },
                         child: const Text(
-                          "LOGIN",
+                          "ĐĂNG NHẬP",
                           style: TextStyle(color: Colors.white, fontSize: 16),
                         ),
                       ),
@@ -193,7 +208,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 20),
                   const Center(
                     child: Text(
-                      "Or login with",
+                      "Hoặc tiếp tục với",
                       style: TextStyle(fontSize: 14, color: Colors.black54),
                     ),
                   ),
@@ -236,8 +251,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         );
                       },
                       child: const Text(
-                        "Don't have an account? Sign Up",
-                        style: TextStyle(color: Colors.blueAccent),
+                        "Chưa có tài khoản? Đăng ký ngay",
+                        style: TextStyle(color: Color(0xFF4FCA9C)),
                       ),
                     ),
                   ),

@@ -134,41 +134,50 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   ///Kiểm tra xem ngày có thuộc thử thách không (sử dụng currentHabit)
   bool _isHabitActiveOnDate(DateTime date) {
-    // Kiểm tra nếu ngày trước ngày bắt đầu
-    if (date.isBefore(currentHabit.startDate)) {
-      return false;
+    // Chuyển về định dạng chỉ có ngày (bỏ giờ phút giây)
+    DateTime dateOnly = DateTime(date.year, date.month, date.day);
+    DateTime startDateOnly = DateTime(
+      currentHabit.startDate.year,
+      currentHabit.startDate.month,
+      currentHabit.startDate.day,
+    );
+
+    // KIỂM TRA CHÍNH: ngày phải >= ngày bắt đầu
+    if (dateOnly.isBefore(startDateOnly)) {
+      return false; // Ngày 11/6 < 12/6 → return false
     }
 
-    // Kiểm tra nếu có ngày kết thúc và ngày sau ngày kết thúc
-    if (currentHabit.hasEndDate &&
-        currentHabit.endDate != null &&
-        date.isAfter(currentHabit.endDate!)) {
-      return false;
+    // Kiểm tra ngày kết thúc (nếu có)
+    if (currentHabit.hasEndDate && currentHabit.endDate != null) {
+      DateTime endDateOnly = DateTime(
+        currentHabit.endDate!.year,
+        currentHabit.endDate!.month,
+        currentHabit.endDate!.day,
+      );
+      if (dateOnly.isAfter(endDateOnly)) {
+        return false;
+      }
     }
 
-    // Nếu là thử thách một lần
+    // Xử lý theo loại habit
     if (currentHabit.type == HabitType.onetime) {
-      // Chỉ active trong ngày bắt đầu
-      return DateFormat('yyyy-MM-dd').format(date) ==
-          DateFormat('yyyy-MM-dd').format(currentHabit.startDate);
+      // Chỉ active đúng ngày bắt đầu
+      return dateOnly.isAtSameMomentAs(startDateOnly);
     }
 
-    // Nếu là thử thách lặp lại
+    // Với các habit lặp lại, kiểm tra pattern
     switch (currentHabit.repeatType) {
       case RepeatType.daily:
-        return true; // Mỗi ngày đều active
+        return true; // Từ ngày bắt đầu trở đi, mỗi ngày đều active
 
       case RepeatType.weekly:
-        // Kiểm tra thứ trong tuần
-        int weekday = date.weekday == 7 ? 0 : date.weekday; // Chuyển Sunday = 0
+        int weekday = date.weekday == 7 ? 0 : date.weekday;
         return currentHabit.selectedWeekdays.contains(weekday);
 
       case RepeatType.monthly:
-        // Kiểm tra ngày trong tháng
         return currentHabit.selectedMonthlyDays.contains(date.day);
 
       case RepeatType.yearly:
-        // Kiểm tra ngày và tháng trong năm
         return date.day == currentHabit.startDate.day &&
             date.month == currentHabit.startDate.month;
     }
@@ -219,13 +228,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
       print(
         'Debug: Đã reload xong, currentHabit.title = ${currentHabit.title}',
-      );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Thử thách đã được cập nhật!'),
-          backgroundColor: Colors.green,
-        ),
       );
     } else {
       print('ℹDebug: Không có result, có thể user đã cancel');
@@ -340,13 +342,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         }
 
         Navigator.of(context).pop(true);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Đã xóa thử thách thành công'),
-            backgroundColor: Colors.green,
-          ),
-        );
       }
     } catch (e) {
       print('Lỗi khi xóa habit: $e');
