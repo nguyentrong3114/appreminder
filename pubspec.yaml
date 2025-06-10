@@ -30,7 +30,6 @@ dependencies:
   permission_handler: ^11.3.0
   timezone: ^0.10.0
   audioplayers: ^5.2.1
-
 dev_dependencies:
   flutter_test:
 

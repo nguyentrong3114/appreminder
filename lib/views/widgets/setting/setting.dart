@@ -1,12 +1,14 @@
+import 'chart.dart';
+import 'statistical.dart';
 import 'settings_item.dart';
 import 'settings_section.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter_app/services/auth_service.dart';
 import 'package:flutter_app/provider/setting_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -388,6 +390,34 @@ class SettingsPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
+            // Statistics
+            SettingsSection(
+              title: 'Statistical',
+              children: [
+                SettingsItem(
+                  icon: Icons.analytics,
+                  iconColor: Colors.deepPurple,
+                  title: 'Statistical',
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const StatisticalPage()),
+                    );
+                  },
+                ),
+                SettingsItem(
+                  icon: Icons.bar_chart,
+                  iconColor: Colors.indigo,
+                  title: 'Chart',
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const StatisticalPage(showChartOnly: true)),
+                    );
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
             // About
             SettingsSection(
               title: 'About',
@@ -395,6 +425,17 @@ class SettingsPage extends StatelessWidget {
                 SettingsItem(icon: Icons.feedback, iconColor: Colors.green, title: 'Feedback'),
                 SettingsItem(icon: Icons.star, iconColor: Colors.blue, title: 'Rate'),
                 SettingsItem(icon: Icons.share, iconColor: Colors.orange, title: 'Share with friends'),
+                SettingsItem(
+                  icon: Icons.logout,
+                  iconColor: Colors.red,
+                  title: 'Logout',
+                  onTap: () async {
+                    await AuthService().signOut();
+                    if (context.mounted) {
+                      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+                    }
+                  },
+                ),
               ],
             ),
           ],
