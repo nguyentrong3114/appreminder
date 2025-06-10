@@ -492,17 +492,22 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
                         SizedBox(width: 16),
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: () async {
-                              Navigator.of(context).pop();
-                              int ratingToSave =
-                                  selectedRating > 0 ? selectedRating : 5;
-                              await _toggleHabitCompletion(
-                                habitId,
-                                rating: ratingToSave,
-                              );
-                            },
+                            onPressed:
+                                selectedRating > 0
+                                    ? () async {
+                                      Navigator.of(context).pop();
+                                      await _toggleHabitCompletion(
+                                        habitId,
+                                        rating: selectedRating,
+                                      );
+                                    }
+                                    : null, // Disable button khi chưa chọn sao
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Color(0xFF4FCA9C),
+                              backgroundColor:
+                                  selectedRating > 0
+                                      ? Color(0xFF4FCA9C)
+                                      : Colors
+                                          .grey[300], // Thay đổi màu khi disabled
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
@@ -510,7 +515,11 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
                             child: Text(
                               'Lưu',
                               style: TextStyle(
-                                color: Colors.white,
+                                color:
+                                    selectedRating > 0
+                                        ? Colors.white
+                                        : Colors
+                                            .grey[600], // Thay đổi màu text khi disabled
                                 fontSize: 16,
                               ),
                             ),

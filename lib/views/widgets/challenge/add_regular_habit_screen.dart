@@ -343,7 +343,9 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
     selectedColor =
         widget.initialColor ??
         availableColors[random.nextInt(availableColors.length)];
-    selectedIcon = iconOptions[random.nextInt(iconOptions.length)];
+    selectedIcon =
+        widget.initialIcon ??
+        iconOptions[random.nextInt(iconOptions.length)]; // <-- Sửa dòng này
     calendarIcon = selectedIcon;
 
     _titleController = TextEditingController(text: widget.initialTitle ?? '');
