@@ -6,32 +6,31 @@ class HabitService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // ✅ Lấy user hiện tại
+  //Lấy user hiện tại
   String? get _currentUserId => _auth.currentUser?.uid;
 
-  // ✅ Collection riêng cho từng user
+  //Collection riêng cho từng user
   CollectionReference get _habitsCollection {
     if (_currentUserId == null) {
       throw Exception('User chưa đăng nhập');
     }
-    print('🔐 Current user: $_currentUserId');
-    print('📍 Collection path: users/$_currentUserId/habits');
+    print('Current user: $_currentUserId');
+    print('Collection path: users/$_currentUserId/habits');
     return _firestore
         .collection('users')
         .doc(_currentUserId)
         .collection('habits');
   }
 
-  // ✨ PHƯƠNG THỨC LƯU HABIT CẢI TIẾN
+  //PHƯƠNG THỨC LƯU HABIT
   Future<String> saveHabit(Habit habit) async {
     try {
       if (_currentUserId == null) {
         throw Exception('Vui lòng đăng nhập để lưu thử thách');
       }
 
-      print('💾 Saving habit for user: $_currentUserId');
+      print('Saving habit for user: $_currentUserId');
 
-      // Tạo habit data với cấu trúc mới
       final habitData = {
         'title': habit.title,
         'iconCodePoint': habit.iconCodePoint,
@@ -43,7 +42,7 @@ class HabitService {
         'type': habit.type.toString(),
         'repeatType': habit.repeatType.toString(),
         'selectedWeekdays': habit.selectedWeekdays,
-        'selectedMonthlyDays': habit.selectedMonthlyDays, // ✨ THÊM MỚI
+        'selectedMonthlyDays': habit.selectedMonthlyDays,
         'reminderEnabled': habit.reminderEnabled,
         'reminderTimes': habit.reminderTimes,
         'streakEnabled': habit.streakEnabled,
@@ -51,7 +50,6 @@ class HabitService {
         'userId': _currentUserId,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
-        // ✨ THÊM METADATA MỚI
         'isActive': true,
         'completionCount': 0,
         'currentStreak': 0,
@@ -59,40 +57,40 @@ class HabitService {
         'lastCompletedDate': null,
       };
 
-      print('📊 Habit data to save: ${habitData.keys.toList()}');
+      print('Habit data to save: ${habitData.keys.toList()}');
 
       final docRef = await _habitsCollection.add(habitData);
-      print('✅ Habit saved with ID: ${docRef.id}');
+      print('Habit saved with ID: ${docRef.id}');
 
-      // ✨ THÊM LOG CHI TIẾT
+      //THÊM LOG CHI TIẾT
       if (habit.repeatType == RepeatType.monthly &&
           habit.selectedMonthlyDays.isNotEmpty) {
-        print('📅 Monthly habit with days: ${habit.selectedMonthlyDays}');
+        print('Monthly habit with days: ${habit.selectedMonthlyDays}');
       }
 
       return docRef.id;
     } catch (e) {
-      print('❌ Save error: $e');
+      print('Save error: $e');
       throw Exception('Không thể lưu thử thách: $e');
     }
   }
 
-  // ✨ LẤY HABITS THEO LOẠI VỚI BỘ LỌC CẢI TIẾN
+  //LẤY HABITS THEO LOẠI VỚI BỘ LỌC CẢI TIẾN
   Stream<List<Habit>> getHabitsByType(
     HabitType type, {
     bool activeOnly = true,
     String? searchQuery,
   }) {
     if (_currentUserId == null) {
-      print('❌ No user authenticated');
+      print('No user authenticated');
       return Stream.value([]);
     }
 
-    print('📊 Getting habits by type: $type for user: $_currentUserId');
+    print('Getting habits by type: $type for user: $_currentUserId');
 
     Query query = _habitsCollection.where('type', isEqualTo: type.toString());
 
-    // ✨ BỘ LỌC ACTIVE
+    //BỘ LỌC ACTIVE
     if (activeOnly) {
       query = query.where('isActive', isEqualTo: true);
     }
@@ -101,7 +99,7 @@ class HabitService {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
-          print('📈 Found ${snapshot.docs.length} habits of type $type');
+          print('Found ${snapshot.docs.length} habits of type $type');
 
           var habits =
               snapshot.docs
@@ -117,7 +115,7 @@ class HabitService {
                   .cast<Habit>()
                   .toList();
 
-          // ✨ FILTER BY SEARCH QUERY
+          //FILTER BY SEARCH QUERY
           if (searchQuery != null && searchQuery.isNotEmpty) {
             habits =
                 habits
@@ -132,31 +130,31 @@ class HabitService {
           return habits;
         })
         .handleError((error) {
-          print('❌ Stream error: $error');
+          print('Stream error: $error');
         });
   }
 
-  // ✨ LẤY TẤT CẢ HABITS VỚI BỘ LỌC
+  //LẤY TẤT CẢ HABITS VỚI BỘ LỌC
   Stream<List<Habit>> getAllHabits({
     bool activeOnly = true,
     String? searchQuery,
     RepeatType? filterByRepeatType,
   }) {
     if (_currentUserId == null) {
-      print('❌ No user authenticated');
+      print('No user authenticated');
       return Stream.value([]);
     }
 
-    print('📊 Getting all habits for user: $_currentUserId');
+    print('Getting all habits for user: $_currentUserId');
 
     Query query = _habitsCollection;
 
-    // ✨ BỘ LỌC ACTIVE
+    // BỘ LỌC ACTIVE
     if (activeOnly) {
       query = query.where('isActive', isEqualTo: true);
     }
 
-    // ✨ BỘ LỌC THEO REPEAT TYPE
+    // BỘ LỌC THEO REPEAT TYPE
     if (filterByRepeatType != null) {
       query = query.where(
         'repeatType',
@@ -168,7 +166,7 @@ class HabitService {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
-          print('📈 Found ${snapshot.docs.length} total habits');
+          print('Found ${snapshot.docs.length} total habits');
 
           var habits =
               snapshot.docs
@@ -176,7 +174,7 @@ class HabitService {
                     try {
                       return _createHabitFromDoc(doc);
                     } catch (e) {
-                      print('❌ Error parsing habit ${doc.id}: $e');
+                      print('Error parsing habit ${doc.id}: $e');
                       return null;
                     }
                   })
@@ -184,7 +182,7 @@ class HabitService {
                   .cast<Habit>()
                   .toList();
 
-          // ✨ FILTER BY SEARCH QUERY
+          //FILTER BY SEARCH QUERY
           if (searchQuery != null && searchQuery.isNotEmpty) {
             habits =
                 habits
@@ -199,23 +197,22 @@ class HabitService {
           return habits;
         })
         .handleError((error) {
-          print('❌ Stream error: $error');
+          print('Stream error: $error');
         });
   }
 
-  // ✨ PHƯƠNG THỨC TẠO HABIT TỪ DOCUMENT
+  //PHƯƠNG THỨC TẠO HABIT TỪ DOCUMENT
   Habit _createHabitFromDoc(QueryDocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
 
-    // ✨ XỬ LÝ MIGRATION CHO selectedMonthlyDays
+    //XỬ LÝ MIGRATION CHO selectedMonthlyDays
     List<int> selectedMonthlyDays = [];
     if (data.containsKey('selectedMonthlyDays')) {
       selectedMonthlyDays = List<int>.from(data['selectedMonthlyDays'] ?? []);
     } else if (data.containsKey('monthlyDay')) {
-      // Migration từ format cũ
       selectedMonthlyDays = [data['monthlyDay'] as int];
       print(
-        '🔄 Migrating monthlyDay ${data['monthlyDay']} to selectedMonthlyDays',
+        'Migrating monthlyDay ${data['monthlyDay']} to selectedMonthlyDays',
       );
     }
 
@@ -255,7 +252,7 @@ class HabitService {
     );
   }
 
-  // ✨ LẤY HABITS THEO NGÀY CỤ THỂ
+  //LẤY HABITS THEO NGÀY CỤ THỂ
   Stream<List<Habit>> getHabitsForDate(DateTime date) {
     return getAllHabits().map((habits) {
       return habits
@@ -264,7 +261,7 @@ class HabitService {
     });
   }
 
-  // ✨ KIỂM TRA HABIT CÓ CHẠY VÀO NGÀY CỤ THỂ KHÔNG
+  //KIỂM TRA HABIT CÓ CHẠY VÀO NGÀY CỤ THỂ KHÔNG
   bool _shouldHabitRunOnDate(Habit habit, DateTime date) {
     // Kiểm tra ngày bắt đầu
     if (date.isBefore(habit.startDate)) return false;
@@ -284,7 +281,6 @@ class HabitService {
         return habit.selectedWeekdays.contains(date.weekday);
 
       case RepeatType.monthly:
-        // ✨ LOGIC MỚI CHO selectedMonthlyDays
         return habit.selectedMonthlyDays.contains(date.day);
 
       case RepeatType.yearly:
@@ -293,25 +289,25 @@ class HabitService {
     }
   }
 
-  // ✨ LẤY HABIT THEO ID VỚI ERROR HANDLING TỐT HỌN
+  //LẤY HABIT THEO ID VỚI ERROR HANDLING TỐT HỌN
   Future<Habit?> getHabitById(String habitId) async {
     try {
       if (_currentUserId == null) {
         throw Exception('User chưa đăng nhập');
       }
 
-      print('🔍 Getting habit: $habitId');
+      print('Getting habit: $habitId');
       final doc = await _habitsCollection.doc(habitId).get();
 
       if (doc.exists) {
-        print('✅ Habit found');
+        print('Habit found');
         return _createHabitFromDoc(doc as QueryDocumentSnapshot);
       }
 
-      print('❌ Habit not found');
+      print('Habit not found');
       return null;
     } catch (e) {
-      print('❌ Get habit error: $e');
+      print('Get habit error: $e');
       throw Exception('Không thể lấy thông tin thử thách: $e');
     }
   }
@@ -323,7 +319,7 @@ class HabitService {
         throw Exception('Vui lòng đăng nhập để cập nhật thử thách');
       }
 
-      print('🔄 Updating habit ${habit.id} for user: $_currentUserId');
+      print('Updating habit ${habit.id} for user: $_currentUserId');
 
       // Tạo habit data để update
       final habitData = {
@@ -343,23 +339,22 @@ class HabitService {
         'streakEnabled': habit.streakEnabled,
         'tags': habit.tags,
         'userId': _currentUserId,
-        'updatedAt': FieldValue.serverTimestamp(), // ✅ Chỉ update timestamp
-        // Giữ nguyên các field khác như createdAt, completionCount, currentStreak, etc.
+        'updatedAt': FieldValue.serverTimestamp(), // Chỉ update timestamp
       };
 
-      print('📊 Updating habit data: ${habitData.keys.toList()}');
+      print('Updating habit data: ${habitData.keys.toList()}');
 
-      // ✅ SỬ DỤNG UPDATE THAY VÌ ADD
+      // SỬ DỤNG UPDATE THAY VÌ ADD
       await _habitsCollection.doc(habit.id).update(habitData);
 
-      print('✅ Habit updated successfully: ${habit.id}');
+      print('Habit updated successfully: ${habit.id}');
     } catch (e) {
-      print('❌ Update error: $e');
+      print('Update error: $e');
       throw Exception('Không thể cập nhật thử thách: $e');
     }
   }
 
-  // ✨ XÓA HABIT (SOFT DELETE)
+  // XÓA HABIT (SOFT DELETE)
   Future<void> deleteHabit(String habitId, {bool hardDelete = false}) async {
     try {
       if (_currentUserId == null) {
@@ -367,10 +362,10 @@ class HabitService {
       }
 
       if (hardDelete) {
-        print('🗑️ Hard deleting habit: $habitId');
+        print('Hard deleting habit: $habitId');
         await _habitsCollection.doc(habitId).delete();
       } else {
-        print('🗑️ Soft deleting habit: $habitId');
+        print('Soft deleting habit: $habitId');
         await _habitsCollection.doc(habitId).update({
           'isActive': false,
           'deletedAt': FieldValue.serverTimestamp(),
@@ -378,35 +373,35 @@ class HabitService {
         });
       }
 
-      print('✅ Habit deleted successfully');
+      print('Habit deleted successfully');
     } catch (e) {
-      print('❌ Delete error: $e');
+      print('Delete error: $e');
       throw Exception('Không thể xóa thử thách: $e');
     }
   }
 
-  // ✨ KHÔI PHỤC HABIT
+  // KHÔI PHỤC HABIT
   Future<void> restoreHabit(String habitId) async {
     try {
       if (_currentUserId == null) {
         throw Exception('User chưa đăng nhập');
       }
 
-      print('🔄 Restoring habit: $habitId');
+      print('Restoring habit: $habitId');
       await _habitsCollection.doc(habitId).update({
         'isActive': true,
         'deletedAt': FieldValue.delete(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
-      print('✅ Habit restored successfully');
+      print('Habit restored successfully');
     } catch (e) {
-      print('❌ Restore error: $e');
+      print('Restore error: $e');
       throw Exception('Không thể khôi phục thử thách: $e');
     }
   }
 
-  // ✨ ĐÁNH DẤU HABIT HOÀN THÀNH
+  //ĐÁNH DẤU HABIT HOÀN THÀNH
   Future<void> markHabitCompleted(String habitId, DateTime date) async {
     try {
       if (_currentUserId == null) {
@@ -430,14 +425,14 @@ class HabitService {
       // Cập nhật habit stats
       await _updateHabitStats(habitId, date);
 
-      print('✅ Habit marked as completed for $date');
+      print('Habit marked as completed for $date');
     } catch (e) {
-      print('❌ Mark completed error: $e');
+      print('Mark completed error: $e');
       throw Exception('Không thể đánh dấu hoàn thành: $e');
     }
   }
 
-  // ✨ CẬP NHẬT THỐNG KÊ HABIT
+  // CẬP NHẬT THỐNG KÊ HABIT
   Future<void> _updateHabitStats(String habitId, DateTime completedDate) async {
     final doc = await _habitsCollection.doc(habitId).get();
     if (!doc.exists) return;
@@ -446,8 +441,6 @@ class HabitService {
     int completionCount = (data['completionCount'] ?? 0) + 1;
     int currentStreak = data['currentStreak'] ?? 0;
     int longestStreak = data['longestStreak'] ?? 0;
-
-    // Tính streak logic ở đây...
     currentStreak++;
     if (currentStreak > longestStreak) {
       longestStreak = currentStreak;
@@ -462,7 +455,7 @@ class HabitService {
     });
   }
 
-  // ✨ LẤY THỐNG KÊ USER
+  // LẤY THỐNG KÊ USER
   Future<Map<String, dynamic>> getUserStats() async {
     if (_currentUserId == null) {
       throw Exception('User chưa đăng nhập');
@@ -486,12 +479,12 @@ class HabitService {
     };
   }
 
-  // ✨ MIGRATION - CẬP NHẬT TẤT CẢ HABITS CŨ
+  // MIGRATION - CẬP NHẬT TẤT CẢ HABITS CŨ
   Future<void> migrateOldHabits() async {
     try {
       if (_currentUserId == null) return;
 
-      print('🔄 Starting migration for user: $_currentUserId');
+      print('Starting migration for user: $_currentUserId');
 
       final snapshot =
           await _habitsCollection
@@ -509,14 +502,14 @@ class HabitService {
           });
 
           print(
-            '✅ Migrated habit ${doc.id}: monthlyDay $monthlyDay -> selectedMonthlyDays [$monthlyDay]',
+            'Migrated habit ${doc.id}: monthlyDay $monthlyDay -> selectedMonthlyDays [$monthlyDay]',
           );
         }
       }
 
-      print('🎉 Migration completed');
+      print('Migration completed');
     } catch (e) {
-      print('❌ Migration error: $e');
+      print('Migration error: $e');
     }
   }
 }

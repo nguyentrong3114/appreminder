@@ -204,15 +204,42 @@ class _OnetimeTask extends State<OnetimeTask> {
   }
 
   void _showTimePicker() async {
+    // LẤY CÀI ĐẶT 24-HOUR FORMAT TỪ PROVIDER
+    final settingProvider = context.read<SettingProvider>();
+    final use24HourFormat = settingProvider.use24HourFormat;
+
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
+      builder: (BuildContext context, Widget? child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            // SỬ DỤNG CÀI ĐẶT 24-HOUR FORMAT
+            alwaysUse24HourFormat: use24HourFormat,
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (picked != null) {
       setState(() {
         reminders.add(picked);
       });
+    }
+  }
+
+  // HELPER METHOD ĐỂ FORMAT THỜI GIAN
+  String _formatTime(TimeOfDay time) {
+    final settingProvider = context.read<SettingProvider>();
+    final use24HourFormat = settingProvider.use24HourFormat;
+
+    if (use24HourFormat) {
+      // Format 24-hour: 14:30
+      return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+    } else {
+      // Format 12-hour: 2:30 PM
+      return time.format(context);
     }
   }
 
@@ -789,6 +816,7 @@ class _OnetimeTask extends State<OnetimeTask> {
   }
 
   // HÀM LEN LỊCH THÔNG BÁO
+  // HÀM LEN LỊCH THÔNG BÁO
   Future<void> _scheduleNotifications(String habitId, String title) async {
     if (!reminderEnabled || reminders.isEmpty) {
       print('Không có thông báo nào để lên lịch');
@@ -796,6 +824,10 @@ class _OnetimeTask extends State<OnetimeTask> {
     }
 
     final notificationService = NotificationService();
+    // LẤY CÀI ĐẶT ÂM THANH TỪ PROVIDER
+    final settingProvider = context.read<SettingProvider>();
+    final notificationSound = settingProvider.notificationSound;
+    final alarmSound = settingProvider.alarmSound;
 
     for (int i = 0; i < reminders.length; i++) {
       final reminder = reminders[i];
@@ -809,9 +841,14 @@ class _OnetimeTask extends State<OnetimeTask> {
           title: title,
           scheduledDate: startDate,
           scheduledTime: reminder,
+          // TRUYỀN ÂM THANH TỪ SETTINGS
+          soundName: notificationSound,
+          alarmSound: alarmSound,
         );
 
-        print('Đã lên lịch thông báo $i: ${reminder.format(context)}');
+        print(
+          'Đã lên lịch thông báo $i: ${_formatTime(reminder)} với âm thanh: $notificationSound',
+        );
       } catch (e) {
         print('Lỗi khi lên lịch thông báo $i: $e');
       }
@@ -982,6 +1019,8 @@ class _OnetimeTask extends State<OnetimeTask> {
   @override
   Widget build(BuildContext context) {
     final dateFormat = context.watch<SettingProvider>().dateFormat;
+    //WATCH CẢ 24-HOUR FORMAT ĐỂ TỰ ĐỘNG CẬP NHẬT UI
+    final use24HourFormat = context.watch<SettingProvider>().use24HourFormat;
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -1222,7 +1261,8 @@ class _OnetimeTask extends State<OnetimeTask> {
                               child: Row(
                                 children: [
                                   Text(
-                                    '${time.format(context)}',
+                                    // ✅ SỬ DỤNG FORMAT ĐỘNG
+                                    _formatTime(time),
                                     style: TextStyle(color: Colors.grey[600]),
                                   ),
                                   Spacer(),

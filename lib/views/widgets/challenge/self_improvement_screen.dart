@@ -205,12 +205,11 @@ class SelfImprovementScreen extends StatelessWidget {
                         initialIcon: icon,
                         initialColor: mainColor,
                         reminderEnabledByDefault: true,
-                        initialStartDate:
-                            ChallengeScreen.selectedDate, // Thêm dòng này
+                        initialStartDate: ChallengeScreen.selectedDate,
                         formattedStartDate: DateFormat(
                           'MMMM d, yyyy',
                           'vi_VN',
-                        ).format(ChallengeScreen.selectedDate), // Thêm dòng này
+                        ).format(ChallengeScreen.selectedDate),
                       ),
                 ),
               );

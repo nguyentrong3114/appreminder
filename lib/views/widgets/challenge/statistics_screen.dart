@@ -22,17 +22,17 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   Map<int, int> ratingCounts = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
   DateTime currentMonth = DateTime.now();
 
-  // ✨ THÊM BIẾN ĐỂ LƯU HABIT HIỆN TẠI
+  //THÊM BIẾN ĐỂ LƯU HABIT HIỆN TẠI
   late Habit currentHabit;
 
   @override
   void initState() {
     super.initState();
-    currentHabit = widget.habit; // ✨ Khởi tạo habit hiện tại
+    currentHabit = widget.habit; //Khởi tạo habit hiện tại
     _loadHabitCompletions();
   }
 
-  // ✨ HÀM MỚI: Tải lại thông tin habit từ database
+  // Tải lại thông tin habit từ database
   Future<void> _reloadHabitInfo() async {
     if (_auth.currentUser == null) return;
 
@@ -49,7 +49,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       if (habitDoc.exists) {
         Map<String, dynamic> data = habitDoc.data() as Map<String, dynamic>;
 
-        // ✨ TẠO HABIT MỚI THEO ĐÚNG MODEL
+        //TẠO HABIT MỚI THEO ĐÚNG MODEL
         Habit updatedHabit = Habit(
           id: habitDoc.id,
           title: data['title'] ?? '',
@@ -68,7 +68,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             data['selectedMonthlyDays'] ?? [],
           ),
 
-          // ✨ CÁC FIELD BỊ THIẾU TRONG CODE CŨ
+          //CÁC FIELD BỊ THIẾU TRONG CODE CŨ
           reminderEnabled: data['reminderEnabled'] ?? false,
           reminderTimes: List<String>.from(data['reminderTimes'] ?? []),
           streakEnabled: data['streakEnabled'] ?? false,
@@ -88,11 +88,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         });
       }
     } catch (e) {
-      print('❌ Lỗi khi tải lại habit info: $e');
+      print('Lỗi khi tải lại habit info: $e');
     }
   }
 
-  // ✨ THÊM HÀM HELPER CHO HabitType
+  //THÊM HÀM HELPER CHO HabitType
   HabitType _parseHabitType(String? type) {
     switch (type) {
       case 'HabitType.regular':
@@ -112,7 +112,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     }
   }
 
-  // ✨ Hàm helper để parse RepeatType
+  //Hàm helper để parse RepeatType
   RepeatType _parseRepeatType(String? type) {
     switch (type) {
       case 'RepeatType.daily':
@@ -132,7 +132,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     }
   }
 
-  /// ✅ Kiểm tra xem ngày có thuộc thử thách không (sử dụng currentHabit)
+  ///Kiểm tra xem ngày có thuộc thử thách không (sử dụng currentHabit)
   bool _isHabitActiveOnDate(DateTime date) {
     // Kiểm tra nếu ngày trước ngày bắt đầu
     if (date.isBefore(currentHabit.startDate)) {
@@ -174,7 +174,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     }
   }
 
-  /// ✅ Hàm xác định text hiển thị theo loại habit (sử dụng currentHabit)
+  ///Hàm xác định text hiển thị theo loại habit (sử dụng currentHabit)
   String _getHabitFrequencyText() {
     if (currentHabit.type == HabitType.onetime) {
       return 'Một lần';
@@ -192,7 +192,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     }
   }
 
-  // ✨ SỬA LẠI HÀM _editHabit() ĐỂ RELOAD ĐÚNG CÁCH
   void _editHabit() async {
     Widget targetScreen;
 
@@ -210,16 +209,16 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       MaterialPageRoute(builder: (context) => targetScreen),
     );
 
-    // ✨ QUAN TRỌNG: Chỉ reload khi có kết quả trả về
+    //Chỉ reload khi có kết quả trả về
     if (result != null) {
-      print('🔄 Debug: Có result từ edit, bắt đầu reload...');
+      print('Debug: Có result từ edit, bắt đầu reload...');
 
-      // ✨ RELOAD THEO THỨ TỰ ĐÚNG
+      // RELOAD THEO THỨ TỰ ĐÚNG
       await _reloadHabitInfo(); // Load habit info trước
       await _loadHabitCompletions(); // Load completions sau
 
       print(
-        '✅ Debug: Đã reload xong, currentHabit.title = ${currentHabit.title}',
+        'Debug: Đã reload xong, currentHabit.title = ${currentHabit.title}',
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -229,11 +228,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         ),
       );
     } else {
-      print('ℹ️ Debug: Không có result, có thể user đã cancel');
+      print('ℹDebug: Không có result, có thể user đã cancel');
     }
   }
 
-  /// ✅ Hàm xóa habit với dialog phù hợp
+  ///Hàm xóa habit với dialog phù hợp
   Future<void> _deleteHabit() async {
     if (currentHabit.type == HabitType.onetime) {
       _showDeleteOneTimeHabitDialog();
@@ -242,7 +241,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     }
   }
 
-  /// ✅ Dialog xóa thử thách một lần
+  /// Dialog xóa thử thách một lần
   Future<void> _showDeleteOneTimeHabitDialog() async {
     bool? confirmDelete = await showDialog<bool>(
       context: context,
@@ -315,7 +314,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     }
   }
 
-  /// ✅ Xóa hoàn toàn thử thách
+  /// Xóa hoàn toàn thử thách
   Future<void> _performDeleteAllHabit() async {
     try {
       if (_auth.currentUser != null) {
@@ -350,7 +349,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         );
       }
     } catch (e) {
-      print('❌ Lỗi khi xóa habit: $e');
+      print('Lỗi khi xóa habit: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Có lỗi xảy ra khi xóa thử thách'),
@@ -366,7 +365,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     String userId = _auth.currentUser!.uid;
 
     try {
-      print('🔄 Debug: Đang reload habit completions...');
+      print('Debug: Đang reload habit completions...');
 
       QuerySnapshot snapshot =
           await FirebaseFirestore.instance
@@ -379,7 +378,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       Map<String, bool> dates = {};
       Map<int, int> ratings = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
 
-      print('🔍 Debug: Tìm thấy ${snapshot.docs.length} completion records');
+      print('Debug: Tìm thấy ${snapshot.docs.length} completion records');
 
       for (var doc in snapshot.docs) {
         var data = doc.data() as Map<String, dynamic>;
@@ -388,7 +387,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           String dateKey = DateFormat('yyyy-MM-dd').format(date);
           dates[dateKey] = true;
 
-          print('🔍 Debug: Completion tồn tại cho ngày: $dateKey');
+          print('Debug: Completion tồn tại cho ngày: $dateKey');
 
           int rating = data['rating'] ?? 5;
           ratings[rating] = (ratings[rating] ?? 0) + 1;
@@ -401,10 +400,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       });
 
       print(
-        '✅ Debug: Đã cập nhật completedDates: ${completedDates.keys.toList()}',
+        'Debug: Đã cập nhật completedDates: ${completedDates.keys.toList()}',
       );
     } catch (e) {
-      print('❌ Lỗi khi tải thống kê: $e');
+      print('Lỗi khi tải thống kê: $e');
     }
   }
 
@@ -418,7 +417,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     ];
   }
 
-  /// ✅ Build calendar grid với logic vòng tròn mới (sử dụng currentHabit)
   Widget _buildCalendarGrid() {
     DateTime firstDay = DateTime(currentMonth.year, currentMonth.month, 1);
     int daysInMonth =
@@ -466,7 +464,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              // ✅ Vòng tròn viền cho ngày có thử thách (chỉ hiện khi chưa hoàn thành)
               if (isHabitActive && !isCompleted)
                 Container(
                   width: 32,
@@ -481,7 +478,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   ),
                 ),
 
-              // ✨ THAY ĐỔI: Hình tròn xanh lá che toàn bộ khi hoàn thành
               if (isCompleted)
                 Container(
                   width: 36,
@@ -500,7 +496,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   child: Icon(Icons.check, color: Colors.white, size: 20),
                 ),
 
-              // ✅ Text ngày (chỉ hiện khi chưa hoàn thành)
+              // Text ngày (chỉ hiện khi chưa hoàn thành)
               if (!isCompleted)
                 Text(
                   '$day',

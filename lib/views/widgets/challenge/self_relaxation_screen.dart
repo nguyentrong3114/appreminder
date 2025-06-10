@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'add_regular_habit_screen.dart'; // Thêm import này
+import 'add_regular_habit_screen.dart';
 import 'challenge_screen.dart';
 import 'package:intl/intl.dart';
 
@@ -202,12 +202,11 @@ class SelfRelaxationScreen extends StatelessWidget {
                         initialIcon: icon,
                         initialColor: mainColor,
                         reminderEnabledByDefault: true,
-                        initialStartDate:
-                            ChallengeScreen.selectedDate, // Thêm dòng này
+                        initialStartDate: ChallengeScreen.selectedDate,
                         formattedStartDate: DateFormat(
                           'MMMM d, yyyy',
                           'vi_VN',
-                        ).format(ChallengeScreen.selectedDate), // Thêm dòng này
+                        ).format(ChallengeScreen.selectedDate),
                       ),
                 ),
               );

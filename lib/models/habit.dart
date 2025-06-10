@@ -28,7 +28,7 @@ class Habit {
     required this.type,
     required this.repeatType,
     required this.selectedWeekdays,
-    required this.selectedMonthlyDays, // ✨ THAY ĐỔI CHÍNH
+    required this.selectedMonthlyDays,
     required this.reminderEnabled,
     required this.reminderTimes,
     required this.streakEnabled,
@@ -49,7 +49,7 @@ class Habit {
       'type': type.toString(),
       'repeatType': repeatType.toString(),
       'selectedWeekdays': selectedWeekdays,
-      'selectedMonthlyDays': selectedMonthlyDays, // ✨ THAY ĐỔI CHÍNH
+      'selectedMonthlyDays': selectedMonthlyDays,
       'reminderEnabled': reminderEnabled,
       'reminderTimes': reminderTimes,
       'streakEnabled': streakEnabled,

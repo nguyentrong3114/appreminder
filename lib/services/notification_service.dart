@@ -84,11 +84,14 @@ class NotificationService {
   }
 
   // ✅ THÊM METHOD NÀY VÀO
+  // ✅ THÊM PARAMETERS VÀO METHOD NÀY
   Future<void> scheduleOnetimeTaskNotification({
     required int id,
     required String title,
     required DateTime scheduledDate,
     required TimeOfDay scheduledTime,
+    String? soundName, // ✨ THÊM PARAMETER NÀY
+    String? alarmSound, // ✨ THÊM PARAMETER NÀY
   }) async {
     final scheduledDateTime = DateTime(
       scheduledDate.year,
@@ -101,14 +104,15 @@ class NotificationService {
     // Kiểm tra thời gian không được trong quá khứ
     if (scheduledDateTime.isBefore(DateTime.now())) {
       print(
-        '❌ Không thể lên lịch thông báo trong quá khứ: ${scheduledDateTime.toString()}',
+        'Không thể lên lịch thông báo trong quá khứ: ${scheduledDateTime.toString()}',
       );
       return;
     }
 
     final tzDateTime = tz.TZDateTime.from(scheduledDateTime, tz.local);
 
-    const AndroidNotificationDetails androidDetails =
+    // SỬ DỤNG ÂM THANH CUSTOM
+    final AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
           'onetime_task_channel',
           'Onetime Task Reminders',
@@ -118,15 +122,22 @@ class NotificationService {
           icon: '@mipmap/ic_launcher',
           enableVibration: true,
           playSound: true,
+          // ÁP DỤNG ÂM THANH TỪ SETTINGS
+          sound:
+              soundName != null
+                  ? RawResourceAndroidNotificationSound(soundName)
+                  : null,
         );
 
     const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
+      // ✨ iOS SOUND (nếu cần)
+      // sound: soundName,
     );
 
-    const NotificationDetails notificationDetails = NotificationDetails(
+    final NotificationDetails notificationDetails = NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );
@@ -138,11 +149,10 @@ class NotificationService {
         title,
         tzDateTime,
         notificationDetails,
-        // ✅ THAY ĐỔI NÀY - Dùng inexact giống như test
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       );
 
-      print('✅ Đã lên lịch thông báo: $title');
+      print('✅ Đã lên lịch thông báo: $title với âm thanh: $soundName');
       print('📅 Thời gian: ${tzDateTime.toString()}');
       print('🆔 ID: $id');
     } catch (e) {
