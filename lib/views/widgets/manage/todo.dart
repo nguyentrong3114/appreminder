@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_app/views/widgets/manage/diary.dart';
 import 'package:intl/intl.dart';
 import 'notes.dart';
-import 'dart:math' as math;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'todo_detail_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
