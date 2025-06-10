@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_app/provider/setting_provider.dart';
 import 'package:flutter_app/views/widgets/manage/diary.dart';
 import 'package:intl/intl.dart';
 import 'notes.dart';
@@ -6,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'todo_detail_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_app/models/todo.dart';
+import 'package:provider/provider.dart';
 
 class TodoScreen extends StatefulWidget {
   const TodoScreen({super.key});
@@ -319,14 +321,14 @@ class TodoState extends State<TodoScreen> {
                     color: Colors.black12,
                     blurRadius: 2,
                     offset: Offset(0, 1),
-                  )
+                  ),
                 ],
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    "${day.day}/${day.month}",
+                    DateFormat('dd/MM').format(day),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -349,6 +351,9 @@ class TodoState extends State<TodoScreen> {
     );
   }
 
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
   Widget _buildWeekSelection() {
     return Container(
       height: 80,
@@ -380,7 +385,7 @@ class TodoState extends State<TodoScreen> {
                     color: Colors.black12,
                     blurRadius: 2,
                     offset: Offset(0, 1),
-                  )
+                  ),
                 ],
               ),
               child: Column(
@@ -443,7 +448,7 @@ class TodoState extends State<TodoScreen> {
                     color: Colors.black12,
                     blurRadius: 2,
                     offset: Offset(0, 1),
-                  )
+                  ),
                 ],
               ),
               child: Column(
@@ -740,16 +745,22 @@ class TodoState extends State<TodoScreen> {
     String title = "";
     String subtitle = "";
 
+    final dateFormat = context.watch<SettingProvider>().dateFormat;
+
     if (selectedFilter == 1) {
-      title = "Hôm nay";
-      subtitle = DateFormat('dd/MM/yyyy').format(selectedDate);
+      if (_isSameDay(selectedDate, DateTime.now())) {
+        title = "Hôm nay";
+      } else {
+        title = _getWeekdayName(selectedDate);
+      }
+      subtitle = DateFormat(dateFormat).format(selectedDate);
     } else if (selectedFilter == 2) {
       title = "Tuần này";
       subtitle =
-          "${DateFormat('dd/MM').format(selectedDate)} - ${DateFormat('dd/MM').format(selectedDate.add(Duration(days: 6)))}";
+          "${DateFormat(dateFormat).format(selectedDate)} - ${DateFormat(dateFormat).format(selectedDate.add(Duration(days: 6)))}";
     } else if (selectedFilter == 3) {
       title = "Tháng này";
-      subtitle = "Tháng ${selectedDate.month}/${selectedDate.year}";
+      subtitle = DateFormat('MMMM yyyy', 'vi').format(selectedDate);
     }
 
     return StreamBuilder<QuerySnapshot>(

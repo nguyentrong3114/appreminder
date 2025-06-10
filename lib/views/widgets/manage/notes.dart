@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_app/provider/setting_provider.dart';
 import 'package:flutter_app/views/widgets/manage/add_notes_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'note_detail_screen.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 class NotesScreen extends StatefulWidget {
   const NotesScreen({super.key});
@@ -51,7 +54,7 @@ class NotesScreenState extends State<NotesScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset('assets/images/cat_heart.png',height: 100), 
+                Image.asset('assets/images/cat_heart.png', height: 100),
                 const SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -137,7 +140,7 @@ class NotesScreenState extends State<NotesScreen> {
                       Padding(
                         padding: const EdgeInsets.only(top: 8.0),
                         child: Text(
-                          'Cập nhật: ${_formatTime(updatedAt)}',
+                          'Cập nhật: ${_formatTime(context, updatedAt)}',
                           style: const TextStyle(
                             fontSize: 12,
                             color: Colors.grey,
@@ -163,9 +166,17 @@ class NotesScreenState extends State<NotesScreen> {
     );
   }
 
-  String _formatTime(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} '
-        '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  String _formatTime(BuildContext context, DateTime date) {
+    final dateFormat = context.watch<SettingProvider>().dateFormat;
+    final is24Hour = context.watch<SettingProvider>().use24HourFormat;
+
+    final formattedDate = DateFormat(dateFormat).format(date);
+    final formattedTime =
+        is24Hour
+            ? DateFormat('HH:mm').format(date)
+            : DateFormat('hh:mm a').format(date);
+
+    return '$formattedDate $formattedTime';
   }
 
   Widget buildNavItem(IconData icon, String label, bool isSelected) {

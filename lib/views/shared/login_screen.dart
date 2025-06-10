@@ -149,77 +149,36 @@ class _LoginScreenState extends State<LoginScreen> {
                           final email = emailController.text.trim();
                           final password = passwordController.text.trim();
 
-                          if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(email)) {
+                          if (email.isEmpty || password.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Email không hợp lệ'),
-                              ),
+                              const SnackBar(content: Text('Vui lòng nhập đầy đủ thông tin')),
                             );
                             return;
                           }
-                          if (email.isEmpty || password.isEmpty) {
+                          if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(email)) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Vui lòng nhập đầy đủ thông tin'),
-                              ),
+                              const SnackBar(content: Text('Email không hợp lệ')),
                             );
                             return;
                           }
 
                           try {
-                            print('Bắt đầu xử lý đăng nhập...');
-
-                            final user = await _authService.signInWithEmail(
-                              email,
-                              password,
-                            );
-
+                            final user = await _authService.signInWithEmail(email, password);
                             if (user != null) {
-                              print('User không null, tiến hành reload...');
-                              await user.reload();
-
-                              print('Đã reload, bắt đầu navigation...');
-                              print('Context mounted: ${mounted}');
-
-                              if (mounted) {
-                                print(
-                                  'Context vẫn mounted, thực hiện navigation',
-                                );
-
-                                try {
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) {
-                                        print('Đang build MainScreen...');
-                                        return MainScreen();
-                                      },
-                                    ),
-                                  );
-                                  print('Navigation completed!');
-                                } catch (navError) {
-                                  print('Lỗi navigation: $navError');
-                                }
-                              } else {
-                                print('Context không còn mounted!');
-                              }
+                              // Đăng nhập thành công
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(builder: (context) => MainScreen()),
+                              );
                             } else {
-                              print('User null - đăng nhập thất bại');
+                              // Sai tài khoản hoặc mật khẩu
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Sai email hoặc mật khẩu'),
-                                ),
+                                const SnackBar(content: Text('Sai tài khoản hoặc mật khẩu')),
                               );
                             }
                           } catch (e) {
-                            print('Exception trong quá trình đăng nhập: $e');
-                            print('Stack trace: ${StackTrace.current}');
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Có lỗi xảy ra, vui lòng thử lại',
-                                ),
-                              ),
+                              const SnackBar(content: Text('Có lỗi xảy ra, vui lòng thử lại')),
                             );
                           }
                         },

@@ -39,7 +39,6 @@ class AlarmService {
           playSound: true,
         ),
       ),
-      matchDateTimeComponents: DateTimeComponents.time,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
     );
   }
@@ -71,7 +70,6 @@ class AlarmService {
           playSound: true,
         ),
       ),
-      matchDateTimeComponents: DateTimeComponents.time,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
     );
   }

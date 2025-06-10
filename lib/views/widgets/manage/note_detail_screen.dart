@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_app/provider/setting_provider.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 class NoteDetailScreen extends StatefulWidget {
   final DocumentSnapshot noteDoc;
-  
+
   const NoteDetailScreen({super.key, required this.noteDoc});
 
   @override
@@ -22,7 +25,7 @@ class NoteDetailScreenState extends State<NoteDetailScreen> {
   void initState() {
     super.initState();
     final data = widget.noteDoc.data() as Map<String, dynamic>;
-    
+
     _titleController = TextEditingController(text: data['title'] ?? '');
     _contentController = TextEditingController(text: data['content'] ?? '');
     _isPinned = data['isPinned'] ?? false;
@@ -39,9 +42,10 @@ class NoteDetailScreenState extends State<NoteDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final data = widget.noteDoc.data() as Map<String, dynamic>;
-    final updatedAt = (data['updatedAt'] != null && data['updatedAt'] is Timestamp)
-        ? (data['updatedAt'] as Timestamp).toDate()
-        : null;
+    final updatedAt =
+        (data['updatedAt'] != null && data['updatedAt'] is Timestamp)
+            ? (data['updatedAt'] as Timestamp).toDate()
+            : null;
 
     return Scaffold(
       backgroundColor: _noteColor,
@@ -67,10 +71,7 @@ class NoteDetailScreenState extends State<NoteDetailScreen> {
               onPressed: _showDeleteDialog,
             ),
           ] else ...[
-            IconButton(
-              icon: const Icon(Icons.save),
-              onPressed: _saveNote,
-            ),
+            IconButton(icon: const Icon(Icons.save), onPressed: _saveNote),
             IconButton(
               icon: const Icon(Icons.cancel),
               onPressed: () {
@@ -80,7 +81,10 @@ class NoteDetailScreenState extends State<NoteDetailScreen> {
                   _titleController.text = data['title'] ?? '';
                   _contentController.text = data['content'] ?? '';
                   _isPinned = data['isPinned'] ?? false;
-                  _noteColor = data['color'] != null ? Color(data['color']) : Colors.white;
+                  _noteColor =
+                      data['color'] != null
+                          ? Color(data['color'])
+                          : Colors.white;
                 });
               },
             ),
@@ -107,15 +111,15 @@ class NoteDetailScreenState extends State<NoteDetailScreen> {
               )
             else
               Text(
-                _titleController.text.isEmpty ? '(Không có tiêu đề)' : _titleController.text,
+                _titleController.text.isEmpty
+                    ? '(Không có tiêu đề)'
+                    : _titleController.text,
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-            
             const SizedBox(height: 8),
-            
             // Thông tin thời gian và pin
             Row(
               children: [
@@ -124,39 +128,37 @@ class NoteDetailScreenState extends State<NoteDetailScreen> {
                 if (_isPinned) const SizedBox(width: 4),
                 if (updatedAt != null)
                   Text(
-                    'Cập nhật: ${_formatTime(updatedAt)}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
+                    'Cập nhật: ${_formatTime(context, updatedAt)}',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
               ],
             ),
-            
             const SizedBox(height: 16),
-            
             // Nội dung
             Expanded(
-              child: _isEditing
-                  ? TextField(
-                      controller: _contentController,
-                      maxLines: null,
-                      expands: true,
-                      textAlignVertical: TextAlignVertical.top,
-                      style: const TextStyle(fontSize: 16),
-                      decoration: const InputDecoration(
-                        hintText: 'Nội dung ghi chú...',
-                        border: InputBorder.none,
-                      ),
-                    )
-                  : SingleChildScrollView(
-                      child: Text(
-                        _contentController.text.isEmpty ? 'Không có nội dung' : _contentController.text,
+              child:
+                  _isEditing
+                      ? TextField(
+                        controller: _contentController,
+                        maxLines: null,
+                        expands: true,
+                        textAlignVertical: TextAlignVertical.top,
                         style: const TextStyle(fontSize: 16),
+                        decoration: const InputDecoration(
+                          hintText: 'Nội dung ghi chú...',
+                          border: InputBorder.none,
+                        ),
+                      )
+                      : SingleChildScrollView(
+                        child: Text(
+                          _contentController.text.isEmpty
+                              ? 'Không có nội dung'
+                              : _contentController.text,
+                          style: const TextStyle(fontSize: 16),
+                        ),
                       ),
-                    ),
             ),
-            
+
             // Các tùy chọn khi đang chỉnh sửa
             if (_isEditing) ...[
               const Divider(),
@@ -175,9 +177,9 @@ class NoteDetailScreenState extends State<NoteDetailScreen> {
                     },
                   ),
                   const Text('Ghim'),
-                  
+
                   const Spacer(),
-                  
+
                   // Color picker
                   Row(
                     children: [
@@ -220,9 +222,17 @@ class NoteDetailScreenState extends State<NoteDetailScreen> {
     );
   }
 
-  String _formatTime(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} '
-        '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  String _formatTime(BuildContext context, DateTime date) {
+    final dateFormat = context.watch<SettingProvider>().dateFormat;
+    final is24Hour = context.watch<SettingProvider>().use24HourFormat;
+
+    final formattedDate = DateFormat(dateFormat).format(date);
+    final formattedTime =
+        is24Hour
+            ? DateFormat('HH:mm').format(date)
+            : DateFormat('hh:mm a').format(date);
+
+    return '$formattedDate $formattedTime';
   }
 
   void _showDeleteDialog() {
@@ -270,9 +280,9 @@ class NoteDetailScreenState extends State<NoteDetailScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi khi xóa: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Lỗi khi xóa: $e')));
       }
     }
   }
@@ -318,9 +328,9 @@ class NoteDetailScreenState extends State<NoteDetailScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi khi lưu: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Lỗi khi lưu: $e')));
       }
     }
   }

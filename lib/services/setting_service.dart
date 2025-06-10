@@ -21,8 +21,7 @@ class SettingsService {
     await prefs.setBool(_keyUse24HourFormat, value);
   }
 
-  /// 0: Chủ nhật, 1: Thứ 2, ..., 6: Thứ 7
-  int get startWeekOn => prefs.getInt(_keyStartWeekOn) ?? 1; // Mặc định Thứ 2
+  int get startWeekOn => prefs.getInt(_keyStartWeekOn) ?? 0; // Mặc định Thứ 2
 
   Future<void> setStartWeekOn(int value) async {
     await prefs.setInt(_keyStartWeekOn, value);
