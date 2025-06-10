@@ -22,9 +22,9 @@ class TodoState extends State<TodoScreen> {
   late List<DateTime> allDays;
   late List<List<DateTime>> allWeeks;
   late List<DateTime> allMonths;
-  late ScrollController dayScrollController;
-  late ScrollController weekScrollController;
-  late ScrollController monthScrollController;
+  late PageController dayPageController;
+  late PageController weekPageController;
+  late PageController monthPageController;
   int currentDayIndex = 0;
   int currentWeekIndex = 0;
   int currentMonthIndex = 0;
@@ -34,17 +34,20 @@ class TodoState extends State<TodoScreen> {
     super.initState();
     _initializeDates();
 
-    // Cuộn đến ngày hiện tại
-    dayScrollController = ScrollController(
-      initialScrollOffset: math.max(0, (currentDayIndex - 3) * 49.0),
+    // Khởi tạo PageController với vị trí hiện tại
+    dayPageController = PageController(
+      initialPage: currentDayIndex,
+      viewportFraction: 0.2, // Hiển thị 5 items cùng lúc
     );
 
-    weekScrollController = ScrollController(
-      initialScrollOffset: math.max(0, (currentWeekIndex - 1) * 120.0),
+    weekPageController = PageController(
+      initialPage: currentWeekIndex,
+      viewportFraction: 0.4, // Hiển thị 2.5 items cùng lúc
     );
 
-    monthScrollController = ScrollController(
-      initialScrollOffset: math.max(0, (currentMonthIndex - 2) * 80.0),
+    monthPageController = PageController(
+      initialPage: currentMonthIndex,
+      viewportFraction: 0.3, // Hiển thị 3.3 items cùng lúc
     );
   }
 
@@ -120,6 +123,14 @@ class TodoState extends State<TodoScreen> {
 
   List<DateTime> _getWeekRange(DateTime startDate) {
     return List.generate(7, (index) => startDate.add(Duration(days: index)));
+  }
+
+  @override
+  void dispose() {
+    dayPageController.dispose();
+    weekPageController.dispose();
+    monthPageController.dispose();
+    super.dispose();
   }
 
   @override
@@ -210,26 +221,26 @@ class TodoState extends State<TodoScreen> {
             // Update selected date based on new filter
             _updateSelectedDateBasedOnFilter();
 
-            // Scroll to current day/week/month when filter changes
+            // Animate to current day/week/month when filter changes
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (index == 1) {
                 // Day
-                dayScrollController.animateTo(
-                  math.max(0, (currentDayIndex - 3) * 49.0),
+                dayPageController.animateToPage(
+                  currentDayIndex,
                   duration: Duration(milliseconds: 300),
                   curve: Curves.easeOut,
                 );
               } else if (index == 2) {
                 // Week
-                weekScrollController.animateTo(
-                  math.max(0, (currentWeekIndex - 1) * 120.0),
+                weekPageController.animateToPage(
+                  currentWeekIndex,
                   duration: Duration(milliseconds: 300),
                   curve: Curves.easeOut,
                 );
               } else if (index == 3) {
                 // Month
-                monthScrollController.animateTo(
-                  math.max(0, (currentMonthIndex - 2) * 80.0),
+                monthPageController.animateToPage(
+                  currentMonthIndex,
                   duration: Duration(milliseconds: 300),
                   curve: Curves.easeOut,
                 );
@@ -277,12 +288,10 @@ class TodoState extends State<TodoScreen> {
 
   Widget _buildDaySelection() {
     return Container(
-      height: 80, // Set a fixed height for the container
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
+      height: 80,
+      child: PageView.builder(
+        controller: dayPageController,
         itemCount: allDays.length,
-        controller: dayScrollController,
         itemBuilder: (context, index) {
           DateTime day = allDays[index];
           bool isSelected =
@@ -295,14 +304,24 @@ class TodoState extends State<TodoScreen> {
               setState(() {
                 selectedDate = day;
               });
+              dayPageController.animateToPage(
+                index,
+                duration: Duration(milliseconds: 200),
+                curve: Curves.easeOut,
+              );
             },
             child: Container(
-              width: 45,
-              margin: const EdgeInsets.symmetric(horizontal: 2),
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
               decoration: BoxDecoration(
                 color: isSelected ? Color(0xFF4CD6A8) : Colors.white,
                 borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 2,
+                    offset: Offset(0, 1),
+                  )
+                ],
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -334,11 +353,9 @@ class TodoState extends State<TodoScreen> {
   Widget _buildWeekSelection() {
     return Container(
       height: 80,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
+      child: PageView.builder(
+        controller: weekPageController,
         itemCount: allWeeks.length,
-        controller: weekScrollController,
         itemBuilder: (context, index) {
           List<DateTime> weekRange = allWeeks[index];
           bool isSelected = _isSameWeek(weekRange[0], selectedDate);
@@ -348,14 +365,24 @@ class TodoState extends State<TodoScreen> {
               setState(() {
                 selectedDate = weekRange[0];
               });
+              weekPageController.animateToPage(
+                index,
+                duration: Duration(milliseconds: 200),
+                curve: Curves.easeOut,
+              );
             },
             child: Container(
-              width: 110,
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
               decoration: BoxDecoration(
                 color: isSelected ? Color(0xFF4CD6A8) : Colors.white,
                 borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 2,
+                    offset: Offset(0, 1),
+                  )
+                ],
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -387,11 +414,9 @@ class TodoState extends State<TodoScreen> {
   Widget _buildMonthSelection() {
     return Container(
       height: 80,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
+      child: PageView.builder(
+        controller: monthPageController,
         itemCount: allMonths.length,
-        controller: monthScrollController,
         itemBuilder: (context, index) {
           DateTime month = allMonths[index];
           bool isSelected =
@@ -403,14 +428,24 @@ class TodoState extends State<TodoScreen> {
               setState(() {
                 selectedDate = month;
               });
+              monthPageController.animateToPage(
+                index,
+                duration: Duration(milliseconds: 200),
+                curve: Curves.easeOut,
+              );
             },
             child: Container(
-              width: 70,
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
               decoration: BoxDecoration(
                 color: isSelected ? Color(0xFF4CD6A8) : Colors.white,
                 borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 2,
+                    offset: Offset(0, 1),
+                  )
+                ],
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -880,6 +915,8 @@ class TodoState extends State<TodoScreen> {
       },
     );
   }
+
+  // Widget for Notes tab content
 
   // Widget for Notes tab content
   Widget _buildNotesContent() {
