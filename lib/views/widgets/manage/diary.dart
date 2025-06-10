@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_app/provider/setting_provider.dart';
 import 'package:flutter_app/views/widgets/manage/add_diary_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 class DiaryScreen extends StatefulWidget {
   const DiaryScreen({super.key});
@@ -245,10 +248,11 @@ class DiaryScreenState extends State<DiaryScreen> {
                 subtitle:
                     date != null
                         ? Text(
-                          "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}",
+                          "${_formatDate(context, date)} ${_formatTime(context, date)}",
                           style: TextStyle(color: Colors.black54, fontSize: 13),
                         )
                         : null,
+
                 trailing: Icon(Icons.chevron_right),
                 onTap: () {
                   _showDiaryDetail(doc, data, date);
@@ -339,11 +343,7 @@ class DiaryScreenState extends State<DiaryScreen> {
                     Icon(Icons.access_time, size: 18, color: color),
                     const SizedBox(width: 6),
                     Text(
-                      "${date.day.toString().padLeft(2, '0')}/"
-                      "${date.month.toString().padLeft(2, '0')}/"
-                      "${date.year} "
-                      "${date.hour.toString().padLeft(2, '0')}:"
-                      "${date.minute.toString().padLeft(2, '0')}",
+                      "${_formatDate(context, date)} ${_formatTime(context, date)}",
                       style: const TextStyle(fontSize: 13),
                     ),
                   ],
@@ -438,5 +438,17 @@ class DiaryScreenState extends State<DiaryScreen> {
         );
       },
     );
+  }
+
+  String _formatTime(BuildContext context, DateTime dateTime) {
+    final is24Hour = context.watch<SettingProvider>().use24HourFormat;
+    return is24Hour
+        ? "${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}"
+        : DateFormat('hh:mm a').format(dateTime);
+  }
+
+  String _formatDate(BuildContext context, DateTime dateTime) {
+    final dateFormat = context.watch<SettingProvider>().dateFormat;
+    return DateFormat(dateFormat).format(dateTime);
   }
 }

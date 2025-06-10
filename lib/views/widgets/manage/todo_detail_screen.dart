@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_app/models/todo.dart';
+import 'package:flutter_app/provider/setting_provider.dart';
 import 'package:flutter_app/views/widgets/manage/add_todo_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_app/services/notification_service.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 class TodoDetailScreen extends StatelessWidget {
   final Todo todo;
@@ -86,22 +89,20 @@ class TodoDetailScreen extends StatelessWidget {
                     children: [
                       _buildTimeRow(
                         'Bắt đầu',
-                        _formatDateTime(todo.startDateTime),
+                        _formatDateTime(context, todo.startDateTime),
                         Icons.play_arrow_outlined,
                         Colors.green,
                       ),
                       const SizedBox(height: 12),
                       _buildTimeRow(
                         'Kết thúc',
-                        _formatDateTime(todo.endDateTime),
+                        _formatDateTime(context, todo.endDateTime),
                         Icons.stop_outlined,
                         Colors.red,
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 20),
-
                   // Settings card
                   _buildInfoCard(
                     icon: Icons.settings_outlined,
@@ -127,14 +128,15 @@ class TodoDetailScreen extends StatelessWidget {
                       _buildSettingRow(
                         'Nhắc nhở',
                         todo.reminderEnabled ? 'Đã bật' : 'Đã tắt',
-                        icon: todo.reminderEnabled
-                            ? Icons.notifications_active_outlined
-                            : Icons.notifications_off_outlined,
-                        iconColor: todo.reminderEnabled
-                            ? Colors.orange
-                            : Colors.grey,
+                        icon:
+                            todo.reminderEnabled
+                                ? Icons.notifications_active_outlined
+                                : Icons.notifications_off_outlined,
+                        iconColor:
+                            todo.reminderEnabled ? Colors.orange : Colors.grey,
                       ),
-                      if (todo.reminderEnabled && todo.reminderTime != null) ...[
+                      if (todo.reminderEnabled &&
+                          todo.reminderTime != null) ...[
                         const SizedBox(height: 12),
                         _buildSettingRow(
                           'Thời gian nhắc',
@@ -157,7 +159,8 @@ class TodoDetailScreen extends StatelessWidget {
                             var result = await Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => AddTodoScreen(existingTodo: todo),
+                                builder:
+                                    (_) => AddTodoScreen(existingTodo: todo),
                               ),
                             );
                             if (result == 'edited' && context.mounted) {
@@ -338,70 +341,78 @@ class TodoDetailScreen extends StatelessWidget {
     return colorMap[colorName] ?? Colors.blue;
   }
 
-  String _formatDateTime(DateTime dt) {
-    return "${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} "
-        "${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
+  String _formatDateTime(BuildContext context, DateTime dt) {
+    final dateFormat = context.watch<SettingProvider>().dateFormat;
+    final is24Hour = context.watch<SettingProvider>().use24HourFormat;
+
+    final formattedDate = DateFormat(dateFormat).format(dt);
+    final formattedTime =
+        is24Hour
+            ? DateFormat('HH:mm').format(dt)
+            : DateFormat('hh:mm a').format(dt);
+
+    return '$formattedDate $formattedTime';
   }
 
   Future<void> _showDeleteDialog(BuildContext context, String todoId) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.warning_outlined,
-                color: Colors.red,
-                size: 24,
-              ),
+      builder:
+          (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
-            const SizedBox(width: 12),
-            const Text(
-              'Xác nhận xóa',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.warning_outlined,
+                    color: Colors.red,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Xác nhận xóa',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                ),
+              ],
             ),
-          ],
-        ),
-        content: const Text(
-          'Bạn có chắc chắn muốn xóa công việc này không? Hành động này không thể hoàn tác.',
-          style: TextStyle(fontSize: 16, height: 1.5),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Hủy', style: TextStyle(fontSize: 16)),
+            content: const Text(
+              'Bạn có chắc chắn muốn xóa công việc này không? Hành động này không thể hoàn tác.',
+              style: TextStyle(fontSize: 16, height: 1.5),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Hủy', style: TextStyle(fontSize: 16)),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Xóa',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text(
-              'Xóa',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
     );
 
     if (confirm == true && context.mounted) {
-      
       final userId = FirebaseAuth.instance.currentUser?.uid;
-      final notificationId = todo.id.hashCode; 
+      final notificationId = todo.id.hashCode;
       await NotificationService().cancelNotification(notificationId);
       await FirebaseFirestore.instance
           .collection('users')
