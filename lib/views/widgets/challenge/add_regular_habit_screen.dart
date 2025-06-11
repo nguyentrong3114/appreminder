@@ -1354,7 +1354,7 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: endDate ?? startDate.add(Duration(days: 30)),
-      firstDate: startDate.add(Duration(days: 1)),
+      firstDate: DateTime(startDate.year, startDate.month, startDate.day),
       lastDate: DateTime(2030),
     );
 
@@ -1398,9 +1398,7 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: endDate ?? startDate.add(Duration(days: 1)),
-      firstDate: startDate.add(
-        Duration(days: 1),
-      ), // Phải sau ngày bắt đầu ít nhất 1 ngày
+      firstDate: startDate,
       lastDate: DateTime(2030),
     );
 

@@ -86,6 +86,6 @@ class Habit {
   }
 }
 
-enum HabitType { regular, challenge, onetime }
+enum HabitType { regular, onetime }
 
 enum RepeatType { daily, weekly, monthly, yearly }
