@@ -97,14 +97,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     switch (type) {
       case 'HabitType.regular':
         return HabitType.regular;
-      case 'HabitType.challenge':
-        return HabitType.challenge;
       case 'HabitType.onetime':
         return HabitType.onetime;
       case 'regular':
         return HabitType.regular;
-      case 'challenge':
-        return HabitType.challenge;
       case 'onetime':
         return HabitType.onetime;
       default:

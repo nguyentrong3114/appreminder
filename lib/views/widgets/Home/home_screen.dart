@@ -31,6 +31,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final AuthService _authService = AuthService();
   final List<String> tabTitles = ["Tháng", "Danh Sách", "Tuần", "Ngày"];
 
+  int _lastTab = 0; // Thêm biến để kiểm tra lần chuyển tab
+
   @override
   void initState() {
     super.initState();
@@ -81,7 +83,29 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final use24Hour = context.watch<SettingProvider>().use24HourFormat;
+    // Khi chuyển sang tab Danh Sách, nếu lần đầu vào tab thì set selectedDayIndex về ngày hôm nay
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (selectedTab == 1 && _lastTab != 1) {
+        final today = DateTime.now();
+        final eventDays = allEvents
+            .map((e) => DateTime(e.startTime.year, e.startTime.month, e.startTime.day))
+            .toSet()
+            .toList()
+          ..sort((a, b) => a.compareTo(b));
+        final todayIndex = eventDays.indexWhere((d) => d.year == today.year && d.month == today.month && d.day == today.day);
+        if (todayIndex != -1 && selectedDayIndex != todayIndex) {
+          setState(() => selectedDayIndex = todayIndex);
+        }
+      }
+      _lastTab = selectedTab;
+      if (selectedTab == 3) {
+        // Tab Ngày
+        final today = DateTime.now();
+        if (selectedDate.year != today.year || selectedDate.month != today.month || selectedDate.day != today.day) {
+          setState(() => selectedDate = today);
+        }
+      }
+    });
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -184,6 +208,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildMonthView() {
     final use24Hour = context.watch<SettingProvider>().use24HourFormat;
+
     Map<String, List<Map<String, String>>> eventsMap = {};
     for (var event in allEvents) {
       String dateKey = DateFormat('yyyy-MM-dd').format(event.startTime);
@@ -207,6 +232,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildListView() {
     final use24Hour = context.watch<SettingProvider>().use24HourFormat;
+
     // Lấy danh sách các ngày có sự kiện (dạng DateTime, không chỉ lấy day để tránh trùng ngày khác tháng/năm)
     final eventDays = allEvents
         .map((e) => DateTime(e.startTime.year, e.startTime.month, e.startTime.day))

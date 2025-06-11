@@ -96,18 +96,23 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
   }
 
   bool _shouldShowHabitOnDate(Habit habit, DateTime date) {
-    if (habit.startDate.isAfter(date)) return false;
+    // So sánh chỉ ngày, tháng, năm
+    DateTime dateOnly = DateTime(date.year, date.month, date.day);
+    DateTime startDateOnly = DateTime(
+      habit.startDate.year,
+      habit.startDate.month,
+      habit.startDate.day,
+    );
 
-    if (habit.hasEndDate &&
-        habit.endDate != null &&
-        habit.endDate!.isBefore(date)) {
-      return false;
-    }
+    if (dateOnly.isBefore(startDateOnly)) return false;
 
-    if (habit.type == HabitType.onetime) {
-      return habit.startDate.year == date.year &&
-          habit.startDate.month == date.month &&
-          habit.startDate.day == date.day;
+    if (habit.hasEndDate && habit.endDate != null) {
+      DateTime endDateOnly = DateTime(
+        habit.endDate!.year,
+        habit.endDate!.month,
+        habit.endDate!.day,
+      );
+      if (dateOnly.isAfter(endDateOnly)) return false;
     }
 
     switch (habit.repeatType) {

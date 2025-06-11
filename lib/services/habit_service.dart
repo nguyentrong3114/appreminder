@@ -418,30 +418,36 @@ class HabitService {
   /// KIỂM TRA HABIT CÓ CHẠY VÀO NGÀY CỤ THỂ KHÔNG
   /// Logic xác định habit có active trong ngày hay không
   bool _shouldHabitRunOnDate(Habit habit, DateTime date) {
-    // Check start date
-    if (date.isBefore(habit.startDate)) return false;
+    // So sánh chỉ ngày, tháng, năm
+    final dateOnly = DateTime(date.year, date.month, date.day);
+    final startDateOnly = DateTime(
+      habit.startDate.year,
+      habit.startDate.month,
+      habit.startDate.day,
+    );
 
-    // Check end date
-    if (habit.hasEndDate &&
-        habit.endDate != null &&
-        date.isAfter(habit.endDate!)) {
-      return false;
+    if (dateOnly.isBefore(startDateOnly)) return false;
+
+    if (habit.hasEndDate && habit.endDate != null) {
+      final endDateOnly = DateTime(
+        habit.endDate!.year,
+        habit.endDate!.month,
+        habit.endDate!.day,
+      );
+      if (dateOnly.isAfter(endDateOnly)) return false;
     }
 
     // Check repeat pattern
     switch (habit.repeatType) {
       case RepeatType.daily:
         return true;
-
       case RepeatType.weekly:
-        return habit.selectedWeekdays.contains(date.weekday);
-
+        return habit.selectedWeekdays.contains(dateOnly.weekday);
       case RepeatType.monthly:
-        return habit.selectedMonthlyDays.contains(date.day);
-
+        return habit.selectedMonthlyDays.contains(dateOnly.day);
       case RepeatType.yearly:
-        return date.day == habit.startDate.day &&
-            date.month == habit.startDate.month;
+        return dateOnly.day == habit.startDate.day &&
+            dateOnly.month == habit.startDate.month;
     }
   }
 

@@ -158,7 +158,15 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
     }
 
     // Kiểm tra ngày bắt đầu không được trong quá khứ
-    if (startDate.isBefore(DateTime.now().subtract(Duration(days: 1)))) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final startDateOnly = DateTime(
+      startDate.year,
+      startDate.month,
+      startDate.day,
+    );
+
+    if (startDateOnly.isBefore(today)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Ngày bắt đầu không được trong quá khứ'),
@@ -352,8 +360,15 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
     reminderEnabled = widget.reminderEnabledByDefault ?? false;
 
     DateTime now = DateTime.now();
-    DateTime providedStartDate = widget.initialStartDate ?? now;
-    startDate = providedStartDate.isBefore(now) ? now : providedStartDate;
+    DateTime today = DateTime(now.year, now.month, now.day);
+    DateTime providedDate = widget.initialStartDate ?? now;
+    DateTime providedDateOnly = DateTime(
+      providedDate.year,
+      providedDate.month,
+      providedDate.day,
+    );
+
+    startDate = providedDateOnly.isBefore(today) ? today : providedDateOnly;
 
     selectedWeekdays = [startDate.weekday];
     selectedMonthlyDays = [startDate.day];
@@ -1339,7 +1354,7 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: endDate ?? startDate.add(Duration(days: 30)),
-      firstDate: startDate.add(Duration(days: 1)),
+      firstDate: DateTime(startDate.year, startDate.month, startDate.day),
       lastDate: DateTime(2030),
     );
 
@@ -1383,9 +1398,7 @@ class _RegularHabitScreenState extends State<RegularHabitScreen> {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: endDate ?? startDate.add(Duration(days: 1)),
-      firstDate: startDate.add(
-        Duration(days: 1),
-      ), // Phải sau ngày bắt đầu ít nhất 1 ngày
+      firstDate: startDate,
       lastDate: DateTime(2030),
     );
 

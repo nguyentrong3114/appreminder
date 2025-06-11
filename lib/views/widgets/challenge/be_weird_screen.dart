@@ -199,13 +199,12 @@ class BeWeirdScreen extends StatelessWidget {
                         initialTitle: title,
                         initialIcon: icon,
                         initialColor: Colors.purple.shade200,
-                        reminderEnabledByDefault: true,
-                        initialStartDate:
-                            ChallengeScreen.selectedDate, // Thêm dòng này
+                        reminderEnabledByDefault: false,
+                        initialStartDate: ChallengeScreen.selectedDate,
                         formattedStartDate: DateFormat(
                           'MMMM d, yyyy',
                           'vi_VN',
-                        ).format(ChallengeScreen.selectedDate), // Thêm dòng này
+                        ).format(ChallengeScreen.selectedDate),
                       ),
                 ),
               );

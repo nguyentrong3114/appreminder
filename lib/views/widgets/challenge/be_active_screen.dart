@@ -209,13 +209,12 @@ class BeActiveScreen extends StatelessWidget {
                         initialTitle: title,
                         initialIcon: icon, // Truyền icon từ tip
                         initialColor: Colors.pink.shade200,
-                        reminderEnabledByDefault: true, // Bật nhắc nhở mặc định
-                        initialStartDate:
-                            ChallengeScreen.selectedDate, // Thêm dòng này
+                        reminderEnabledByDefault: false,
+                        initialStartDate: ChallengeScreen.selectedDate,
                         formattedStartDate: DateFormat(
                           'MMMM d, yyyy',
                           'vi_VN',
-                        ).format(ChallengeScreen.selectedDate), // Thêm dòng này
+                        ).format(ChallengeScreen.selectedDate),
                       ),
                 ),
               );

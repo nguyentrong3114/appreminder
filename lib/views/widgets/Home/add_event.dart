@@ -9,7 +9,7 @@ import 'package:flutter_app/provider/setting_provider.dart';
 class AddEventWidget extends StatefulWidget {
   final DateTime selectedDate;
   final void Function(CalendarEvent event) onAdd;
-  final CalendarEvent? event; // thêm vào AddEventWidget
+  final CalendarEvent? event; 
 
   const AddEventWidget({
     required this.selectedDate,
@@ -351,14 +351,20 @@ class _AddEventWidgetState extends State<AddEventWidget> {
                   );
                 }
 
+                // Đặt báo thức lặp lại trong ngày nếu là cả ngày và có chọn báo thức
                 if (allDay && alarmReminder) {
                   DateTime current = DateTime(start.year, start.month, start.day, 0, 0);
                   final DateTime endOfDay = DateTime(start.year, start.month, start.day, 23, 59);
-
                   int repeatIndex = 0;
                   while (current.isBefore(endOfDay)) {
                     if (current.isAfter(DateTime.now())) {
-                      // Đặt báo thức/notification
+                      await AlarmService.scheduleAlarm(
+                        id: alarmId + repeatIndex + 1000000, // đảm bảo id duy nhất
+                        title: event.title,
+                        body: event.detail.isNotEmpty ? event.detail : 'Đã đến giờ sự kiện!',
+                        scheduledTime: current,
+                        sound: alarmSound,
+                      );
                     }
                     current = current.add(Duration(hours: repeatIntervalHours));
                     repeatIndex++;
