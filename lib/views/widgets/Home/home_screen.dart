@@ -31,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final AuthService _authService = AuthService();
   final List<String> tabTitles = ["Tháng", "Danh Sách", "Tuần", "Ngày"];
 
-  int _lastTab = 0; // Thêm biến để kiểm tra lần chuyển tab
+  int _lastTab = 0;
 
   @override
   void initState() {
