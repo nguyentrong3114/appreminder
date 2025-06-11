@@ -26,7 +26,7 @@ class SettingsPage extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 1,
       ),
-      body: SafeArea( // <-- Thêm dòng này
+      body: SafeArea( 
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
