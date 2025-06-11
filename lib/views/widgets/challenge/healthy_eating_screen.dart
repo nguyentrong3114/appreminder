@@ -208,7 +208,7 @@ class HealthyEatingScreen extends StatelessWidget {
                         initialTitle: title,
                         initialIcon: icon,
                         initialColor: Colors.orange.shade200,
-                        reminderEnabledByDefault: true,
+                        reminderEnabledByDefault: false,
                         initialStartDate:
                             ChallengeScreen.selectedDate, // Thêm dòng này
                         formattedStartDate: DateFormat(

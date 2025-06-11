@@ -204,7 +204,7 @@ class SelfImprovementScreen extends StatelessWidget {
                         initialTitle: title,
                         initialIcon: icon,
                         initialColor: mainColor,
-                        reminderEnabledByDefault: true,
+                        reminderEnabledByDefault: false,
                         initialStartDate: ChallengeScreen.selectedDate,
                         formattedStartDate: DateFormat(
                           'MMMM d, yyyy',
