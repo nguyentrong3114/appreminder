@@ -1,4 +1,5 @@
 import 'chart.dart';
+import 'profile.dart';
 import 'statistical.dart';
 import 'settings_item.dart';
 import 'settings_section.dart';
@@ -41,7 +42,7 @@ class SettingsPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-
+            const ProfileWidget(),
             // General
             SettingsSection(
               children: [
