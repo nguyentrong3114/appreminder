@@ -10,6 +10,7 @@ class SettingsService {
   static const _keyFontFamily = 'fontFamily';
   static const _keyAlarmSound = 'alarmSound';
   static const _keyNotificationSound = 'notificationSound';
+  static const _keyVip = 'isVip';
 
   final SharedPreferences prefs;
 
@@ -46,6 +47,12 @@ class SettingsService {
   String get notificationSound => prefs.getString(_keyNotificationSound) ?? 'noti1';
 
   Future<void> setNotificationSound(String value) async => await prefs.setString(_keyNotificationSound, value);
+
+  bool get isVip => prefs.getBool(_keyVip) ?? false;
+
+  Future<void> setVip(bool value) async {
+    await prefs.setBool(_keyVip, value);
+  }
 }
 
 

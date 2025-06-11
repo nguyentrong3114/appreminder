@@ -16,15 +16,17 @@ import 'package:flutter_app/provider/setting_provider.dart';
 import 'views/widgets/challenge/add_regular_habit_screen.dart';
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final GlobalKey<NavigatorState>? navigatorKey;
+  const MyApp({super.key, this.navigatorKey});
   @override
   Widget build(BuildContext context) {
     final fontFamily = context.watch<SettingProvider>().fontFamily;
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      navigatorKey: navigatorKey,
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        fontFamily: fontFamily ?? 'Roboto',
+        fontFamily: fontFamily,
       ),
       home: LoginScreen(),
       routes: {
@@ -33,16 +35,16 @@ class MyApp extends StatelessWidget {
         '/add_todo': (context) => const TodoScreen(),
         '/add_setting': (context) => const SettingsPage(),
         '/add_regular_habit': (context) => RegularHabitScreen(
-              initialStartDate: ChallengeScreen.selectedDate ?? DateTime.now(),
+              initialStartDate: ChallengeScreen.selectedDate,
               formattedStartDate: DateFormat('MMMM d, yyyy', 'vi_VN')
-                  .format(ChallengeScreen.selectedDate ?? DateTime.now()),
+                  .format(ChallengeScreen.selectedDate),
             ),
         '/add_events_home': (context) => const AddSomethingToday(),
         '/add_challenge': (context) => AddChallengeScreen(),
         '/add_onetime_task': (context) => OnetimeTask(
-              initialStartDate: ChallengeScreen.selectedDate ?? DateTime.now(),
+              initialStartDate: ChallengeScreen.selectedDate,
               formattedStartDate: DateFormat('MMMM d, yyyy', 'vi_VN')
-                  .format(ChallengeScreen.selectedDate ?? DateTime.now()),
+                  .format(ChallengeScreen.selectedDate),
             ),
       },
     );
@@ -137,9 +139,9 @@ class _MainScreenState extends State<MainScreen> {
         context,
         MaterialPageRoute(
           builder: (context) => RegularHabitScreen(
-            initialStartDate: ChallengeScreen.selectedDate ?? DateTime.now(),
+            initialStartDate: ChallengeScreen.selectedDate,
             formattedStartDate: DateFormat('MMMM d, yyyy', 'vi_VN')
-                .format(ChallengeScreen.selectedDate ?? DateTime.now()),
+                .format(ChallengeScreen.selectedDate),
           ),
         ),
       );
