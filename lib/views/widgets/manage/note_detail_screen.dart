@@ -273,9 +273,9 @@ class NoteDetailScreenState extends State<NoteDetailScreen> {
           .delete();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đã xóa ghi chú thành công!')),
-        );
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   const SnackBar(content: Text('Đã xóa ghi chú thành công!')),
+        // );
         Navigator.of(context).pop();
       }
     } catch (e) {
