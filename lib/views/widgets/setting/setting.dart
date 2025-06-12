@@ -2,7 +2,9 @@ import 'chart.dart';
 import 'profile.dart';
 import 'statistical.dart';
 import 'settings_item.dart';
+import 'change_password.dart';
 import 'settings_section.dart';
+import 'vip_upgrade_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -11,8 +13,34 @@ import 'package:flutter_app/provider/setting_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-class SettingsPage extends StatelessWidget {
+class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
+
+  @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
+    Future.microtask(() => context.read<SettingProvider>().syncVipStatusFromFirestore());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      context.read<SettingProvider>().syncVipStatusFromFirestore();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +51,16 @@ class SettingsPage extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
-        leading: const Icon(FontAwesomeIcons.crown, color: Colors.green),
+        leading: IconButton(
+          icon: const Icon(FontAwesomeIcons.crown, color: Colors.green),
+          tooltip: 'Nâng cấp VIP',
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (context) => const VipUpgradeDialog(),
+            );
+          },
+        ),
         backgroundColor: Colors.white,
         elevation: 1,
       ),
@@ -196,6 +233,15 @@ class SettingsPage extends StatelessWidget {
                     style: const TextStyle(color: Colors.grey),
                   ),
                   onTap: () async {
+                    final isVip = context.read<SettingProvider>().isVip;
+                    if (!isVip) {
+                      // Nếu chưa VIP, mở dialog nâng cấp VIP
+                      showDialog(
+                        context: context,
+                        builder: (context) => const VipUpgradeDialog(),
+                      );
+                      return;
+                    }
                     final fonts = [
                       'Roboto',
                       'Montserrat',
@@ -508,6 +554,17 @@ class SettingsPage extends StatelessWidget {
                   icon: Icons.share,
                   iconColor: Colors.orange,
                   title: 'Chia sẻ với bạn bè',
+                ),
+                SettingsItem(
+                  icon: Icons.lock,
+                  iconColor: Colors.purple,
+                  title: 'Change Password',
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => const ChangePasswordWidget(),
+                    );
+                  },
                 ),
                 SettingsItem(
                   icon: Icons.logout,

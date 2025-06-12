@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_app/services/setting_service.dart';
 
 class SettingProvider extends ChangeNotifier {
@@ -9,6 +11,7 @@ class SettingProvider extends ChangeNotifier {
   String _fontFamily;
   String _notificationSound;
   String _alarmSound;
+  bool _isVip = false;
 
   SettingProvider(this.settingsService)
     : _use24HourFormat = settingsService.use24HourFormat,
@@ -16,14 +19,16 @@ class SettingProvider extends ChangeNotifier {
       _dateFormat = settingsService.dateFormat,
       _fontFamily = settingsService.fontFamily,
       _notificationSound = settingsService.notificationSound,
-      _alarmSound = settingsService.alarmSound;
+      _alarmSound = settingsService.alarmSound,
+      _isVip = settingsService.isVip;
 
   bool get use24HourFormat => _use24HourFormat;
   int get startWeekOn => _startWeekOn;
   String get dateFormat => _dateFormat;
-  String get fontFamily => (_fontFamily != null && _fontFamily.isNotEmpty) ? _fontFamily : 'Roboto';
+  String get fontFamily => _fontFamily.isNotEmpty ? _fontFamily : 'Roboto';
   String get notificationSound => _notificationSound;
   String get alarmSound => _alarmSound;
+  bool get isVip => _isVip;
 
   Future<void> setUse24HourFormat(bool value) async {
     _use24HourFormat = value;
@@ -59,5 +64,20 @@ class SettingProvider extends ChangeNotifier {
     _alarmSound = value;
     await settingsService.setAlarmSound(value);
     notifyListeners();
+  }
+
+  Future<void> setVip(bool value) async {
+    _isVip = value;
+    await settingsService.setVip(value);
+    notifyListeners();
+  }
+
+  Future<void> syncVipStatusFromFirestore() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      final isVipRemote = doc.data()?['isVip'] == true;
+      await setVip(isVipRemote);
+    }
   }
 }
