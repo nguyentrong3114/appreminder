@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'statistics_screen.dart';
 import 'add_challenge_screen.dart';
 import '../../../models/habit.dart';
+import 'package:flutter/material.dart';
 import '../../../services/habit_service.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'statistics_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ChallengeScreen extends StatefulWidget {
   static DateTime selectedDate = DateTime.now();
@@ -96,7 +96,6 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
   }
 
   bool _shouldShowHabitOnDate(Habit habit, DateTime date) {
-    // So sánh chỉ ngày, tháng, năm
     DateTime dateOnly = DateTime(date.year, date.month, date.day);
     DateTime startDateOnly = DateTime(
       habit.startDate.year,
@@ -104,6 +103,13 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
       habit.startDate.day,
     );
 
+    // ✅ THÊM LOGIC CHO ONETIME TASK
+    if (habit.type == HabitType.onetime) {
+      // Chỉ hiển thị đúng ngày đã chọn
+      return dateOnly.isAtSameMomentAs(startDateOnly);
+    }
+
+    // Logic cũ cho habit thường xuyên
     if (dateOnly.isBefore(startDateOnly)) return false;
 
     if (habit.hasEndDate && habit.endDate != null) {

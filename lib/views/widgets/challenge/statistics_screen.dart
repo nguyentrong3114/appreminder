@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_app/views/widgets/challenge/add_onetime_task.dart';
-import 'package:flutter_app/views/widgets/challenge/add_regular_habit_screen.dart';
 import 'package:intl/intl.dart';
 import '../../../models/habit.dart';
+import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_app/views/widgets/challenge/add_onetime_task.dart';
+import 'package:flutter_app/views/widgets/challenge/add_regular_habit_screen.dart';
 
 class StatisticsScreen extends StatefulWidget {
   final Habit habit;
